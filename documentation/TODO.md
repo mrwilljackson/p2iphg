@@ -1,7 +1,7 @@
 # Power2Inspire Event CRM App - TODO List
 
-**Last Updated:** 2026-02-06  
-**Project Status:** Requirements Gathering Phase
+**Last Updated:** 2026-02-09
+**Project Status:** Airtable Integration Design Phase
 
 ---
 
@@ -19,6 +19,8 @@
 - [x] DATA_MODELS.md - Entity definitions and validation rules
 - [x] PROJECT_STATUS.md - Current status and next steps
 - [x] TODO.md - This task tracking document
+- [x] AIRTABLE_INTEGRATION.md - Airtable backend integration specification
+- [x] INTEGRATION_DISCUSSION.md - Decision summary and outstanding questions
 
 ### 3. Install dependencies
 - [x] State management (Riverpod)
@@ -30,28 +32,45 @@
 
 ---
 
+### 4. Define Airtable integration approach
+- [x] Document direct API access decision and rationale
+- [x] Define security measures and risk mitigations
+- [x] Design Airtable schema (Events, Organizations, Registrations)
+- [x] Define API operations (GET/POST/PATCH endpoints)
+- [x] Document offline-first sync strategy
+- [x] Update data models with new fields (name/surname, impairment, organizationId)
+- [x] Create Organization entity for linked records
+- [x] Document outstanding questions for Power2Inspire
+
+---
+
 ## 🔄 In Progress
 
-### 4. Gather detailed field requirements
-- [ ] **AWAITING INPUT:** Specific fields required for Attendee registration
-- [ ] **AWAITING INPUT:** Specific fields required for Volunteer registration
-- [ ] **AWAITING INPUT:** Any differences between Attendee and Volunteer data capture
-- [ ] **AWAITING INPUT:** Validation rules for each field (required/optional, format)
-- [ ] **AWAITING INPUT:** Consent text for marketing and photo permissions
-- [ ] Document field requirements in DATA_MODELS.md
+### 5. Finalize field requirements and Airtable setup
+- [ ] **AWAITING INPUT:** Answers to questions in INTEGRATION_DISCUSSION.md
+- [ ] **AWAITING INPUT:** Airtable workspace details (plan level, admin access)
+- [ ] **AWAITING INPUT:** Organization list to import (if any)
+- [ ] **AWAITING INPUT:** Impairment field format (free text vs dropdown)
+- [ ] **AWAITING INPUT:** Token management process and rotation schedule
+- [ ] **AWAITING INPUT:** Mailchimp sync approach (direct vs Airtable automation)
+- [ ] **AWAITING INPUT:** Data retention and GDPR policy
+- [ ] **AWAITING INPUT:** Exact consent text for marketing and photo permissions
+- [ ] Create Airtable base with proposed schema
+- [ ] Generate test access token for development
+- [ ] Import organization data (if provided)
 
 ---
 
 ## 📋 Pending Tasks
 
-### 5. Set up local database schema
+### 6. Set up local database schema
 - [ ] Run build_runner to generate Drift database code
 - [ ] Test database creation and migrations
 - [ ] Verify indexes are created correctly
 - [ ] Add sample data for testing
 - [ ] Document database setup in ARCHITECTURE.md
 
-### 6. Implement core data models
+### 7. Implement core data models
 - [ ] Create Event model with Freezed
 - [ ] Create Registration model with Freezed
 - [ ] Create SyncLog model with Freezed
@@ -61,18 +80,20 @@
 - [ ] Add JSON serialization
 - [ ] Write unit tests for models
 
-### 7. Build registration UI
+### 8. Build registration UI
 - [ ] Design app navigation structure
 - [ ] Create home screen with event selection
 - [ ] Build attendee registration form
+  - [ ] Fields: Attendee Name, Attendee Surname, Impairment, Organization (autocomplete)
+  - [ ] Fields: Email, Phone (at least one required)
   - [ ] Large, accessible input fields
   - [ ] Clear labels and instructions
   - [ ] Marketing consent checkbox with explanation
   - [ ] Photo consent checkbox with explanation
   - [ ] Form validation with clear error messages
 - [ ] Build volunteer registration form
-  - [ ] Same accessibility features as attendee form
-  - [ ] Additional volunteer-specific fields (TBD)
+  - [ ] Same fields and accessibility features as attendee form
+  - [ ] Role automatically set to "Volunteer"
 - [ ] Create confirmation screen after registration
 - [ ] Implement tablet-optimized layout (landscape/portrait)
 - [ ] Add accessibility features:
@@ -82,7 +103,7 @@
   - [ ] Support for system font scaling
 - [ ] Test on actual tablet devices
 
-### 8. Implement attendance tracking
+### 9. Implement attendance tracking
 - [ ] Create check-in screen
   - [ ] Search/filter registered attendees
   - [ ] Quick check-in button
@@ -98,12 +119,15 @@
 - [ ] Add timestamp recording for check-in/check-out
 - [ ] Implement attendance duration calculation
 
-### 9. Create CSV export functionality
+### 10. Create CSV export functionality
 - [ ] Design CSV export data structure
 - [ ] Implement CSV generation with required fields:
-  - [ ] Name
-  - [ ] Organization
+  - [ ] Attendee Name
+  - [ ] Attendee Surname
+  - [ ] Impairment
+  - [ ] Organization (looked up from organizationId)
   - [ ] Email
+  - [ ] Phone
   - [ ] Role (Attendee/Volunteer)
   - [ ] Marketing consent (Yes/No)
   - [ ] Photo consent (Yes/No)
@@ -115,7 +139,7 @@
 - [ ] Add export preview before saving
 - [ ] Test with 500+ records
 
-### 10. Build sync framework
+### 11. Build sync framework
 - [ ] Design sync engine architecture
 - [ ] Implement sync status tracking
 - [ ] Create sync queue for pending operations
@@ -129,14 +153,19 @@
 - [ ] Add background sync capability (optional)
 - [ ] Test offline → online sync scenarios
 
-### 11. Integrate external APIs
+### 12. Integrate external APIs
 - [ ] **Airtable Integration:**
-  - [ ] Set up API authentication
-  - [ ] Implement read events endpoint
-  - [ ] Implement write registrations endpoint
+  - [ ] Install flutter_secure_storage for token storage
+  - [ ] Create Airtable API client using Dio
+  - [ ] Implement token storage in device keychain/keystore
+  - [ ] Implement GET /v0/{baseId}/Events (fetch active event)
+  - [ ] Implement GET /v0/{baseId}/Organizations (fetch org list)
+  - [ ] Implement POST /v0/{baseId}/Registrations (create registration)
+  - [ ] Implement PATCH /v0/{baseId}/Registrations/{id} (update check-in/out)
   - [ ] Map app data models to Airtable schema
-  - [ ] Handle API errors gracefully
-  - [ ] Test with actual Airtable account
+  - [ ] Implement rate limiting (5 req/sec)
+  - [ ] Handle API errors gracefully with retry logic
+  - [ ] Test with actual Airtable account and access token
 - [ ] **Mailchimp Integration:**
   - [ ] Set up API authentication
   - [ ] Implement export contacts endpoint
@@ -152,7 +181,7 @@
   - [ ] Handle API errors gracefully
   - [ ] Test with actual Google account
 
-### 12. Testing & Quality Assurance
+### 13. Testing & Quality Assurance
 - [ ] Write unit tests (target >80% coverage)
 - [ ] Write widget tests for UI components
 - [ ] Write integration tests for user flows
@@ -163,7 +192,7 @@
 - [ ] Security audit (data encryption, GDPR compliance)
 - [ ] User acceptance testing with Power2Inspire
 
-### 13. Documentation & Deployment
+### 14. Documentation & Deployment
 - [ ] Create user manual/guide
 - [ ] Create training materials for charity staff
 - [ ] Document API integration setup
@@ -178,15 +207,17 @@
 
 ## 🤔 Questions & Decisions Needed
 
-### From Power2Inspire:
-1. **Field Requirements:** What specific fields are needed for attendees vs volunteers?
-2. **Branding:** Logo, color scheme, and branding guidelines?
-3. **Data Retention:** How long to keep event data on device?
-4. **Sync Timing:** When should sync occur? (end of event, daily, manual only)
-5. **Conflict Resolution:** Which system takes precedence - Airtable or Mailchimp?
-6. **Testing Devices:** What specific tablet models will be used?
-7. **Consent Text:** Exact wording for marketing and photo consent?
-8. **Source of Truth:** Is Airtable the primary CRM or is it Mailchimp?
+### From Power2Inspire (See INTEGRATION_DISCUSSION.md for details):
+1. **Airtable Setup:** Do you have a workspace? What plan level? Who has admin access?
+2. **Organization Data:** Existing list to import? How many organizations typically attend?
+3. **Impairment Field:** Free text or dropdown? What are common values?
+4. **Token Management:** Who generates tokens? Rotation schedule? Lost device protocol?
+5. **Mailchimp Sync:** Direct from app or via Airtable automation?
+6. **Data Retention:** How long to keep event data? GDPR retention policy?
+7. **Consent Text:** Exact wording for marketing and photo consent checkboxes?
+8. **Branding:** Logo, color scheme, and branding guidelines?
+9. **Testing Devices:** What specific tablet models will be used?
+10. **Sync Timing:** When should sync occur? (end of event, daily, manual only)
 
 ### Technical Decisions:
 - [ ] Flutter SDK upgrade to resolve dependency conflicts? (Recommended)
@@ -199,19 +230,25 @@
 
 ## 📝 Notes
 
-- Project is currently in **requirements gathering phase**
-- Awaiting detailed field requirements before proceeding with coding
+- Project is currently in **Airtable integration design phase**
+- Direct API access approach approved for controlled environment
+- Data model updated with name/surname split, impairment field, and organization entity
+- Awaiting answers to questions in INTEGRATION_DISCUSSION.md before proceeding with coding
 - All documentation is version controlled in git
-- Database schema is drafted but not yet generated
+- Database schema is drafted but not yet generated (pending dependency resolution)
 - Dependencies are installed and ready to use
+- Airtable base needs to be created with proposed schema
 
 ---
 
 ## 🎯 Next Immediate Steps
 
-1. **Gather field requirements** from Power2Inspire
-2. Update DATA_MODELS.md with specific fields
-3. Generate database code with build_runner
-4. Begin UI development with concrete requirements
-5. Implement registration forms with validated fields
+1. **Get answers** to questions in INTEGRATION_DISCUSSION.md from Power2Inspire
+2. **Create Airtable base** with proposed schema (Events, Organizations, Registrations)
+3. **Generate access token** for development and testing
+4. **Import organization data** (if provided by charity)
+5. **Resolve dependency conflicts** (consider Flutter SDK upgrade or manual approach)
+6. **Generate database code** with build_runner or write manual Drift tables
+7. **Begin UI development** with finalized field requirements
+8. **Implement Airtable API client** for sync functionality
 
