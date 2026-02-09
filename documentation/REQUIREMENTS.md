@@ -122,7 +122,7 @@ The Power2Inspire Event CRM App is a tablet-first, offline-capable mobile applic
 - ID, Name, Date, Location, Description, Status, Created/Modified timestamps
 
 ### 6.2 Registration
-- ID, Event ID, Name, Organization, Email, Phone, Role, Marketing Consent, Photo Consent, Check-in Time, Check-out Time, Sync Status
+- ID, Event ID, Attendee Name and Surname, Impairment, Organization ID, Email, Phone, Role, Marketing Consent, Photo Consent, Check-in Time, Check-out Time, Sync Status
 
 ### 6.3 Sync Log
 - ID, Entity Type, Entity ID, Sync Target, Status, Timestamp, Error Message

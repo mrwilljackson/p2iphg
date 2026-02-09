@@ -47,8 +47,10 @@ Represents an attendee or volunteer registration for an event.
 **Properties:**
 - `id` (String, UUID): Unique identifier
 - `eventId` (String, required): Foreign key to Event
-- `name` (String, required): Full name
-- `organization` (String, optional): Organization/company name
+- `attendeeName` (String, required): First name / given name
+- `attendeeSurname` (String, required): Last name / family name
+- `impairment` (String, optional): Disability or accessibility needs
+- `organizationId` (String, optional): Foreign key to Organization (linked record in Airtable)
 - `email` (String, optional): Email address
 - `phone` (String, optional): Phone number
 - `role` (RegistrationRole, required): attendee | volunteer
@@ -61,14 +63,23 @@ Represents an attendee or volunteer registration for an event.
 - `modifiedAt` (DateTime, required): Last modification timestamp
 
 **Business Rules:**
-- Name must be 2-100 characters
+- Attendee name must be 2-100 characters
+- Attendee surname must be 2-100 characters
+- Impairment is free text for accessibility needs (e.g., "wheelchair user", "hearing impaired")
 - Email must be valid format if provided
 - Phone must be valid format if provided
 - At least one contact method (email or phone) should be provided
 - Cannot check out before checking in
 - Marketing consent defaults to false (opt-in required)
+- Organization is optional but recommended for tracking
 
 **Computed Properties:**
+- `isCheckedIn`: Returns true if checkinTime is not null
+- `isCheckedOut`: Returns true if checkoutTime is not null
+- `attendanceDuration`: Returns duration between check-in and check-out
+
+**Computed Properties:**
+- `fullName`: Returns "attendeeName attendeeSurname"
 - `isCheckedIn`: Returns true if checkinTime is not null
 - `isCheckedOut`: Returns true if checkoutTime is not null
 - `attendanceDuration`: Returns duration between check-in and check-out
@@ -78,8 +89,10 @@ Represents an attendee or volunteer registration for an event.
 Registration(
   id: 'reg_456def',
   eventId: 'evt_123abc',
-  name: 'Jane Smith',
-  organization: 'Local Community Group',
+  attendeeName: 'Jane',
+  attendeeSurname: 'Smith',
+  impairment: 'Wheelchair user',
+  organizationId: 'org_789xyz',
   email: 'jane.smith@example.com',
   phone: '+44 7700 900123',
   role: RegistrationRole.attendee,
@@ -95,7 +108,40 @@ Registration(
 
 ---
 
-### 1.3 SyncLog Entity
+### 1.3 Organization Entity
+
+Represents an organization that attendees/volunteers may be affiliated with.
+
+**Properties:**
+- `id` (String, UUID): Unique identifier
+- `name` (String, required): Organization name
+- `contactEmail` (String, optional): Primary contact email
+- `contactPhone` (String, optional): Primary contact phone
+- `notes` (String, optional): Additional information
+- `createdAt` (DateTime, required): Record creation timestamp
+- `modifiedAt` (DateTime, required): Last modification timestamp
+
+**Business Rules:**
+- Organization name must be 2-200 characters
+- Organizations can be pre-loaded from Airtable
+- Organizations can be created on-the-fly during registration
+
+**Example:**
+```dart
+Organization(
+  id: 'org_789xyz',
+  name: 'Local Community Group',
+  contactEmail: 'info@localgroup.org',
+  contactPhone: '+44 7700 900000',
+  notes: 'Regular event participants',
+  createdAt: DateTime.now(),
+  modifiedAt: DateTime.now(),
+)
+```
+
+---
+
+### 1.4 SyncLog Entity
 
 Tracks synchronization attempts to external systems.
 
@@ -176,9 +222,12 @@ enum SyncTarget {
 Used for generating CSV reports.
 
 **Properties:**
-- `name` (String): Attendee/volunteer name
-- `organization` (String): Organization name
+- `attendeeName` (String): First name
+- `attendeeSurname` (String): Last name
+- `impairment` (String): Accessibility needs
+- `organization` (String): Organization name (looked up from organizationId)
 - `email` (String): Email address
+- `phone` (String): Phone number
 - `role` (String): attendee | volunteer
 - `marketingConsent` (String): yes | no
 - `photoConsent` (String): yes | no
