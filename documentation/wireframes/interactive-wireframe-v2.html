@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Power2Inspire Event CRM - Wireframe V2</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .device-frame {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .screen {
+            display: none;
+            min-height: 600px;
+            padding: 24px;
+        }
+        
+        .screen.active {
+            display: block;
+        }
+        
+        .header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .back-button {
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 8px 16px;
+            margin-right: 16px;
+            color: #2196F3;
+            font-weight: 600;
+        }
+        
+        .back-button:hover {
+            background: #f0f0f0;
+            border-radius: 4px;
+        }
+        
+        .title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .event-card {
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+        
+        .event-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+        
+        .event-name {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .event-date {
+            color: #666;
+            font-size: 16px;
+        }
+        
+        .button {
+            width: 100%;
+            padding: 20px;
+            margin-bottom: 16px;
+            border: 2px solid #333;
+            border-radius: 8px;
+            background: white;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+        }
+        
+        .button:hover {
+            background: #f8f9fa;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .button.primary {
+            background: #4CAF50;
+            color: white;
+            border-color: #4CAF50;
+        }
+        
+        .button.primary:hover {
+            background: #45a049;
+        }
+        
+        .button.secondary {
+            background: #2196F3;
+            color: white;
+            border-color: #2196F3;
+        }
+        
+        .button.secondary:hover {
+            background: #0b7dda;
+        }
+        
+        .button.warning {
+            background: #FF9800;
+            color: white;
+            border-color: #FF9800;
+        }
+        
+        .button.warning:hover {
+            background: #e68900;
+        }
+        
+        .card {
+            border: 2px solid #333;
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .card:hover {
+            background: #f8f9fa;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .card-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+
+        .card-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .card-description {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .required {
+            color: #f44336;
+        }
+
+        .form-input, .form-select {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+            background: white;
+        }
+
+        .form-input:focus, .form-select:focus {
+            outline: none;
+            border-color: #2196F3;
+        }
+
+        .form-hint {
+            font-size: 12px;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        .radio-group {
+            margin-bottom: 20px;
+        }
+
+        .radio-label {
+            display: flex;
+            align-items: flex-start;
+            padding: 12px;
+            border: 2px solid #ccc;
+            border-radius: 4px;
+            margin-bottom: 12px;
+            cursor: pointer;
+        }
+
+        .radio-label:hover {
+            background: #f8f9fa;
+        }
+
+        .radio-label input {
+            margin-right: 12px;
+            margin-top: 4px;
+        }
+
+        .confirmation-icon {
+            font-size: 64px;
+            text-align: center;
+            margin: 32px 0;
+            color: #4CAF50;
+        }
+
+        .confirmation-text {
+            text-align: center;
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 24px;
+        }
+
+        .summary-box {
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .summary-item {
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="device-frame">
+        <!-- Screen 1: Home Screen -->
+        <div id="screen-home" class="screen active">
+            <div class="header">
+                <div class="title">Power2Inspire Event CRM</div>
+            </div>
+
+            <div class="event-card">
+                <div class="event-icon">🎯</div>
+                <div class="event-name">Current Event:</div>
+                <div class="event-name">PowerHouseGames 2026</div>
+                <div class="event-date">Date: 15 March 2026</div>
+            </div>
+
+            <button class="button primary" onclick="showScreen('screen-reg-type')">
+                📝 NEW REGISTRATION
+            </button>
+
+            <button class="button secondary" onclick="showScreen('screen-attendance')">
+                ✓ ATTENDANCE LIST
+            </button>
+
+            <button class="button warning" onclick="showScreen('screen-admin')">
+                ⚙️ ADMIN
+            </button>
+        </div>
+
+        <!-- Screen 2: Event Info Screen -->
+        <div id="screen-event-info" class="screen">
+            <div class="header">
+                <button class="back-button" onclick="showScreen('screen-home')">← Back</button>
+                <div class="title">Event Info</div>
+            </div>
+
+            <div class="summary-box">
+                <div class="summary-item"><strong>Event:</strong> PowerHouseGames 2026</div>
+                <div class="summary-item"><strong>Date:</strong> 15 March 2026</div>
+                <div class="summary-item"><strong>Location:</strong> Community Centre</div>
+                <div class="summary-item"><strong>Time:</strong> 10:00 - 16:00</div>
+            </div>
+
+            <p style="margin-bottom: 16px;">
+                Annual gaming event for disabled and non-disabled participants.
+            </p>
+
+            <div class="summary-box">
+                <div class="summary-item"><strong>Expected Attendees:</strong> 150</div>
+                <div class="summary-item"><strong>Volunteers Needed:</strong> 25</div>
+            </div>
+
+            <button class="button secondary" onclick="showScreen('screen-home')">
+                CLOSE
+            </button>
+        </div>
+
+        <!-- Screen 3: Registration Type Screen -->
+        <div id="screen-reg-type" class="screen">
+            <div class="header">
+                <button class="back-button" onclick="showScreen('screen-home')">← Back</button>
+                <div class="title">Registration Type</div>
+            </div>
+
+            <p style="margin-bottom: 24px; font-size: 18px;">Please select registration type:</p>
+
+            <div class="card" onclick="showScreen('screen-reg-form-attendee')">
+                <div class="card-icon">👤</div>
+                <div class="card-title">ATTENDEE</div>
+                <div class="card-description">Participating in event</div>
+            </div>
+
+            <div class="card" onclick="showScreen('screen-reg-form-volunteer')">
+                <div class="card-icon">🙋</div>
+                <div class="card-title">VOLUNTEER</div>
+                <div class="card-description">Helping run the event</div>
+            </div>
+        </div>
+
+        <!-- Screen 4: Registration Form (Attendee) -->
+        <div id="screen-reg-form-attendee" class="screen">
+            <div class="header">
+                <button class="back-button" onclick="showScreen('screen-reg-type')">← Back</button>
+                <div class="title">Registration Form</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Event <span class="required">*</span></label>
+                <select class="form-select">
+                    <option selected>PowerHouseGames 2026</option>
+                    <option>Community Health Fair 2026</option>
+                    <option>Summer Sports Day 2026</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">First Name <span class="required">*</span></label>
+                <input type="text" class="form-input" placeholder="Enter first name">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Last Name <span class="required">*</span></label>
+                <input type="text" class="form-input" placeholder="Enter last name">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Email <span class="required">*</span></label>
+                <input type="email" class="form-input" placeholder="your.email@example.com">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Organization <span class="required">*</span></label>
+                <input type="text" class="form-input" placeholder="Select or type organization name" list="organizations">
+                <datalist id="organizations">
+                    <option value="NHS">
+                    <option value="Power2Inspire">
+                    <option value="Community Centre">
+                    <option value="Local Council">
+                </datalist>
+                <div class="form-hint">Start typing to search or enter new organization</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Do you have an impairment <span class="required">*</span></label>
+                <input type="text" class="form-input" placeholder="e.g., wheelchair user, hearing aid, visual impairment">
+                <div class="form-hint">Please describe any accessibility requirements</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Consent to photography <span class="required">*</span></label>
+                <div class="radio-group">
+                    <label class="radio-label">
+                        <input type="radio" name="photo-consent-attendee" value="yes">
+                        <span>Yes, I consent to the use of photographs as specified</span>
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="photo-consent-attendee" value="no">
+                        <span>No, I will wear an orange wristband to denote I do not wish photos of me to be used in this way</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">I would like to receive emails about Power2Inspire's work <span class="required">*</span></label>
+                <div class="radio-group">
+                    <label class="radio-label">
+                        <input type="radio" name="marketing-consent-attendee" value="yes">
+                        <span>Yes, I would like to hear from Power2Inspire</span>
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="marketing-consent-attendee" value="no">
+                        <span>No, please don't add me to the mailing list</span>
+                    </label>
+                </div>
+            </div>
+
+            <button class="button primary" onclick="showScreen('screen-confirmation')">
+                SUBMIT
+            </button>
+        </div>
+
+        <!-- Screen 5: Registration Form (Volunteer) -->
+        <div id="screen-reg-form-volunteer" class="screen">
+            <div class="header">
+                <button class="back-button" onclick="showScreen('screen-reg-type')">← Back</button>
+                <div class="title">Registration Form</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Event <span class="required">*</span></label>
+                <select class="form-select">
+                    <option selected>PowerHouseGames 2026</option>
+                    <option>Community Health Fair 2026</option>
+                    <option>Summer Sports Day 2026</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">First Name <span class="required">*</span></label>
+                <input type="text" class="form-input" placeholder="Enter first name">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Last Name <span class="required">*</span></label>
+                <input type="text" class="form-input" placeholder="Enter last name">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Email <span class="required">*</span></label>
+                <input type="email" class="form-input" placeholder="your.email@example.com">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Organization <span class="required">*</span></label>
+                <input type="text" class="form-input" placeholder="Select or type organization name" list="organizations2">
+                <datalist id="organizations2">
+                    <option value="NHS">
+                    <option value="Power2Inspire">
+                    <option value="Community Centre">
+                    <option value="Local Council">
+                </datalist>
+                <div class="form-hint">Start typing to search or enter new organization</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Do you have an impairment <span class="required">*</span></label>
+                <input type="text" class="form-input" placeholder="e.g., wheelchair user, hearing aid, visual impairment">
+                <div class="form-hint">Please describe any accessibility requirements</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Consent to photography <span class="required">*</span></label>
+                <div class="radio-group">
+                    <label class="radio-label">
+                        <input type="radio" name="photo-consent-volunteer" value="yes">
+                        <span>Yes, I consent to the use of photographs as specified</span>
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="photo-consent-volunteer" value="no">
+                        <span>No, I will wear an orange wristband to denote I do not wish photos of me to be used in this way</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">I would like to receive emails about Power2Inspire's work <span class="required">*</span></label>
+                <div class="radio-group">
+                    <label class="radio-label">
+                        <input type="radio" name="marketing-consent-volunteer" value="yes">
+                        <span>Yes, I would like to hear from Power2Inspire</span>
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="marketing-consent-volunteer" value="no">
+                        <span>No, please don't add me to the mailing list</span>
+                    </label>
+                </div>
+            </div>
+
+            <button class="button primary" onclick="showScreen('screen-confirmation')">
+                SUBMIT
+            </button>
+        </div>
+
+        <!-- Screen 6: Confirmation Screen -->
+        <div id="screen-confirmation" class="screen">
+            <div class="header">
+                <div class="title">Registration Complete</div>
+            </div>
+
+            <div class="confirmation-icon">✓</div>
+            <div class="confirmation-text">Thank you for registering!</div>
+
+            <div class="summary-box">
+                <div class="summary-item"><strong>Name:</strong> John Smith</div>
+                <div class="summary-item"><strong>Email:</strong> john.smith@example.com</div>
+                <div class="summary-item"><strong>Organization:</strong> NHS</div>
+                <div class="summary-item"><strong>Event:</strong> PowerHouseGames 2026</div>
+                <div class="summary-item"><strong>Type:</strong> Attendee</div>
+            </div>
+
+            <p style="margin-bottom: 16px; text-align: center;">
+                Your registration has been saved. Please check in at the attendance desk when you arrive.
+            </p>
+
+            <button class="button primary" onclick="showScreen('screen-home')">
+                DONE
+            </button>
+
+            <button class="button secondary" onclick="showScreen('screen-reg-type')">
+                REGISTER ANOTHER PERSON
+            </button>
+        </div>
+
+        <!-- Screen 7: Attendance List Screen -->
+        <div id="screen-attendance" class="screen">
+            <div class="header">
+                <button class="back-button" onclick="showScreen('screen-home')">← Back</button>
+                <div class="title">Attendance List</div>
+            </div>
+
+            <div class="form-group">
+                <input type="text" class="form-input" placeholder="🔍 Search by name or email...">
+            </div>
+
+            <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+                <button class="button secondary" style="flex: 1; padding: 12px; font-size: 14px;">
+                    All (45)
+                </button>
+                <button class="button" style="flex: 1; padding: 12px; font-size: 14px; background: white;">
+                    Attendees (30)
+                </button>
+                <button class="button" style="flex: 1; padding: 12px; font-size: 14px; background: white;">
+                    Volunteers (15)
+                </button>
+            </div>
+
+            <div class="summary-box" style="margin-bottom: 16px;">
+                <div style="display: flex; justify-content: space-around;">
+                    <div><strong>Checked In:</strong> 28</div>
+                    <div><strong>Not Checked In:</strong> 17</div>
+                </div>
+            </div>
+
+            <div class="card" style="background: #f1f8f4; border-color: #4CAF50;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div class="card-title">Sarah Johnson</div>
+                        <div class="card-description">sarah.j@example.com</div>
+                        <div style="color: #4CAF50; font-weight: 600; margin-top: 4px;">✓ Checked In - 10:15 AM</div>
+                    </div>
+                    <button class="button warning" style="width: auto; padding: 12px 20px; margin: 0;">
+                        CHECK OUT
+                    </button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div class="card-title">Michael Brown</div>
+                        <div class="card-description">m.brown@example.com</div>
+                        <div style="color: #666; margin-top: 4px;">Not checked in</div>
+                    </div>
+                    <button class="button primary" style="width: auto; padding: 12px 20px; margin: 0;">
+                        CHECK IN
+                    </button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div class="card-title">Emma Wilson</div>
+                        <div class="card-description">emma.w@example.com</div>
+                        <div style="color: #666; margin-top: 4px;">Not checked in</div>
+                    </div>
+                    <button class="button primary" style="width: auto; padding: 12px 20px; margin: 0;">
+                        CHECK IN
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Screen 8: Admin Menu Screen -->
+        <div id="screen-admin" class="screen">
+            <div class="header">
+                <button class="back-button" onclick="showScreen('screen-home')">← Back</button>
+                <div class="title">Admin Menu</div>
+            </div>
+
+            <div class="card">
+                <div class="card-icon">🔄</div>
+                <div class="card-title">Sync with Airtable</div>
+                <div style="color: #4CAF50; font-size: 14px; margin-bottom: 8px;">✓ Last synced: 2 minutes ago</div>
+                <div class="card-description">Upload local registrations to Airtable</div>
+            </div>
+
+            <div class="card">
+                <div class="card-icon">📊</div>
+                <div class="card-title">Export CSV Report</div>
+                <div class="card-description">Download attendance and registration data</div>
+            </div>
+
+            <div class="card">
+                <div class="card-icon">⚙️</div>
+                <div class="card-title">Settings</div>
+                <div class="card-description">Configure app settings and integrations</div>
+            </div>
+
+            <div class="summary-box" style="margin-top: 24px;">
+                <div class="summary-item"><strong>Total Registrations:</strong> 45</div>
+                <div class="summary-item"><strong>Pending Sync:</strong> 3</div>
+                <div class="summary-item"><strong>Storage Used:</strong> 2.4 MB</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showScreen(screenId) {
+            // Hide all screens
+            const screens = document.querySelectorAll('.screen');
+            screens.forEach(screen => screen.classList.remove('active'));
+
+            // Show selected screen
+            const targetScreen = document.getElementById(screenId);
+            if (targetScreen) {
+                targetScreen.classList.add('active');
+                window.scrollTo(0, 0);
+            }
+        }
+    </script>
+</body>
+</html>
+
