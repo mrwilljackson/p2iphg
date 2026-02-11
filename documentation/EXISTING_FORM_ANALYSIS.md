@@ -167,16 +167,90 @@ Start with existing form fields, add optional fields:
 
 ---
 
-## Next Steps
+## ✅ DECISIONS MADE (2026-02-11)
 
-1. **User Decision:** Which option (A, B, or C) aligns with your needs?
-2. **Update Wireframes:** Modify based on chosen approach
-3. **Clarify Event Selection:** Understand how PowerHouseGames field works
-4. **Consent Pattern:** Decide on radio buttons vs checkboxes
-5. **Update Data Models:** Align with final field list
+### 1. **PowerHouseGames/Event Field: YES - ESSENTIAL**
+- **Decision:** Event ID is required to tie registration to specific event in Airtable
+- **Implementation:** Pulldown/dropdown selector
+- **Default:** Pre-selected to current active event
+- **User can change:** Yes (dropdown allows selection of other events if needed)
+
+### 2. **Consent Pattern: RADIO BUTTONS**
+- **Decision:** Keep current format with two radio buttons (yes/no)
+- **Rationale:** Forces explicit choice, matches existing form
+- **Fields affected:** Photo consent, Marketing consent
+
+### 3. **Orange Wristband Language: YES - KEEP IT**
+- **Decision:** Always use the same language mentioning orange wristband
+- **Text:** "No, I will wear an orange wristband to denote I do not wish photos of me to be used in this way"
+- **Rationale:** Standard practice at all events
+
+### 4. **Additional Fields**
+- ✅ **Organization: YES - REQUIRED**
+  - Type: Pulldown OR free text (to be decided)
+  - Purpose: Capture attendee's organization
+
+- ✅ **Impairment: YES - REQUIRED** (renamed from "Accessibility Needs")
+  - Type: Free text input
+  - Label: "Do you have an impairment"
+  - Purpose: Capture accessibility requirements
+
+- ❌ **Phone Number: NO - REMOVE**
+  - Not needed in the app
+
+### 5. **Attendee vs Volunteer: SAME FORM WITH CONDITIONAL FIELDS**
+- **Decision:** Use same basic form for both
+- **Implementation:** Show/hide 1-2 fields based on registration type
+- **To be defined:** Which specific fields differ between Attendee and Volunteer
 
 ---
 
-*Document created: 2026-02-11*  
+## 📋 Final Field List
+
+### Required Fields (All Registrations)
+1. **Event** - Dropdown (pre-selected to current event)
+2. **First Name** - Text input
+3. **Last Name** - Text input
+4. **Email** - Email input
+5. **Organization** - Dropdown or free text
+6. **Do you have an impairment** - Text input
+7. **Photo Consent** - Radio buttons (Yes with consent text / No with orange wristband text)
+8. **Marketing Consent** - Radio buttons (Yes / No)
+
+### Conditional Fields
+- **To be defined:** 1-2 fields that show for Volunteer but not Attendee (or vice versa)
+
+### Removed Fields
+- ❌ Phone Number (not needed)
+
+---
+
+## 🎯 Next Steps
+
+1. ✅ **Decisions documented** - Complete
+2. ⏳ **Update wireframes** - In progress
+3. ⏳ **Define conditional field rules** - Which fields differ for Attendee vs Volunteer?
+4. ⏳ **Update data models** - Align with final field list
+5. ⏳ **Clarify organization field** - Dropdown with predefined list OR free text?
+
+---
+
+## ❓ Outstanding Questions
+
+1. **Organization field type:**
+   - Option A: Dropdown with predefined list of organizations (like existing form)
+   - Option B: Free text input (user types anything)
+   - Option C: Autocomplete (type to search predefined list, can add new)
+   - **Which do you prefer?**
+
+2. **Conditional fields for Attendee vs Volunteer:**
+   - **Which 1-2 fields should be different?**
+   - Examples: Role/Position, T-shirt size, Availability, Special skills, etc.
+   - **Or should all fields be the same for both?**
+
+---
+
+*Document created: 2026-02-11*
+*Updated with decisions: 2026-02-11*
 *Based on: https://airtable.com/appIeSZKJnzKfqKea/shreia8ATAOeunxD2*
 
