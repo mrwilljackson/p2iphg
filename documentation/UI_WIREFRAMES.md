@@ -41,57 +41,31 @@
 
 ## 🔄 User Flow Diagram
 
-```
-┌─────────────────┐
-│   Home Screen   │
-│   (Main Menu)   │
-└────────┬────────┘
-         │
-    ┌────┴────┐
-    │         │
-    ▼         ▼
-┌────────┐  ┌──────────────┐
-│ Event  │  │ Registration │
-│  Info  │  │     Type     │
-└────────┘  └──────┬───────┘
-                   │
-              ┌────┴────┐
-              │         │
-              ▼         ▼
-         ┌─────────┐ ┌──────────┐
-         │Attendee │ │Volunteer │
-         │  Form   │ │   Form   │
-         └────┬────┘ └────┬─────┘
-              │           │
-              └─────┬─────┘
-                    │
-                    ▼
-            ┌───────────────┐
-            │    Consent    │
-            │    Screen     │
-            └───────┬───────┘
-                    │
-                    ▼
-            ┌───────────────┐
-            │ Confirmation  │
-            └───────────────┘
-                    │
-                    ▼
-            (Return to Home)
+```mermaid
+graph TD
+    Home[Home Screen<br/>Main Menu]
 
-    From Home:
-         │
-         ▼
-    ┌──────────────┐
-    │  Attendance  │
-    │     List     │
-    └──────────────┘
-         │
-         ▼
-    ┌──────────────┐
-    │ Admin Menu   │
-    │ (Staff Only) │
-    └──────────────┘
+    Home --> EventInfo[Event Info Screen<br/>View Details]
+    Home --> RegType[Registration Type Screen<br/>Choose Role]
+    Home --> Attendance[Attendance List Screen<br/>Check In/Out]
+    Home --> Admin[Admin Menu Screen<br/>Staff Only]
+
+    RegType --> AttendeeForm[Registration Form<br/>Attendee]
+    RegType --> VolunteerForm[Registration Form<br/>Volunteer]
+
+    AttendeeForm --> Consent[Consent Screen<br/>Permissions]
+    VolunteerForm --> Consent
+
+    Consent --> Confirmation[Confirmation Screen<br/>Success]
+
+    Confirmation --> Home
+    EventInfo --> Home
+    Attendance --> Home
+    Admin --> Home
+
+    style Home fill:#e1f5ff,stroke:#01579b,stroke-width:3px
+    style Confirmation fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
+    style Admin fill:#fff3e0,stroke:#e65100,stroke-width:2px
 ```
 
 ---
