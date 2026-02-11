@@ -1,7 +1,8 @@
 # Power2Inspire Event CRM App - Data Models
 
-**Document Version:** 1.0  
-**Date:** 2026-02-06
+**Document Version:** 2.0
+**Date:** 2026-02-11
+**Updated:** Aligned with Wireframe V2 and existing Airtable form structure
 
 ## 1. Domain Entities
 
@@ -46,32 +47,37 @@ Represents an attendee or volunteer registration for an event.
 
 **Properties:**
 - `id` (String, UUID): Unique identifier
-- `eventId` (String, required): Foreign key to Event
+- `eventId` (String, required): Foreign key to Event (Airtable event ID)
 - `attendeeName` (String, required): First name / given name
 - `attendeeSurname` (String, required): Last name / family name
-- `impairment` (String, optional): Disability or accessibility needs
-- `organizationId` (String, optional): Foreign key to Organization (linked record in Airtable)
-- `email` (String, optional): Email address
-- `phone` (String, optional): Phone number
+- `email` (String, required): Email address
+- `organizationId` (String, required): Foreign key to Organization (linked record in Airtable)
+- `impairment` (String, required): Disability or accessibility needs description
 - `role` (RegistrationRole, required): attendee | volunteer
+- `photoConsent` (bool, required): Consent for event photography (true = yes, false = orange wristband)
 - `marketingConsent` (bool, required): Opt-in for marketing communications
-- `photoConsent` (bool, required): Consent for event photography
 - `checkinTime` (DateTime, optional): Check-in timestamp
 - `checkoutTime` (DateTime, optional): Check-out timestamp
 - `syncStatus` (SyncStatus, required): pending | synced | failed
+- `airtableRecordId` (String, optional): Airtable record ID after sync
 - `createdAt` (DateTime, required): Record creation timestamp
 - `modifiedAt` (DateTime, required): Last modification timestamp
 
 **Business Rules:**
+- **Event ID is REQUIRED** - Must be selected from dropdown (pre-selected to current active event)
 - Attendee name must be 2-100 characters
 - Attendee surname must be 2-100 characters
-- Impairment is free text for accessibility needs (e.g., "wheelchair user", "hearing impaired")
-- Email must be valid format if provided
-- Phone must be valid format if provided
-- At least one contact method (email or phone) should be provided
+- **Email is REQUIRED** - Must be valid format
+- **Organization is REQUIRED** - Can be selected from autocomplete list or entered as free text
+- **Impairment is REQUIRED** - Free text for accessibility needs (e.g., "wheelchair user", "hearing impaired", "none")
+- **Photo consent is REQUIRED** - Radio button choice (yes/no)
+  - `false` = User will wear orange wristband (no photos)
+  - `true` = User consents to photography
+- **Marketing consent is REQUIRED** - Radio button choice (yes/no)
+  - `false` = Do not add to mailing list
+  - `true` = User wants to receive emails from Power2Inspire
 - Cannot check out before checking in
-- Marketing consent defaults to false (opt-in required)
-- Organization is optional but recommended for tracking
+- Phone number field has been REMOVED (not needed per user requirements)
 
 **Computed Properties:**
 - `isCheckedIn`: Returns true if checkinTime is not null
@@ -88,19 +94,19 @@ Represents an attendee or volunteer registration for an event.
 ```dart
 Registration(
   id: 'reg_456def',
-  eventId: 'evt_123abc',
+  eventId: 'recABC123XYZ',  // Airtable event record ID
   attendeeName: 'Jane',
   attendeeSurname: 'Smith',
-  impairment: 'Wheelchair user',
-  organizationId: 'org_789xyz',
   email: 'jane.smith@example.com',
-  phone: '+44 7700 900123',
+  organizationId: 'org_789xyz',
+  impairment: 'Wheelchair user',
   role: RegistrationRole.attendee,
-  marketingConsent: true,
-  photoConsent: false,
+  photoConsent: false,  // Will wear orange wristband
+  marketingConsent: true,  // Wants to receive emails
   checkinTime: DateTime(2026, 03, 15, 10, 30),
   checkoutTime: null,
   syncStatus: SyncStatus.pending,
+  airtableRecordId: null,  // Will be populated after sync
   createdAt: DateTime.now(),
   modifiedAt: DateTime.now(),
 )
@@ -222,17 +228,18 @@ enum SyncTarget {
 Used for generating CSV reports.
 
 **Properties:**
+- `eventName` (String): Event name (looked up from eventId)
 - `attendeeName` (String): First name
 - `attendeeSurname` (String): Last name
-- `impairment` (String): Accessibility needs
-- `organization` (String): Organization name (looked up from organizationId)
 - `email` (String): Email address
-- `phone` (String): Phone number
+- `organization` (String): Organization name (looked up from organizationId)
+- `impairment` (String): Accessibility needs description
 - `role` (String): attendee | volunteer
+- `photoConsent` (String): yes | no (orange wristband)
 - `marketingConsent` (String): yes | no
-- `photoConsent` (String): yes | no
-- `checkinTime` (String): ISO 8601 formatted timestamp
-- `checkoutTime` (String): ISO 8601 formatted timestamp
+- `checkinTime` (String): ISO 8601 formatted timestamp or empty
+- `checkoutTime` (String): ISO 8601 formatted timestamp or empty
+- `attendanceDuration` (String): Duration in minutes or empty
 
 ---
 
@@ -243,13 +250,7 @@ Used for generating CSV reports.
 - Maximum length: 254 characters
 - Example: `user@example.com`
 
-### 4.2 Phone Validation
-- Format: E.164 international format preferred
-- Minimum length: 10 digits
-- Maximum length: 15 digits
-- Example: `+44 7700 900123`
-
-### 4.3 Name Validation
+### 4.2 Name Validation
 - Minimum length: 2 characters
 - Maximum length: 100 characters
 - Allowed characters: Letters, spaces, hyphens, apostrophes
@@ -270,7 +271,9 @@ CREATE INDEX idx_events_date ON events(date);
 CREATE INDEX idx_registrations_event_id ON registrations(event_id);
 CREATE INDEX idx_registrations_sync_status ON registrations(sync_status);
 CREATE INDEX idx_registrations_email ON registrations(email);
+CREATE INDEX idx_registrations_role ON registrations(role);
 CREATE INDEX idx_registrations_checkin ON registrations(checkin_time);
+CREATE INDEX idx_registrations_airtable_id ON registrations(airtable_record_id);
 
 -- Sync Logs
 CREATE INDEX idx_sync_logs_entity ON sync_logs(entity_type, entity_id);
