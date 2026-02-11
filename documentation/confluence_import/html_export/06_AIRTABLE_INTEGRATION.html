@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>AIRTABLE_INTEGRATION</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<h1 id="airtable-integration-architecture">Airtable Integration
+Architecture</h1>
+<p><strong>Document Version:</strong> 1.0<br />
+<strong>Date:</strong> 2026-02-09<br />
+<strong>Status:</strong> Design Discussion</p>
+<h2 id="overview">1. Overview</h2>
+<p>The Power2Inspire Event CRM App will use Airtable as its backend
+database, with the Flutter app acting as a mobile interface for event
+registration and attendance tracking. This document outlines the
+integration approach, security considerations, and implementation
+details.</p>
+<h2 id="integration-approach">2. Integration Approach</h2>
+<h3 id="direct-api-access">2.1 Direct API Access</h3>
+<p>The app will communicate directly with Airtable’s REST API from the
+Flutter application.</p>
+<p><strong>Rationale:</strong> - Controlled environment (charity-owned
+devices only) - Not publicly distributed app - Limited, specific API
+operations coded into the app - Simpler architecture (no middleware
+server required) - Offline-first with local SQLite cache</p>
+<h3 id="authentication-method">2.2 Authentication Method</h3>
+<p><strong>User Access Token</strong> - Each device will require an
+Airtable user access token to function.</p>
+<p><strong>Token Storage:</strong> - Stored securely in device
+keychain/keystore - Entered once during initial app setup - Can be
+updated/rotated by authorized staff</p>
+<h2 id="security-considerations">3. Security Considerations</h2>
+<h3 id="acceptable-risks-controlled-environment">3.1 Acceptable Risks
+(Controlled Environment)</h3>
+<p>✅ <strong>Why direct API access is acceptable:</strong> 1.
+<strong>Not Public:</strong> App is not distributed via App Store/Play
+Store to general public 2. <strong>Controlled Devices:</strong> Only
+runs on charity-owned tablets 3. <strong>Physical Security:</strong>
+Devices remain in charity’s possession 4. <strong>Limited
+Scope:</strong> API access is restricted to specific operations only 5.
+<strong>User Token:</strong> Requires valid Airtable user credentials 6.
+<strong>Audit Trail:</strong> All API calls logged in Airtable</p>
+<h3 id="security-measures-implemented">3.2 Security Measures
+Implemented</h3>
+<p>🔒 <strong>Mitigations:</strong> - [ ] Access token stored in secure
+device storage (iOS Keychain / Android Keystore) - [ ] Token never
+logged or displayed in UI - [ ] API calls use HTTPS only (TLS 1.2+) - [
+] Rate limiting respected (Airtable: 5 requests/second) - [ ] Minimal
+API permissions (read events, write registrations only) - [ ] Local data
+encrypted at rest (SQLite encryption) - [ ] App requires device
+PIN/biometric to access (optional) - [ ] Token can be revoked remotely
+via Airtable</p>
+<h3 id="known-limitations-risks">3.3 Known Limitations &amp; Risks</h3>
+<p>⚠️ <strong>Acknowledged risks:</strong> 1. <strong>Token
+Exposure:</strong> If device is compromised, token could be extracted -
+<em>Mitigation:</em> Token can be revoked in Airtable, device should be
+locked 2. <strong>API Key in Code:</strong> API endpoints are visible in
+decompiled app - <em>Mitigation:</em> Acceptable for controlled
+deployment, not public app 3. <strong>No Server-Side
+Validation:</strong> App directly modifies Airtable data -
+<em>Mitigation:</em> Airtable’s built-in validation and permissions
+apply</p>
+<h2 id="airtable-schema-design">4. Airtable Schema Design</h2>
+<h3 id="base-structure">4.1 Base Structure</h3>
+<p><strong>Base Name:</strong> <code>Power2Inspire Events</code> (or as
+defined by charity)</p>
+<h3 id="tables">4.2 Tables</h3>
+<h4 id="table-1-events">Table 1: Events</h4>
+<table>
+<thead>
+<tr>
+<th>Field Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Event ID</td>
+<td>Auto Number</td>
+<td>Unique identifier</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Event Name</td>
+<td>Single Line Text</td>
+<td>Name of event</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Event Date</td>
+<td>Date</td>
+<td>When event occurs</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Location</td>
+<td>Single Line Text</td>
+<td>Venue/address</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Description</td>
+<td>Long Text</td>
+<td>Event details</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Status</td>
+<td>Single Select</td>
+<td>active, completed, cancelled</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Created At</td>
+<td>Created Time</td>
+<td>Auto-generated</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Modified At</td>
+<td>Last Modified Time</td>
+<td>Auto-generated</td>
+<td>Yes</td>
+</tr>
+</tbody>
+</table>
+<h4 id="table-2-organizations">Table 2: Organizations</h4>
+<table>
+<thead>
+<tr>
+<th>Field Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Organization ID</td>
+<td>Auto Number</td>
+<td>Unique identifier</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Organization Name</td>
+<td>Single Line Text</td>
+<td>Name of organization</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Contact Email</td>
+<td>Email</td>
+<td>Primary contact</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Contact Phone</td>
+<td>Phone</td>
+<td>Primary contact</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Notes</td>
+<td>Long Text</td>
+<td>Additional info</td>
+<td>No</td>
+</tr>
+</tbody>
+</table>
+<h4 id="table-3-registrations">Table 3: Registrations</h4>
+<table>
+<colgroup>
+<col style="width: 29%" />
+<col style="width: 14%" />
+<col style="width: 31%" />
+<col style="width: 24%" />
+</colgroup>
+<thead>
+<tr>
+<th>Field Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Registration ID</td>
+<td>Auto Number</td>
+<td>Unique identifier</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Event</td>
+<td>Link to Events</td>
+<td>Which event</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Attendee Name</td>
+<td>Single Line Text</td>
+<td>First name</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Attendee Surname</td>
+<td>Single Line Text</td>
+<td>Last name</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Impairment</td>
+<td>Single Line Text</td>
+<td>Disability/accessibility needs</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Organization</td>
+<td>Link to Organizations</td>
+<td>Linked organization</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Email</td>
+<td>Email</td>
+<td>Contact email</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Phone</td>
+<td>Phone</td>
+<td>Contact phone</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Role</td>
+<td>Single Select</td>
+<td>Attendee, Volunteer</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Marketing Consent</td>
+<td>Checkbox</td>
+<td>Opt-in for marketing</td>
+<td>Yes (default: No)</td>
+</tr>
+<tr>
+<td>Photo Consent</td>
+<td>Checkbox</td>
+<td>Consent for photography</td>
+<td>Yes (default: No)</td>
+</tr>
+<tr>
+<td>Check-in Time</td>
+<td>Date &amp; Time</td>
+<td>When checked in</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Check-out Time</td>
+<td>Date &amp; Time</td>
+<td>When checked out</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Sync Status</td>
+<td>Single Select</td>
+<td>pending, synced, failed</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Created At</td>
+<td>Created Time</td>
+<td>Auto-generated</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Modified At</td>
+<td>Last Modified Time</td>
+<td>Auto-generated</td>
+<td>Yes</td>
+</tr>
+</tbody>
+</table>
+<h3 id="views-in-airtable">4.3 Views (in Airtable)</h3>
+<ul>
+<li><strong>Active Event:</strong> Filter by Status = “active”</li>
+<li><strong>Today’s Registrations:</strong> Filter by Event Date =
+today</li>
+<li><strong>Checked In:</strong> Filter by Check-in Time is not empty
+AND Check-out Time is empty</li>
+<li><strong>Marketing Consent:</strong> Filter by Marketing Consent =
+true</li>
+<li><strong>Volunteers:</strong> Filter by Role = “Volunteer”</li>
+</ul>
+<h2 id="api-operations">5. API Operations</h2>
+<h3 id="read-operations">5.1 Read Operations</h3>
+<pre><code>GET /v0/{baseId}/Events
+- Fetch active event details
+- Used when app starts or syncs
+
+GET /v0/{baseId}/Organizations
+- Fetch organization list for dropdown
+- Cached locally for offline use</code></pre>
+<h3 id="write-operations">5.2 Write Operations</h3>
+<pre><code>POST /v0/{baseId}/Registrations
+- Create new registration record
+- Includes all attendee/volunteer data
+
+PATCH /v0/{baseId}/Registrations/{recordId}
+- Update check-in/check-out times
+- Update sync status</code></pre>
+<h3 id="rate-limiting">5.3 Rate Limiting</h3>
+<ul>
+<li>Airtable limit: 5 requests per second per base</li>
+<li>App will implement request queuing</li>
+<li>Batch operations where possible</li>
+</ul>
+<h2 id="offline-first-architecture">6. Offline-First Architecture</h2>
+<h3 id="data-flow">6.1 Data Flow</h3>
+<p><strong>Offline Mode (Primary):</strong> 1. User registers attendee →
+Saved to local SQLite 2. User checks in attendee → Updated in local
+SQLite 3. All operations work without internet</p>
+<p><strong>Sync Mode (On-Demand):</strong> 1. User triggers sync 2. App
+reads pending records from SQLite 3. App sends to Airtable API 4. On
+success: Update sync status to “synced” 5. On failure: Log error, mark
+for retry</p>
+<h3 id="conflict-resolution">6.2 Conflict Resolution</h3>
+<p><strong>Strategy:</strong> Last Write Wins (Local app is
+authoritative)</p>
+<p><strong>Scenarios:</strong> - <strong>New Registration:</strong>
+Always create in Airtable (no conflict) - <strong>Check-in
+Update:</strong> Overwrite Airtable timestamp with local timestamp -
+<strong>Duplicate Detection:</strong> Check by Email + Event ID before
+creating</p>
+<h2 id="implementation-checklist">7. Implementation Checklist</h2>
+<h3 id="setup-tasks">7.1 Setup Tasks</h3>
+<ul class="task-list">
+<li><label><input type="checkbox" />Create Airtable base with schema
+above</label></li>
+<li><label><input type="checkbox" />Generate user access token in
+Airtable</label></li>
+<li><label><input type="checkbox" />Document token generation process
+for charity staff</label></li>
+<li><label><input type="checkbox" />Test API access with
+Postman/curl</label></li>
+</ul>
+<h3 id="app-development-tasks">7.2 App Development Tasks</h3>
+<ul class="task-list">
+<li><label><input type="checkbox" />Create Airtable API client
+(Dio-based)</label></li>
+<li><label><input type="checkbox" />Implement token storage
+(flutter_secure_storage)</label></li>
+<li><label><input type="checkbox" />Build sync engine with retry
+logic</label></li>
+<li><label><input type="checkbox" />Add organization
+lookup/autocomplete</label></li>
+<li><label><input type="checkbox" />Map local SQLite models to Airtable
+schema</label></li>
+<li><label><input type="checkbox" />Handle API errors
+gracefully</label></li>
+<li><label><input type="checkbox" />Add sync status UI</label></li>
+</ul>
+<h2 id="questions-for-power2inspire">8. Questions for Power2Inspire</h2>
+<ol type="1">
+<li><strong>Airtable Account:</strong> Do you already have an Airtable
+workspace set up?</li>
+<li><strong>Base Access:</strong> Who will have access to the Airtable
+base?</li>
+<li><strong>Token Management:</strong> Who will generate and manage
+access tokens?</li>
+<li><strong>Organization List:</strong> Do you have an existing list of
+organizations to import?</li>
+<li><strong>Impairment Field:</strong> What values should be available?
+(Free text or dropdown?)</li>
+<li><strong>Data Ownership:</strong> Is Airtable the permanent storage,
+or just a sync target?</li>
+<li><strong>Mailchimp Sync:</strong> Should we sync to Mailchimp from
+Airtable or directly from app?</li>
+</ol>
+<h2 id="next-steps">9. Next Steps</h2>
+<ol type="1">
+<li>Finalize Airtable schema with charity</li>
+<li>Create Airtable base and test tables</li>
+<li>Generate access token for development</li>
+<li>Implement API client in Flutter</li>
+<li>Test end-to-end sync flow</li>
+<li>Document setup process for production deployment</li>
+</ol>
+</body>
+</html>

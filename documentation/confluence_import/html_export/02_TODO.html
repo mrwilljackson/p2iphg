@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>TODO</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<h1 id="power2inspire-event-crm-app---todo-list">Power2Inspire Event CRM
+App - TODO List</h1>
+<p><strong>Last Updated:</strong> 2026-02-09 <strong>Project
+Status:</strong> Airtable Integration Design Phase</p>
+<hr />
+<h2 id="completed-tasks">✅ Completed Tasks</h2>
+<h3 id="initialize-project-infrastructure">1. Initialize project
+infrastructure</h3>
+<ul class="task-list">
+<li><label><input type="checkbox" checked="" />Set up git
+repository</label></li>
+<li><label><input type="checkbox" checked="" />Create Flutter project
+structure in software/flutter directory</label></li>
+<li><label><input type="checkbox" checked="" />Configure .gitignore for
+Flutter and sensitive files</label></li>
+<li><label><input type="checkbox" checked="" />Initial git
+commit</label></li>
+</ul>
+<h3 id="create-initial-documentation">2. Create initial
+documentation</h3>
+<ul class="task-list">
+<li><label><input type="checkbox" checked="" />REQUIREMENTS.md -
+Functional and non-functional requirements</label></li>
+<li><label><input type="checkbox" checked="" />ARCHITECTURE.md -
+Technical architecture and design decisions</label></li>
+<li><label><input type="checkbox" checked="" />DATA_MODELS.md - Entity
+definitions and validation rules</label></li>
+<li><label><input type="checkbox" checked="" />PROJECT_STATUS.md -
+Current status and next steps</label></li>
+<li><label><input type="checkbox" checked="" />TODO.md - This task
+tracking document</label></li>
+<li><label><input type="checkbox" checked="" />AIRTABLE_INTEGRATION.md -
+Airtable backend integration specification</label></li>
+<li><label><input type="checkbox" checked="" />INTEGRATION_DISCUSSION.md
+- Decision summary and outstanding questions</label></li>
+</ul>
+<h3 id="install-dependencies">3. Install dependencies</h3>
+<ul class="task-list">
+<li><label><input type="checkbox" checked="" />State management
+(Riverpod)</label></li>
+<li><label><input type="checkbox" checked="" />Database
+(Drift/SQLite)</label></li>
+<li><label><input type="checkbox" checked="" />Networking
+(Dio)</label></li>
+<li><label><input type="checkbox" checked="" />CSV export (CSV
+package)</label></li>
+<li><label><input type="checkbox" checked="" />Code generation tools
+(Freezed, JSON Serializable, Build Runner)</label></li>
+<li><label><input type="checkbox" checked="" />Utilities (UUID, Path
+Provider, Shared Preferences, Intl)</label></li>
+</ul>
+<hr />
+<h3 id="define-airtable-integration-approach">4. Define Airtable
+integration approach</h3>
+<ul class="task-list">
+<li><label><input type="checkbox" checked="" />Document direct API
+access decision and rationale</label></li>
+<li><label><input type="checkbox" checked="" />Define security measures
+and risk mitigations</label></li>
+<li><label><input type="checkbox" checked="" />Design Airtable schema
+(Events, Organizations, Registrations)</label></li>
+<li><label><input type="checkbox" checked="" />Define API operations
+(GET/POST/PATCH endpoints)</label></li>
+<li><label><input type="checkbox" checked="" />Document offline-first
+sync strategy</label></li>
+<li><label><input type="checkbox" checked="" />Update data models with
+new fields (name/surname, impairment, organizationId)</label></li>
+<li><label><input type="checkbox" checked="" />Create Organization
+entity for linked records</label></li>
+<li><label><input type="checkbox" checked="" />Document outstanding
+questions for Power2Inspire</label></li>
+</ul>
+<hr />
+<h2 id="in-progress">🔄 In Progress</h2>
+<h3 id="finalize-field-requirements-and-airtable-setup">5. Finalize
+field requirements and Airtable setup</h3>
+<ul class="task-list">
+<li><label><input type="checkbox" /><strong>AWAITING INPUT:</strong>
+Answers to questions in INTEGRATION_DISCUSSION.md</label></li>
+<li><label><input type="checkbox" /><strong>AWAITING INPUT:</strong>
+Airtable workspace details (plan level, admin access)</label></li>
+<li><label><input type="checkbox" /><strong>AWAITING INPUT:</strong>
+Organization list to import (if any)</label></li>
+<li><label><input type="checkbox" /><strong>AWAITING INPUT:</strong>
+Impairment field format (free text vs dropdown)</label></li>
+<li><label><input type="checkbox" /><strong>AWAITING INPUT:</strong>
+Token management process and rotation schedule</label></li>
+<li><label><input type="checkbox" /><strong>AWAITING INPUT:</strong>
+Mailchimp sync approach (direct vs Airtable automation)</label></li>
+<li><label><input type="checkbox" /><strong>AWAITING INPUT:</strong>
+Data retention and GDPR policy</label></li>
+<li><label><input type="checkbox" /><strong>AWAITING INPUT:</strong>
+Exact consent text for marketing and photo permissions</label></li>
+<li><label><input type="checkbox" />Create Airtable base with proposed
+schema</label></li>
+<li><label><input type="checkbox" />Generate test access token for
+development</label></li>
+<li><label><input type="checkbox" />Import organization data (if
+provided)</label></li>
+</ul>
+<hr />
+<h2 id="pending-tasks">📋 Pending Tasks</h2>
+<h3 id="set-up-local-database-schema">6. Set up local database
+schema</h3>
+<ul class="task-list">
+<li><label><input type="checkbox" />Run build_runner to generate Drift
+database code</label></li>
+<li><label><input type="checkbox" />Test database creation and
+migrations</label></li>
+<li><label><input type="checkbox" />Verify indexes are created
+correctly</label></li>
+<li><label><input type="checkbox" />Add sample data for
+testing</label></li>
+<li><label><input type="checkbox" />Document database setup in
+ARCHITECTURE.md</label></li>
+</ul>
+<h3 id="implement-core-data-models">7. Implement core data models</h3>
+<ul class="task-list">
+<li><label><input type="checkbox" />Create Event model with
+Freezed</label></li>
+<li><label><input type="checkbox" />Create Registration model with
+Freezed</label></li>
+<li><label><input type="checkbox" />Create SyncLog model with
+Freezed</label></li>
+<li><label><input type="checkbox" />Add validation logic to
+models</label></li>
+<li><label><input type="checkbox" />Implement computed properties
+(isCheckedIn, attendanceDuration)</label></li>
+<li><label><input type="checkbox" />Create enums (EventStatus,
+RegistrationRole, SyncStatus, SyncTarget)</label></li>
+<li><label><input type="checkbox" />Add JSON serialization</label></li>
+<li><label><input type="checkbox" />Write unit tests for
+models</label></li>
+</ul>
+<h3 id="build-registration-ui">8. Build registration UI</h3>
+<ul class="task-list">
+<li><label><input type="checkbox" />Design app navigation
+structure</label></li>
+<li><label><input type="checkbox" />Create home screen with event
+selection</label></li>
+<li><label><input type="checkbox" />Build attendee registration
+form</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Fields: Attendee Name, Attendee
+Surname, Impairment, Organization (autocomplete)</label></li>
+<li><label><input type="checkbox" />Fields: Email, Phone (at least one
+required)</label></li>
+<li><label><input type="checkbox" />Large, accessible input
+fields</label></li>
+<li><label><input type="checkbox" />Clear labels and
+instructions</label></li>
+<li><label><input type="checkbox" />Marketing consent checkbox with
+explanation</label></li>
+<li><label><input type="checkbox" />Photo consent checkbox with
+explanation</label></li>
+<li><label><input type="checkbox" />Form validation with clear error
+messages</label></li>
+</ul></li>
+<li><label><input type="checkbox" />Build volunteer registration
+form</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Same fields and accessibility
+features as attendee form</label></li>
+<li><label><input type="checkbox" />Role automatically set to
+“Volunteer”</label></li>
+</ul></li>
+<li><label><input type="checkbox" />Create confirmation screen after
+registration</label></li>
+<li><label><input type="checkbox" />Implement tablet-optimized layout
+(landscape/portrait)</label></li>
+<li><label><input type="checkbox" />Add accessibility features:</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Minimum 48x48 dp touch targets
+(prefer 72x72 dp)</label></li>
+<li><label><input type="checkbox" />High contrast colors (WCAG AA
+compliance)</label></li>
+<li><label><input type="checkbox" />Screen reader labels</label></li>
+<li><label><input type="checkbox" />Support for system font
+scaling</label></li>
+</ul></li>
+<li><label><input type="checkbox" />Test on actual tablet
+devices</label></li>
+</ul>
+<h3 id="implement-attendance-tracking">9. Implement attendance
+tracking</h3>
+<ul class="task-list">
+<li><label><input type="checkbox" />Create check-in screen</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Search/filter registered
+attendees</label></li>
+<li><label><input type="checkbox" />Quick check-in button</label></li>
+<li><label><input type="checkbox" />Display current attendance
+count</label></li>
+</ul></li>
+<li><label><input type="checkbox" />Create check-out screen</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />List currently checked-in
+attendees</label></li>
+<li><label><input type="checkbox" />Quick check-out button</label></li>
+</ul></li>
+<li><label><input type="checkbox" />Build attendance dashboard</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Total registered count</label></li>
+<li><label><input type="checkbox" />Currently present count</label></li>
+<li><label><input type="checkbox" />Checked out count</label></li>
+<li><label><input type="checkbox" />Fire drill/emergency evacuation
+view</label></li>
+</ul></li>
+<li><label><input type="checkbox" />Add timestamp recording for
+check-in/check-out</label></li>
+<li><label><input type="checkbox" />Implement attendance duration
+calculation</label></li>
+</ul>
+<h3 id="create-csv-export-functionality">10. Create CSV export
+functionality</h3>
+<ul class="task-list">
+<li><label><input type="checkbox" />Design CSV export data
+structure</label></li>
+<li><label><input type="checkbox" />Implement CSV generation with
+required fields:</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Attendee Name</label></li>
+<li><label><input type="checkbox" />Attendee Surname</label></li>
+<li><label><input type="checkbox" />Impairment</label></li>
+<li><label><input type="checkbox" />Organization (looked up from
+organizationId)</label></li>
+<li><label><input type="checkbox" />Email</label></li>
+<li><label><input type="checkbox" />Phone</label></li>
+<li><label><input type="checkbox" />Role
+(Attendee/Volunteer)</label></li>
+<li><label><input type="checkbox" />Marketing consent
+(Yes/No)</label></li>
+<li><label><input type="checkbox" />Photo consent (Yes/No)</label></li>
+<li><label><input type="checkbox" />Check-in time</label></li>
+<li><label><input type="checkbox" />Check-out time</label></li>
+</ul></li>
+<li><label><input type="checkbox" />Add date range filtering for
+exports</label></li>
+<li><label><input type="checkbox" />Save CSV to device
+storage</label></li>
+<li><label><input type="checkbox" />Create export
+history/log</label></li>
+<li><label><input type="checkbox" />Add export preview before
+saving</label></li>
+<li><label><input type="checkbox" />Test with 500+ records</label></li>
+</ul>
+<h3 id="build-sync-framework">11. Build sync framework</h3>
+<ul class="task-list">
+<li><label><input type="checkbox" />Design sync engine
+architecture</label></li>
+<li><label><input type="checkbox" />Implement sync status
+tracking</label></li>
+<li><label><input type="checkbox" />Create sync queue for pending
+operations</label></li>
+<li><label><input type="checkbox" />Add retry logic for failed syncs
+(max 3 attempts)</label></li>
+<li><label><input type="checkbox" />Implement conflict resolution
+strategy (TBD with charity)</label></li>
+<li><label><input type="checkbox" />Build sync UI:</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Manual sync trigger
+button</label></li>
+<li><label><input type="checkbox" />Sync status indicator</label></li>
+<li><label><input type="checkbox" />Sync history/log viewer</label></li>
+<li><label><input type="checkbox" />Error notification and retry
+options</label></li>
+</ul></li>
+<li><label><input type="checkbox" />Add background sync capability
+(optional)</label></li>
+<li><label><input type="checkbox" />Test offline → online sync
+scenarios</label></li>
+</ul>
+<h3 id="integrate-external-apis">12. Integrate external APIs</h3>
+<ul class="task-list">
+<li><label><input type="checkbox" /><strong>Airtable
+Integration:</strong></label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Install flutter_secure_storage for
+token storage</label></li>
+<li><label><input type="checkbox" />Create Airtable API client using
+Dio</label></li>
+<li><label><input type="checkbox" />Implement token storage in device
+keychain/keystore</label></li>
+<li><label><input type="checkbox" />Implement GET /v0/{baseId}/Events
+(fetch active event)</label></li>
+<li><label><input type="checkbox" />Implement GET
+/v0/{baseId}/Organizations (fetch org list)</label></li>
+<li><label><input type="checkbox" />Implement POST
+/v0/{baseId}/Registrations (create registration)</label></li>
+<li><label><input type="checkbox" />Implement PATCH
+/v0/{baseId}/Registrations/{id} (update check-in/out)</label></li>
+<li><label><input type="checkbox" />Map app data models to Airtable
+schema</label></li>
+<li><label><input type="checkbox" />Implement rate limiting (5
+req/sec)</label></li>
+<li><label><input type="checkbox" />Handle API errors gracefully with
+retry logic</label></li>
+<li><label><input type="checkbox" />Test with actual Airtable account
+and access token</label></li>
+</ul></li>
+<li><label><input type="checkbox" /><strong>Mailchimp
+Integration:</strong></label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Set up API
+authentication</label></li>
+<li><label><input type="checkbox" />Implement export contacts
+endpoint</label></li>
+<li><label><input type="checkbox" />Respect marketing consent
+flags</label></li>
+<li><label><input type="checkbox" />Map app data to Mailchimp subscriber
+format</label></li>
+<li><label><input type="checkbox" />Handle API errors
+gracefully</label></li>
+<li><label><input type="checkbox" />Test with actual Mailchimp
+account</label></li>
+</ul></li>
+<li><label><input type="checkbox" /><strong>Google Drive
+Integration:</strong></label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Set up OAuth
+authentication</label></li>
+<li><label><input type="checkbox" />Implement CSV upload to
+Drive</label></li>
+<li><label><input type="checkbox" />Implement database backup to
+Drive</label></li>
+<li><label><input type="checkbox" />Create folder structure in
+Drive</label></li>
+<li><label><input type="checkbox" />Handle API errors
+gracefully</label></li>
+<li><label><input type="checkbox" />Test with actual Google
+account</label></li>
+</ul></li>
+</ul>
+<h3 id="testing-quality-assurance">13. Testing &amp; Quality
+Assurance</h3>
+<ul class="task-list">
+<li><label><input type="checkbox" />Write unit tests (target &gt;80%
+coverage)</label></li>
+<li><label><input type="checkbox" />Write widget tests for UI
+components</label></li>
+<li><label><input type="checkbox" />Write integration tests for user
+flows</label></li>
+<li><label><input type="checkbox" />Perform accessibility
+testing</label></li>
+<li><label><input type="checkbox" />Performance testing with 500+
+registrations</label></li>
+<li><label><input type="checkbox" />Test on multiple tablet
+models</label></li>
+<li><label><input type="checkbox" />Test offline functionality
+thoroughly</label></li>
+<li><label><input type="checkbox" />Security audit (data encryption,
+GDPR compliance)</label></li>
+<li><label><input type="checkbox" />User acceptance testing with
+Power2Inspire</label></li>
+</ul>
+<h3 id="documentation-deployment">14. Documentation &amp;
+Deployment</h3>
+<ul class="task-list">
+<li><label><input type="checkbox" />Create user
+manual/guide</label></li>
+<li><label><input type="checkbox" />Create training materials for
+charity staff</label></li>
+<li><label><input type="checkbox" />Document API integration
+setup</label></li>
+<li><label><input type="checkbox" />Create deployment guide</label></li>
+<li><label><input type="checkbox" />Set up CI/CD pipeline
+(optional)</label></li>
+<li><label><input type="checkbox" />Prepare for Google Play Store
+submission</label></li>
+<li><label><input type="checkbox" />Prepare for Apple App Store
+submission</label></li>
+<li><label><input type="checkbox" />Create privacy policy</label></li>
+<li><label><input type="checkbox" />Create terms of service</label></li>
+</ul>
+<hr />
+<h2 id="questions-decisions-needed">🤔 Questions &amp; Decisions
+Needed</h2>
+<h3
+id="from-power2inspire-see-integration_discussion.md-for-details">From
+Power2Inspire (See INTEGRATION_DISCUSSION.md for details):</h3>
+<ol type="1">
+<li><strong>Airtable Setup:</strong> Do you have a workspace? What plan
+level? Who has admin access?</li>
+<li><strong>Organization Data:</strong> Existing list to import? How
+many organizations typically attend?</li>
+<li><strong>Impairment Field:</strong> Free text or dropdown? What are
+common values?</li>
+<li><strong>Token Management:</strong> Who generates tokens? Rotation
+schedule? Lost device protocol?</li>
+<li><strong>Mailchimp Sync:</strong> Direct from app or via Airtable
+automation?</li>
+<li><strong>Data Retention:</strong> How long to keep event data? GDPR
+retention policy?</li>
+<li><strong>Consent Text:</strong> Exact wording for marketing and photo
+consent checkboxes?</li>
+<li><strong>Branding:</strong> Logo, color scheme, and branding
+guidelines?</li>
+<li><strong>Testing Devices:</strong> What specific tablet models will
+be used?</li>
+<li><strong>Sync Timing:</strong> When should sync occur? (end of event,
+daily, manual only)</li>
+</ol>
+<h3 id="technical-decisions">Technical Decisions:</h3>
+<ul class="task-list">
+<li><label><input type="checkbox" />Flutter SDK upgrade to resolve
+dependency conflicts? (Recommended)</label></li>
+<li><label><input type="checkbox" />Use code generation or manual
+models? (Depends on SDK upgrade)</label></li>
+<li><label><input type="checkbox" />Implement database encryption?
+(Recommended for GDPR)</label></li>
+<li><label><input type="checkbox" />Add biometric/PIN lock for app
+access?</label></li>
+<li><label><input type="checkbox" />Support multiple languages?
+(i18n)</label></li>
+</ul>
+<hr />
+<h2 id="notes">📝 Notes</h2>
+<ul>
+<li>Project is currently in <strong>Airtable integration design
+phase</strong></li>
+<li>Direct API access approach approved for controlled environment</li>
+<li>Data model updated with name/surname split, impairment field, and
+organization entity</li>
+<li>Awaiting answers to questions in INTEGRATION_DISCUSSION.md before
+proceeding with coding</li>
+<li>All documentation is version controlled in git</li>
+<li>Database schema is drafted but not yet generated (pending dependency
+resolution)</li>
+<li>Dependencies are installed and ready to use</li>
+<li>Airtable base needs to be created with proposed schema</li>
+</ul>
+<hr />
+<h2 id="next-immediate-steps">🎯 Next Immediate Steps</h2>
+<ol type="1">
+<li><strong>Get answers</strong> to questions in
+INTEGRATION_DISCUSSION.md from Power2Inspire</li>
+<li><strong>Create Airtable base</strong> with proposed schema (Events,
+Organizations, Registrations)</li>
+<li><strong>Generate access token</strong> for development and
+testing</li>
+<li><strong>Import organization data</strong> (if provided by
+charity)</li>
+<li><strong>Resolve dependency conflicts</strong> (consider Flutter SDK
+upgrade or manual approach)</li>
+<li><strong>Generate database code</strong> with build_runner or write
+manual Drift tables</li>
+<li><strong>Begin UI development</strong> with finalized field
+requirements</li>
+<li><strong>Implement Airtable API client</strong> for sync
+functionality</li>
+</ol>
+</body>
+</html>

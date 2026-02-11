@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>REQUIREMENTS</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<h1
+id="power2inspire-event-crm-app---requirements-specification">Power2Inspire
+Event CRM App - Requirements Specification</h1>
+<p><strong>Document Version:</strong> 1.0<br />
+<strong>Date:</strong> 2026-02-06<br />
+<strong>Project:</strong> Event CRM Application for Power2Inspire
+Charity</p>
+<h2 id="executive-summary">1. Executive Summary</h2>
+<p>The Power2Inspire Event CRM App is a tablet-first, offline-capable
+mobile application designed to facilitate event management, attendee
+registration, volunteer coordination, and contact capture for a
+charitable organization. The application prioritizes accessibility,
+usability, and offline-first operation with on-demand synchronization to
+external systems.</p>
+<h2 id="stakeholders">2. Stakeholders</h2>
+<ul>
+<li><strong>Primary Users:</strong> Event attendees, volunteers, charity
+staff</li>
+<li><strong>Organization:</strong> Power2Inspire (Charity)</li>
+<li><strong>Device Ownership:</strong> Charity-controlled tablets at
+events</li>
+<li><strong>User Interaction Model:</strong> Kiosk-style self-service
+registration</li>
+</ul>
+<h2 id="functional-requirements">3. Functional Requirements</h2>
+<h3 id="event-management">3.1 Event Management</h3>
+<ul>
+<li><strong>FR-001:</strong> Support single active event at a time</li>
+<li><strong>FR-002:</strong> Event details editable offline at the event
+location</li>
+<li><strong>FR-003:</strong> Event details may be pre-populated from
+Airtable when online</li>
+<li><strong>FR-004:</strong> Event information includes: name, date,
+location, description</li>
+</ul>
+<h3 id="attendee-registration">3.2 Attendee Registration</h3>
+<ul>
+<li><strong>FR-010:</strong> Capture attendee information: name,
+organization, email, phone</li>
+<li><strong>FR-011:</strong> Record marketing consent
+(opt-in/opt-out)</li>
+<li><strong>FR-012:</strong> Record photo consent for event
+photography</li>
+<li><strong>FR-013:</strong> Assign role: Attendee or Volunteer</li>
+<li><strong>FR-014:</strong> Validate required fields before
+submission</li>
+<li><strong>FR-015:</strong> Support quick re-registration for returning
+attendees</li>
+</ul>
+<h3 id="volunteer-registration">3.3 Volunteer Registration</h3>
+<ul>
+<li><strong>FR-020:</strong> Capture volunteer-specific information</li>
+<li><strong>FR-021:</strong> Track volunteer roles/responsibilities</li>
+<li><strong>FR-022:</strong> Record volunteer availability and
+preferences</li>
+</ul>
+<h3 id="attendance-tracking">3.4 Attendance Tracking</h3>
+<ul>
+<li><strong>FR-030:</strong> Real-time check-in functionality</li>
+<li><strong>FR-031:</strong> Check-out functionality for safety
+compliance</li>
+<li><strong>FR-032:</strong> Display current attendance count</li>
+<li><strong>FR-033:</strong> Support fire drill/emergency evacuation
+reporting</li>
+<li><strong>FR-034:</strong> Track entry and exit timestamps</li>
+</ul>
+<h3 id="contact-management">3.5 Contact Management</h3>
+<ul>
+<li><strong>FR-040:</strong> Store contact information for future
+marketing</li>
+<li><strong>FR-041:</strong> Respect marketing consent preferences</li>
+<li><strong>FR-042:</strong> Support contact deduplication</li>
+<li><strong>FR-043:</strong> Export contacts for Mailchimp
+integration</li>
+</ul>
+<h3 id="reporting-export">3.6 Reporting &amp; Export</h3>
+<ul>
+<li><strong>FR-050:</strong> Generate CSV reports with: names,
+organizations, emails, consent flags, photo consent, roles</li>
+<li><strong>FR-051:</strong> Export attendance statistics</li>
+<li><strong>FR-052:</strong> Export volunteer participation data</li>
+<li><strong>FR-053:</strong> Support date-range filtering for
+reports</li>
+<li><strong>FR-054:</strong> Save exports to local storage and Google
+Drive</li>
+</ul>
+<h3 id="data-synchronization">3.7 Data Synchronization</h3>
+<ul>
+<li><strong>FR-060:</strong> Operate fully offline (no internet required
+during event)</li>
+<li><strong>FR-061:</strong> On-demand sync to Airtable</li>
+<li><strong>FR-062:</strong> On-demand sync to Mailchimp</li>
+<li><strong>FR-063:</strong> On-demand backup to Google Drive</li>
+<li><strong>FR-064:</strong> Conflict resolution strategy (to be defined
+with charity)</li>
+<li><strong>FR-065:</strong> Sync status indicators and error
+reporting</li>
+<li><strong>FR-066:</strong> Retry mechanism for failed sync
+operations</li>
+</ul>
+<h2 id="non-functional-requirements">4. Non-Functional Requirements</h2>
+<h3 id="platform-support">4.1 Platform Support</h3>
+<ul>
+<li><strong>NFR-001:</strong> Support Android tablets (API level
+21+)</li>
+<li><strong>NFR-002:</strong> Support iOS tablets (iOS 12+)</li>
+<li><strong>NFR-003:</strong> Optimize for tablet form factor (10-13
+inch screens)</li>
+<li><strong>NFR-004:</strong> Support mobile phones as secondary
+devices</li>
+</ul>
+<h3 id="accessibility">4.2 Accessibility</h3>
+<ul>
+<li><strong>NFR-010:</strong> Large touch targets (minimum 48x48
+dp)</li>
+<li><strong>NFR-011:</strong> High contrast UI elements</li>
+<li><strong>NFR-012:</strong> Screen reader compatibility</li>
+<li><strong>NFR-013:</strong> Support for users with motor
+disabilities</li>
+<li><strong>NFR-014:</strong> Clear, readable fonts (minimum 16sp for
+body text)</li>
+<li><strong>NFR-015:</strong> Minimal, uncluttered interface design</li>
+</ul>
+<h3 id="performance">4.3 Performance</h3>
+<ul>
+<li><strong>NFR-020:</strong> App launch time &lt; 3 seconds</li>
+<li><strong>NFR-021:</strong> Registration form submission &lt; 1
+second</li>
+<li><strong>NFR-022:</strong> Support 500+ registrations per event</li>
+<li><strong>NFR-023:</strong> Database query response &lt; 100ms</li>
+</ul>
+<h3 id="data-integrity">4.4 Data Integrity</h3>
+<ul>
+<li><strong>NFR-030:</strong> Local data persistence using SQLite</li>
+<li><strong>NFR-031:</strong> Automatic data backup before sync</li>
+<li><strong>NFR-032:</strong> Transaction-based database operations</li>
+<li><strong>NFR-033:</strong> Data validation at input and storage
+layers</li>
+</ul>
+<h3 id="security">4.5 Security</h3>
+<ul>
+<li><strong>NFR-040:</strong> Secure storage of personal data</li>
+<li><strong>NFR-041:</strong> GDPR compliance for data collection</li>
+<li><strong>NFR-042:</strong> Encrypted data transmission during
+sync</li>
+<li><strong>NFR-043:</strong> No sensitive data in logs</li>
+</ul>
+<h2 id="external-system-integrations">5. External System
+Integrations</h2>
+<h3 id="airtable">5.1 Airtable</h3>
+<ul>
+<li><strong>Purpose:</strong> CRM data storage (potential source of
+truth)</li>
+<li><strong>Operations:</strong> Read event details, write
+registrations, sync contacts</li>
+<li><strong>API:</strong> Airtable REST API v0</li>
+</ul>
+<h3 id="mailchimp">5.2 Mailchimp</h3>
+<ul>
+<li><strong>Purpose:</strong> Marketing communications (current primary
+system)</li>
+<li><strong>Operations:</strong> Export contacts with consent, manage
+subscriber lists</li>
+<li><strong>API:</strong> Mailchimp Marketing API v3</li>
+</ul>
+<h3 id="google-drive">5.3 Google Drive</h3>
+<ul>
+<li><strong>Purpose:</strong> File storage and backup</li>
+<li><strong>Operations:</strong> Upload CSV exports, backup database
+files</li>
+<li><strong>API:</strong> Google Drive API v3</li>
+</ul>
+<h2 id="data-model-high-level">6. Data Model (High-Level)</h2>
+<h3 id="event">6.1 Event</h3>
+<ul>
+<li>ID, Name, Date, Location, Description, Status, Created/Modified
+timestamps</li>
+</ul>
+<h3 id="registration">6.2 Registration</h3>
+<ul>
+<li>ID, Event ID, Attendee Name and Surname, Impairment, Organization
+ID, Email, Phone, Role, Marketing Consent, Photo Consent, Check-in Time,
+Check-out Time, Sync Status</li>
+</ul>
+<h3 id="sync-log">6.3 Sync Log</h3>
+<ul>
+<li>ID, Entity Type, Entity ID, Sync Target, Status, Timestamp, Error
+Message</li>
+</ul>
+<h2 id="out-of-scope-current-version">7. Out of Scope (Current
+Version)</h2>
+<ul>
+<li>Multi-event concurrent management</li>
+<li>User authentication/authorization</li>
+<li>Payment processing</li>
+<li>Advanced analytics/dashboards</li>
+<li>Push notifications</li>
+<li>QR code scanning</li>
+</ul>
+<h2 id="future-considerations">8. Future Considerations</h2>
+<ul>
+<li>Determine single source of truth (Airtable vs Mailchimp vs App)</li>
+<li>Conflict resolution strategy for sync operations</li>
+<li>Multi-device coordination at same event</li>
+<li>Historical event analytics</li>
+</ul>
+</body>
+</html>

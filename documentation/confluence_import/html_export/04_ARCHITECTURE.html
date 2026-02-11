@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>ARCHITECTURE</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<h1
+id="power2inspire-event-crm-app---architecture-documentation">Power2Inspire
+Event CRM App - Architecture Documentation</h1>
+<p><strong>Document Version:</strong> 1.0<br />
+<strong>Date:</strong> 2026-02-06<br />
+<strong>Compliance:</strong> IEC 62304 Software Development Lifecycle
+Principles</p>
+<h2 id="system-architecture-overview">1. System Architecture
+Overview</h2>
+<p>The application follows a <strong>Clean Architecture</strong> pattern
+with clear separation of concerns, enabling testability,
+maintainability, and scalability.</p>
+<h3 id="architecture-layers">1.1 Architecture Layers</h3>
+<pre><code>┌─────────────────────────────────────────────────────┐
+│              Presentation Layer                      │
+│  (UI Widgets, State Management, View Models)        │
+└─────────────────────────────────────────────────────┘
+                        ↓
+┌─────────────────────────────────────────────────────┐
+│              Application Layer                       │
+│  (Use Cases, Business Logic, Validation)            │
+└─────────────────────────────────────────────────────┘
+                        ↓
+┌─────────────────────────────────────────────────────┐
+│              Domain Layer                            │
+│  (Entities, Value Objects, Repository Interfaces)   │
+└─────────────────────────────────────────────────────┘
+                        ↓
+┌─────────────────────────────────────────────────────┐
+│              Infrastructure Layer                    │
+│  (Database, API Clients, File System, Sync Engine)  │
+└─────────────────────────────────────────────────────┘</code></pre>
+<h2 id="technology-stack">2. Technology Stack</h2>
+<h3 id="core-framework">2.1 Core Framework</h3>
+<ul>
+<li><strong>Flutter SDK:</strong> 3.32.0+ (Dart 3.8.0+)</li>
+<li><strong>Target Platforms:</strong> Android (API 21+), iOS (12+)</li>
+</ul>
+<h3 id="state-management">2.2 State Management</h3>
+<ul>
+<li><strong>Riverpod 2.x:</strong> Dependency injection and state
+management</li>
+<li><strong>Freezed:</strong> Immutable data classes with code
+generation</li>
+<li><strong>Hooks:</strong> Simplified widget lifecycle management</li>
+</ul>
+<h3 id="local-data-persistence">2.3 Local Data Persistence</h3>
+<ul>
+<li><strong>Drift (formerly Moor):</strong> Type-safe SQLite database
+layer</li>
+<li><strong>SQLite:</strong> Local database engine</li>
+<li><strong>Shared Preferences:</strong> Simple key-value storage for
+settings</li>
+</ul>
+<h3 id="api-integration">2.4 API Integration</h3>
+<ul>
+<li><strong>Dio:</strong> HTTP client with interceptors and retry
+logic</li>
+<li><strong>Retrofit:</strong> Type-safe REST API client generation</li>
+<li><strong>JSON Serializable:</strong> JSON
+serialization/deserialization</li>
+</ul>
+<h3 id="file-operations">2.5 File Operations</h3>
+<ul>
+<li><strong>CSV:</strong> CSV file generation for reports</li>
+<li><strong>Path Provider:</strong> Access to device file system</li>
+<li><strong>Google Drive API:</strong> Cloud backup integration</li>
+</ul>
+<h3 id="uiux">2.6 UI/UX</h3>
+<ul>
+<li><strong>Material Design 3:</strong> Modern, accessible UI
+components</li>
+<li><strong>Responsive Framework:</strong> Adaptive layouts for
+tablets/phones</li>
+<li><strong>Flutter Accessibility:</strong> Screen reader and assistive
+technology support</li>
+</ul>
+<h2 id="project-structure">3. Project Structure</h2>
+<pre><code>software/flutter/event_crm_app/
+├── lib/
+│   ├── main.dart                          # App entry point
+│   ├── core/                              # Core utilities
+│   │   ├── constants/                     # App-wide constants
+│   │   ├── errors/                        # Error handling
+│   │   ├── network/                       # Network utilities
+│   │   └── utils/                         # Helper functions
+│   ├── features/                          # Feature modules
+│   │   ├── event/                         # Event management
+│   │   │   ├── data/                      # Data sources, repositories
+│   │   │   ├── domain/                    # Entities, use cases
+│   │   │   └── presentation/              # UI, view models
+│   │   ├── registration/                  # Attendee/volunteer registration
+│   │   ├── attendance/                    # Check-in/check-out tracking
+│   │   ├── reporting/                     # CSV export and reports
+│   │   └── sync/                          # Data synchronization
+│   ├── shared/                            # Shared components
+│   │   ├── widgets/                       # Reusable UI components
+│   │   ├── models/                        # Shared data models
+│   │   └── providers/                     # Shared Riverpod providers
+│   └── config/                            # App configuration
+│       ├── theme/                         # App theming
+│       ├── routes/                        # Navigation
+│       └── env/                           # Environment variables
+├── test/                                  # Unit and widget tests
+├── integration_test/                      # Integration tests
+└── assets/                                # Images, fonts, etc.</code></pre>
+<h2 id="data-flow">4. Data Flow</h2>
+<h3 id="offline-first-operation">4.1 Offline-First Operation</h3>
+<ol type="1">
+<li>User interacts with UI (Presentation Layer)</li>
+<li>UI triggers Use Case (Application Layer)</li>
+<li>Use Case validates and processes business logic</li>
+<li>Repository saves to local SQLite database (Infrastructure
+Layer)</li>
+<li>Sync status marked as “pending”</li>
+</ol>
+<h3 id="synchronization-flow">4.2 Synchronization Flow</h3>
+<ol type="1">
+<li>User initiates sync (manual trigger)</li>
+<li>Sync Engine queries pending records from database</li>
+<li>API Client sends data to external systems (Airtable, Mailchimp,
+Google Drive)</li>
+<li>On success: Update sync status to “synced”</li>
+<li>On failure: Log error, mark for retry, notify user</li>
+</ol>
+<h2 id="database-schema-sqlite">5. Database Schema (SQLite)</h2>
+<h3 id="events-table">5.1 Events Table</h3>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode sql"><code class="sourceCode sql"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> <span class="kw">events</span> (</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">id</span> TEXT <span class="kw">PRIMARY</span> <span class="kw">KEY</span>,</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    name TEXT <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">date</span> TEXT <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    location TEXT,</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    description TEXT,</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    status TEXT <span class="kw">DEFAULT</span> <span class="st">&#39;active&#39;</span>,</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    created_at TEXT <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    modified_at TEXT <span class="kw">NOT</span> <span class="kw">NULL</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>);</span></code></pre></div>
+<h3 id="registrations-table">5.2 Registrations Table</h3>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode sql"><code class="sourceCode sql"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> registrations (</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">id</span> TEXT <span class="kw">PRIMARY</span> <span class="kw">KEY</span>,</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    event_id TEXT <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    name TEXT <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">organization</span> TEXT,</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    email TEXT,</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    phone TEXT,</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">role</span> TEXT <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    marketing_consent <span class="dt">INTEGER</span> <span class="kw">DEFAULT</span> <span class="dv">0</span>,</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    photo_consent <span class="dt">INTEGER</span> <span class="kw">DEFAULT</span> <span class="dv">0</span>,</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>    checkin_time TEXT,</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    checkout_time TEXT,</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>    sync_status TEXT <span class="kw">DEFAULT</span> <span class="st">&#39;pending&#39;</span>,</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>    created_at TEXT <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>    modified_at TEXT <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>    <span class="kw">FOREIGN</span> <span class="kw">KEY</span> (event_id) <span class="kw">REFERENCES</span> <span class="kw">events</span>(<span class="kw">id</span>)</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>);</span></code></pre></div>
+<h3 id="sync-logs-table">5.3 Sync Logs Table</h3>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode sql"><code class="sourceCode sql"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> sync_logs (</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">id</span> TEXT <span class="kw">PRIMARY</span> <span class="kw">KEY</span>,</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    entity_type TEXT <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    entity_id TEXT <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    sync_target TEXT <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    status TEXT <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    error_message TEXT,</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    <span class="dt">timestamp</span> TEXT <span class="kw">NOT</span> <span class="kw">NULL</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>);</span></code></pre></div>
+<h2 id="security-considerations">6. Security Considerations</h2>
+<ul>
+<li><strong>Data Encryption:</strong> SQLite database encryption using
+sqlcipher</li>
+<li><strong>API Keys:</strong> Stored in environment variables, never in
+source code</li>
+<li><strong>HTTPS Only:</strong> All API communications over TLS
+1.2+</li>
+<li><strong>Input Validation:</strong> Sanitize all user inputs</li>
+<li><strong>GDPR Compliance:</strong> Respect consent flags, support
+data deletion</li>
+</ul>
+<h2 id="accessibility-features">7. Accessibility Features</h2>
+<ul>
+<li><strong>Touch Targets:</strong> Minimum 48x48 dp (72x72 dp preferred
+for tablets)</li>
+<li><strong>Contrast Ratio:</strong> WCAG AA compliance (4.5:1 for
+text)</li>
+<li><strong>Font Scaling:</strong> Support system font size
+preferences</li>
+<li><strong>Screen Readers:</strong> Semantic labels for all interactive
+elements</li>
+<li><strong>Focus Management:</strong> Logical tab order for keyboard
+navigation</li>
+</ul>
+<h2 id="testing-strategy">8. Testing Strategy</h2>
+<ul>
+<li><strong>Unit Tests:</strong> Business logic, use cases, utilities
+(&gt;80% coverage)</li>
+<li><strong>Widget Tests:</strong> UI components in isolation</li>
+<li><strong>Integration Tests:</strong> End-to-end user flows</li>
+<li><strong>Accessibility Tests:</strong> Screen reader compatibility,
+contrast checks</li>
+<li><strong>Performance Tests:</strong> Database query benchmarks, UI
+responsiveness</li>
+</ul>
+<h2 id="deployment">9. Deployment</h2>
+<ul>
+<li><strong>Android:</strong> Google Play Store (internal testing →
+production)</li>
+<li><strong>iOS:</strong> Apple App Store (TestFlight → production)</li>
+<li><strong>CI/CD:</strong> GitHub Actions for automated testing and
+builds</li>
+<li><strong>Version Control:</strong> Git with semantic versioning
+(MAJOR.MINOR.PATCH)</li>
+</ul>
+</body>
+</html>
