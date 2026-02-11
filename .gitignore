@@ -91,6 +91,9 @@ coverage/
 .env.local
 .env.*.local
 
+# Secrets and credentials
+secrets.txt
+
 # Generated files
 *.g.dart
 *.freezed.dart
