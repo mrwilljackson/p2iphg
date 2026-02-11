@@ -9,9 +9,14 @@
 
 ## Executive Summary
 
-The Power2Inspire Event CRM App specifications have been updated to **Version 2.0** based on analysis of the existing PowerHouseGames (PHG) volunteer signup Airtable form. This ensures the new mobile app aligns with proven workflows while adding enhanced functionality for offline-first operation and attendance tracking.
+The Power2Inspire Event CRM App specifications have been updated to **Version 2.0** based on analysis of the existing PowerHouseGames (PHG) volunteer signup Airtable form. Following client review, the project will be built as a **NextJS web application** hosted on **Vercel** instead of a Flutter mobile app, eliminating offline sync complexity while maintaining all V2 UI/UX specifications.
 
-**Key Outcome:** All documentation is now aligned and ready for Flutter development.
+**Key Outcomes:**
+- ✅ All V2 UI/UX specifications remain valid and will be implemented in React
+- ✅ 60% faster development (10-15 days vs 24-33 days)
+- ✅ $0 hosting cost on Vercel free tier
+- ✅ Direct Airtable integration (no offline sync needed)
+- ✅ Works on any device (tablets, phones, desktop)
 
 ---
 
@@ -374,17 +379,22 @@ Registration {
 
 ### 13.1 Remaining Work (After Questions Answered)
 
+**NextJS Web Application Timeline:**
+
 | Phase | Tasks | Estimated Time |
 |-------|-------|----------------|
-| **Setup** | Airtable base, token, database | 1-2 days |
-| **Core UI** | 8 screens, navigation, forms | 5-7 days |
-| **Data Layer** | Models, database, validation | 3-4 days |
-| **Sync** | Airtable integration, conflict resolution | 4-5 days |
-| **Features** | Attendance tracking, CSV export | 3-4 days |
-| **Testing** | Unit, widget, integration tests | 4-5 days |
-| **Polish** | Accessibility, performance, UX | 2-3 days |
-| **Deployment** | Documentation, training, release | 2-3 days |
-| **TOTAL** | | **24-33 days** |
+| **Setup** | NextJS project, Vercel, Airtable token | 1-2 days |
+| **Core Features** | Registration forms, consent radio buttons, validation | 4-6 days |
+| **Attendance & Admin** | Attendance tracking, check-in/out, CSV export | 2-3 days |
+| **Polish & Testing** | Responsive design, accessibility, testing | 3-4 days |
+| **TOTAL** | | **10-15 days** |
+
+**Benefits vs Flutter Approach:**
+- ✅ 60% faster development (10-15 days vs 24-33 days)
+- ✅ No offline sync complexity (removed 4-5 days)
+- ✅ No mobile database setup (removed 3-4 days)
+- ✅ No app store deployment (removed 2-3 days)
+- ✅ Simpler architecture = faster iteration
 
 *Note: Assumes full-time development, may vary based on resource availability*
 
@@ -392,19 +402,20 @@ Registration {
 
 ## 14. Approval Checklist
 
-Before proceeding with Flutter development, please confirm:
+Before proceeding with NextJS development, please confirm:
 
 - [ ] V2 field changes are acceptable (required fields, removed phone, renamed fields)
 - [ ] Consent radio button approach is acceptable (vs checkboxes)
 - [ ] Orange wristband language is correct and must be preserved
 - [ ] Event dropdown approach is acceptable (pre-selected, can change)
 - [ ] 8-screen user flow matches expected workflow
-- [ ] Interactive wireframe V2 accurately represents desired app
+- [ ] Interactive wireframe V2 accurately represents desired web app
 - [ ] **ANSWER:** Organization field implementation (dropdown/autocomplete/free text)
 - [ ] **ANSWER:** Conditional fields for Attendee vs Volunteer (which 1-2 fields differ)
 - [ ] Airtable workspace access can be provided
 - [ ] Access token can be generated for development
-- [ ] Timeline estimate is acceptable
+- [ ] NextJS web app approach is acceptable (vs Flutter mobile app)
+- [ ] Timeline estimate is acceptable (10-15 days)
 
 ---
 
@@ -420,13 +431,14 @@ Before proceeding with Flutter development, please confirm:
 1. Answer 2 high-priority questions (organization field, conditional fields)
 2. Provide Airtable workspace access
 3. Approve V2 specifications
-4. Begin Flutter development
+4. Review NextJS architecture document (`documentation/NEXTJS_ARCHITECTURE.md`)
+5. Begin NextJS development
 
 ---
 
 **Document End**
 
-*This summary was generated on 2026-02-11 to document all changes from initial design to V2 specifications based on the existing PowerHouseGames volunteer signup Airtable form.*
+*This summary was generated on 2026-02-11 to document all changes from initial design to V2 specifications based on the existing PowerHouseGames volunteer signup Airtable form. Updated to reflect NextJS web application approach instead of Flutter mobile app.*
 | Organization | Link to Organizations | **Yes** | Now required |
 | Do you have an impairment | Long Text | **Yes** | Now required, free text |
 | Role | Single Select | Yes | "Attendee" or "Volunteer" |

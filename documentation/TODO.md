@@ -1,8 +1,9 @@
 # Power2Inspire Event CRM App - TODO List
 
 **Last Updated:** 2026-02-11
-**Project Status:** Documentation Complete - Ready for Implementation
+**Project Status:** NextJS Architecture Complete - Ready for Implementation
 **Current Version:** V2 (Based on existing Airtable form)
+**Technology:** NextJS 14 + Vercel (Web Application)
 
 ---
 
@@ -23,13 +24,18 @@
 - [x] AIRTABLE_INTEGRATION.md - Airtable backend integration specification
 - [x] INTEGRATION_DISCUSSION.md - Decision summary and outstanding questions
 
-### 3. Install dependencies
-- [x] State management (Riverpod)
-- [x] Database (Drift/SQLite)
-- [x] Networking (Dio)
-- [x] CSV export (CSV package)
-- [x] Code generation tools (Freezed, JSON Serializable, Build Runner)
-- [x] Utilities (UUID, Path Provider, Shared Preferences, Intl)
+### 3. Create NextJS architecture documentation
+- [x] Document technology stack (NextJS, React, TypeScript, Tailwind, Shadcn/ui)
+- [x] Design architecture diagrams and data flows
+- [x] Define project structure and directory layout
+- [x] Specify API routes (registrations, attendance, export, events, organizations)
+- [x] Document security and authentication approach
+- [x] Create TypeScript types and Zod validation schemas
+- [x] Document Airtable integration strategy
+- [x] Define deployment strategy for Vercel
+- [x] Create testing strategy
+- [x] Document accessibility implementation (WCAG AA)
+- [x] Estimate timeline (10-15 days)
 
 ---
 
@@ -75,295 +81,197 @@
 
 ---
 
-## 📋 Pending Tasks
+## 📋 Pending Tasks (NextJS Implementation)
 
-### 7. Set up local database schema
-- [ ] Run build_runner to generate Drift database code
-- [ ] Test database creation and migrations
-- [ ] Verify indexes are created correctly
-- [ ] Add sample data for testing
-- [ ] Document database setup in ARCHITECTURE.md
+### 7. Phase 1: Project Setup (1-2 days)
+- [ ] Initialize NextJS 14 project with TypeScript
+  - [ ] Run `npx create-next-app@latest event-crm-web --typescript --tailwind --app`
+  - [ ] Configure TypeScript strict mode
+  - [ ] Set up ESLint and Prettier
+- [ ] Install dependencies
+  - [ ] `npm install airtable zod react-hook-form @hookform/resolvers`
+  - [ ] `npm install -D @types/node`
+- [ ] Install and configure Shadcn/ui
+  - [ ] Run `npx shadcn-ui@latest init`
+  - [ ] Install components: button, input, radio-group, select, label, card
+- [ ] Set up project structure
+  - [ ] Create `lib/` directory (airtable.ts, validation.ts, types.ts, utils.ts)
+  - [ ] Create `components/` directory (ui/, RegistrationForm.tsx, etc.)
+  - [ ] Create `app/api/` routes structure
+- [ ] Configure environment variables
+  - [ ] Create `.env.local` with Airtable credentials
+  - [ ] Create `.env.example` template
+  - [ ] Add to `.gitignore`
+- [ ] Set up Vercel deployment
+  - [ ] Create `vercel.json` configuration
+  - [ ] Connect GitHub repository to Vercel
+  - [ ] Configure environment variables in Vercel dashboard
 
-### 8. Implement core data models (V2 specifications)
-- [ ] Create Event model with Freezed
-- [ ] Create Registration model with Freezed (V2 fields):
-  - [ ] eventId (required) - Airtable event record ID
-  - [ ] attendeeName (required) - First name
-  - [ ] attendeeSurname (required) - Last name
-  - [ ] email (required) - Email address
-  - [ ] organizationId (required) - Airtable organization record ID
-  - [ ] impairment (required) - Free text accessibility needs
-  - [ ] role (required) - Attendee or Volunteer
-  - [ ] photoConsent (required) - Boolean (false = orange wristband)
-  - [ ] marketingConsent (required) - Boolean (false = no mailing list)
-  - [ ] checkinTime (optional)
-  - [ ] checkoutTime (optional)
-  - [ ] airtableRecordId (optional) - Populated after sync
-  - [ ] ~~phone~~ - REMOVED (not needed)
-- [ ] Create Organization model with Freezed
-- [ ] Create SyncLog model with Freezed
-- [ ] Add validation logic to models:
-  - [ ] Email format validation
-  - [ ] Name length validation (2-100 chars)
-  - [ ] Required field validation
-- [ ] Implement computed properties (fullName, isCheckedIn, attendanceDuration)
-- [ ] Create enums (EventStatus, RegistrationRole, SyncStatus, SyncTarget)
-- [ ] Add JSON serialization
-- [ ] Write unit tests for models
+### 8. Phase 2: Core Features (4-6 days)
+- [ ] Create TypeScript types and Zod schemas
+  - [ ] Define Registration interface (V2 fields)
+  - [ ] Define Event and Organization interfaces
+  - [ ] Create Zod validation schemas for all forms
+  - [ ] Export types from `lib/types.ts`
+- [ ] Set up Airtable integration
+  - [ ] Create Airtable client singleton in `lib/airtable.ts`
+  - [ ] Test connection to Airtable base
+  - [ ] Verify table access (Events, Organizations, Registrations)
+- [ ] Build API routes
+  - [ ] POST `/api/registrations` - Create new registration
+  - [ ] GET `/api/events` - Fetch active events
+  - [ ] GET `/api/organizations` - Fetch organizations for autocomplete
+  - [ ] Add server-side Zod validation
+  - [ ] Add error handling and logging
+- [ ] Build registration forms (Based on Wireframe V2)
+  - [ ] **Screen 1: Home Screen** (`app/page.tsx`)
+    - [ ] Current event card display
+    - [ ] "NEW REGISTRATION" button (navigate to /register)
+    - [ ] "ATTENDANCE LIST" button (navigate to /attendance)
+    - [ ] "ADMIN" button (navigate to /admin)
+  - [ ] **Screen 2: Event Info Screen** (`app/event-info/page.tsx`)
+    - [ ] Event details display
+    - [ ] Expected counts
+    - [ ] Back navigation
+  - [ ] **Screen 3: Registration Type** (`app/register/page.tsx`)
+    - [ ] Attendee card (navigate to /register/attendee)
+    - [ ] Volunteer card (navigate to /register/volunteer)
+  - [ ] **Screen 4 & 5: Registration Forms**
+    - [ ] Create shared `RegistrationForm.tsx` component
+    - [ ] Attendee form (`app/register/attendee/page.tsx`)
+    - [ ] Volunteer form (`app/register/volunteer/page.tsx`)
+    - [ ] Event dropdown (pre-selected, can change)
+    - [ ] First Name field (required)
+    - [ ] Last Name field (required)
+    - [ ] Email field (required, email validation)
+    - [ ] Organization autocomplete (required)
+    - [ ] Impairment field (required, free text)
+    - [ ] Photo consent radio buttons (orange wristband language)
+    - [ ] Marketing consent radio buttons
+    - [ ] React Hook Form integration
+    - [ ] Client-side Zod validation
+    - [ ] Submit handler (POST to /api/registrations)
+    - [ ] Loading states and error handling
+  - [ ] **Screen 6: Confirmation** (`app/confirmation/page.tsx`)
+    - [ ] Success message
+    - [ ] Registration details summary
+    - [ ] "REGISTER ANOTHER" button
+    - [ ] "HOME" button
 
-### 9. Build registration UI (Based on Wireframe V2)
-- [ ] Design app navigation structure (8 screens total)
-- [ ] **Screen 1: Home Screen**
-  - [ ] Display current event card (name, date)
-  - [ ] "NEW REGISTRATION" button (primary green)
-  - [ ] "ATTENDANCE LIST" button (secondary blue)
-  - [ ] "ADMIN" button (warning orange)
-- [ ] **Screen 2: Event Info Screen**
-  - [ ] Display event details (name, date, location, time)
-  - [ ] Expected attendees and volunteers count
-  - [ ] Back button navigation
-- [ ] **Screen 3: Registration Type Screen**
-  - [ ] "ATTENDEE" card with icon
-  - [ ] "VOLUNTEER" card with icon
-  - [ ] Navigate to appropriate form
-- [ ] **Screen 4 & 5: Registration Forms (Attendee & Volunteer)**
-  - [ ] Event dropdown (pre-selected to current event, can change)
-  - [ ] First Name field (required, text input)
-  - [ ] Last Name field (required, text input)
-  - [ ] Email field (required, email validation)
-  - [ ] Organization field (required, autocomplete with datalist)
-  - [ ] "Do you have an impairment" field (required, free text with hint)
-  - [ ] Photo consent (required, radio buttons):
-    - [ ] "Yes, I consent to the use of photographs as specified"
-    - [ ] "No, I will wear an orange wristband to denote I do not wish photos of me to be used in this way"
-  - [ ] Marketing consent (required, radio buttons):
-    - [ ] "Yes, I would like to hear from Power2Inspire"
-    - [ ] "No, please don't add me to the mailing list"
-  - [ ] SUBMIT button (goes directly to confirmation)
-  - [ ] Form validation with clear error messages
-  - [ ] Large, accessible input fields (48x48 dp minimum)
-- [ ] **Screen 6: Confirmation Screen**
-  - [ ] Success icon and message
-  - [ ] Registration summary (name, email, organization, event, type)
-  - [ ] "DONE" button (return to home)
-  - [ ] "REGISTER ANOTHER PERSON" button
-- [ ] **Screen 7: Attendance List Screen**
-  - [ ] Search box for filtering by name/email
+
+### 9. Phase 3: Attendance & Admin Features (2-3 days)
+- [ ] Build attendance tracking (Screen 7: `app/attendance/page.tsx`)
+  - [ ] Create API route: PATCH `/api/attendance` (check-in/out)
+  - [ ] Fetch all registrations from Airtable
+  - [ ] Search functionality (filter by name or email)
   - [ ] Filter tabs (All, Attendees, Volunteers)
-  - [ ] Stats box (Checked In count, Not Checked In count)
-  - [ ] List items showing:
+  - [ ] Stats display (Checked In count, Not Checked In count)
+  - [ ] Attendance list items:
     - [ ] Name, email, check-in status
     - [ ] CHECK IN button (green) or CHECK OUT button (orange)
-  - [ ] Visual distinction for checked-in attendees (green border)
-- [ ] **Screen 8: Admin Menu Screen**
-  - [ ] Sync with Airtable card (with last sync time)
+    - [ ] Visual distinction for checked-in (green border)
+  - [ ] Check-in functionality:
+    - [ ] Record timestamp (ISO 8601)
+    - [ ] Update Airtable via API route
+    - [ ] Optimistic UI update
+  - [ ] Check-out functionality:
+    - [ ] Record timestamp (ISO 8601)
+    - [ ] Calculate duration
+    - [ ] Update Airtable via API route
+- [ ] Build admin menu (Screen 8: `app/admin/page.tsx`)
   - [ ] Export CSV Report card
-  - [ ] Settings card
-  - [ ] Stats summary (total registrations, pending sync, storage used)
-- [ ] Implement tablet-optimized layout (landscape/portrait)
-- [ ] Add accessibility features:
+  - [ ] Stats summary (total registrations, checked in, etc.)
+  - [ ] Settings card (future)
+- [ ] Create CSV export functionality
+  - [ ] Create API route: GET `/api/export`
+  - [ ] Generate CSV with V2 fields:
+    - [ ] Event Name, First Name, Last Name, Email
+    - [ ] Organization, Impairment, Role
+    - [ ] Photo Consent, Marketing Consent
+    - [ ] Check-in Time, Check-out Time, Duration
+  - [ ] Add date range filtering
+  - [ ] Add event filtering
+  - [ ] Return CSV file download
+  - [ ] Test with 500+ records
+
+### 10. Phase 4: Polish & Testing (3-4 days)
+- [ ] Responsive design
+  - [ ] Test on tablet (iPad, Android tablet)
+  - [ ] Test on phone (iOS, Android)
+  - [ ] Test on desktop
+  - [ ] Optimize for landscape and portrait
+  - [ ] Match styling from interactive wireframe V2
+- [ ] Accessibility (WCAG AA compliance)
   - [ ] Minimum 48x48 dp touch targets (prefer 72x72 dp)
-  - [ ] High contrast colors (WCAG AA compliance)
-  - [ ] Screen reader labels
-  - [ ] Support for system font scaling
-- [ ] Test on actual tablet devices
-- [ ] Match styling from interactive wireframe V2
+  - [ ] High contrast colors (4.5:1 minimum)
+  - [ ] Keyboard navigation (all interactive elements)
+  - [ ] Screen reader labels (ARIA attributes)
+  - [ ] Focus indicators (visible focus states)
+  - [ ] Test with VoiceOver (iOS) and TalkBack (Android)
+- [ ] Performance optimization
+  - [ ] Lazy load attendance list
+  - [ ] Debounce organization autocomplete
+  - [ ] Optimize images
+  - [ ] Enable Vercel Edge caching
+  - [ ] Test Lighthouse score (aim for 90+)
+- [ ] Cross-browser testing
+  - [ ] Safari (iOS/macOS)
+  - [ ] Chrome (Android/desktop)
+  - [ ] Firefox (desktop)
+  - [ ] Edge (desktop)
+- [ ] Error handling
+  - [ ] Network errors (offline, timeout)
+  - [ ] Validation errors (clear messages)
+  - [ ] Airtable API errors
+  - [ ] Loading states for all async operations
+- [ ] Testing
+  - [ ] Unit tests for validation schemas
+  - [ ] Integration tests for API routes
+  - [ ] E2E tests for critical flows (registration, attendance)
+  - [ ] Manual testing on real devices
 
-### 10. Implement attendance tracking (Wireframe V2 Screen 7)
-- [ ] Implement search functionality
-  - [ ] Search by name (first or last)
-  - [ ] Search by email
-  - [ ] Real-time filtering as user types
-- [ ] Implement filter tabs
-  - [ ] "All" - show all registrations
-  - [ ] "Attendees" - filter by role = Attendee
-  - [ ] "Volunteers" - filter by role = Volunteer
-- [ ] Display attendance statistics
-  - [ ] Count of checked-in attendees
-  - [ ] Count of not checked-in attendees
-  - [ ] Update counts in real-time
-- [ ] Build attendance list items
-  - [ ] Display name (first + last)
-  - [ ] Display email
-  - [ ] Display check-in status (visual indicator)
-  - [ ] CHECK IN button (green) when not checked in
-  - [ ] CHECK OUT button (orange) when checked in
-  - [ ] Green border for checked-in attendees
-- [ ] Implement check-in functionality
-  - [ ] Record check-in timestamp (ISO 8601)
-  - [ ] Update UI immediately
-  - [ ] Mark for sync to Airtable
-- [ ] Implement check-out functionality
-  - [ ] Record check-out timestamp (ISO 8601)
-  - [ ] Calculate attendance duration
-  - [ ] Update UI immediately
-  - [ ] Mark for sync to Airtable
-- [ ] Fire drill/emergency evacuation view
-  - [ ] Quick view of all currently checked-in people
-  - [ ] Print-friendly format
+### 11. Deployment to Vercel
+- [ ] Configure Vercel project
+  - [ ] Connect GitHub repository
+  - [ ] Set up environment variables (AIRTABLE_API_KEY, AIRTABLE_BASE_ID)
+  - [ ] Configure build settings
+  - [ ] Set up custom domain (if needed)
+- [ ] Deploy to production
+  - [ ] Merge to main branch
+  - [ ] Verify automatic deployment
+  - [ ] Test production URL
+  - [ ] Verify environment variables are working
+- [ ] Set up preview deployments
+  - [ ] Test preview URLs for feature branches
+  - [ ] Configure preview environment variables
+- [ ] Monitor and optimize
+  - [ ] Set up Vercel Analytics
+  - [ ] Monitor serverless function performance
+  - [ ] Check error logs
+  - [ ] Optimize cold start times
 
-### 11. Create CSV export functionality (V2 fields)
-- [ ] Design CSV export data structure (RegistrationExportDTO)
-- [ ] Implement CSV generation with V2 fields:
-  - [ ] Event Name (looked up from eventId)
-  - [ ] First Name (attendeeName)
-  - [ ] Last Name (attendeeSurname)
-  - [ ] Email
-  - [ ] Organization (looked up from organizationId)
-  - [ ] Do you have an impairment (impairment field)
-  - [ ] Role (Attendee/Volunteer)
-  - [ ] Photo Consent (Yes/No - false = orange wristband)
-  - [ ] Marketing Consent (Yes/No - false = no mailing list)
-  - [ ] Check-in Time (ISO 8601 format)
-  - [ ] Check-out Time (ISO 8601 format)
-  - [ ] Attendance Duration (calculated)
-  - [ ] ~~Phone~~ - REMOVED (not in V2)
-- [ ] Add date range filtering for exports
-- [ ] Add event filtering for exports
-- [ ] Save CSV to device storage
-- [ ] Create export history/log
-- [ ] Add export preview before saving
-- [ ] Test with 500+ records
-- [ ] Implement from Admin Menu Screen (Wireframe V2 Screen 8)
-
-### 12. Build sync framework
-- [ ] Design sync engine architecture
-- [ ] Implement sync status tracking (SyncLog entity)
-- [ ] Create sync queue for pending operations
-- [ ] Add retry logic for failed syncs (max 3 attempts)
-- [ ] Implement conflict resolution strategy (Last Write Wins - local is authoritative)
-- [ ] Build sync UI in Admin Menu (Wireframe V2 Screen 8):
-  - [ ] "Sync with Airtable" card
-  - [ ] Display last sync time
-  - [ ] Display pending sync count
-  - [ ] Manual sync trigger button
-  - [ ] Sync progress indicator
-  - [ ] Sync history/log viewer
-  - [ ] Error notification and retry options
-- [ ] Implement bidirectional sync:
-  - [ ] Upload new registrations to Airtable (POST)
-  - [ ] Upload check-in/out updates to Airtable (PATCH)
-  - [ ] Store Airtable record IDs in local database
-  - [ ] Use App Record ID for matching records
-- [ ] Add background sync capability (optional)
-- [ ] Test offline → online sync scenarios
-- [ ] Handle duplicate detection (by email + event ID)
-
-### 13. Integrate external APIs (V2 field mappings)
-- [ ] **Airtable Integration (V2):**
-  - [ ] Install flutter_secure_storage for token storage
-  - [ ] Create Airtable API client using Dio
-  - [ ] Implement token storage in device keychain/keystore
-  - [ ] Implement GET /v0/{baseId}/Events (fetch active events for dropdown)
-  - [ ] Implement GET /v0/{baseId}/Organizations (fetch org list for autocomplete)
-  - [ ] Implement POST /v0/{baseId}/Registrations with V2 fields:
-    - [ ] Event (link to Events table)
-    - [ ] First Name (attendeeName)
-    - [ ] Last Name (attendeeSurname)
-    - [ ] Email (required)
-    - [ ] Organization (link to Organizations table)
-    - [ ] Do you have an impairment (impairment field)
-    - [ ] Role (Attendee/Volunteer)
-    - [ ] Photo Consent (boolean → checkbox)
-    - [ ] Marketing Consent (boolean → checkbox)
-    - [ ] App Record ID (local UUID)
-  - [ ] Implement PATCH /v0/{baseId}/Registrations/{id} for check-in/out:
-    - [ ] Check-in Time (ISO 8601)
-    - [ ] Check-out Time (ISO 8601)
-  - [ ] Map app data models to Airtable schema (see AIRTABLE_INTEGRATION.md Section 5)
-  - [ ] Implement rate limiting (5 req/sec)
-  - [ ] Handle API errors gracefully with retry logic
-  - [ ] Test with actual Airtable account and access token
-  - [ ] Verify field mappings match V2 specifications
-- [ ] **Mailchimp Integration:**
-  - [ ] Set up API authentication
-  - [ ] Implement export contacts endpoint
-  - [ ] Respect marketing consent flags (only export if marketingConsent = true)
-  - [ ] Map V2 data to Mailchimp subscriber format:
-    - [ ] Email (required)
-    - [ ] First Name (FNAME)
-    - [ ] Last Name (LNAME)
-    - [ ] Organization (merge field)
-  - [ ] Handle API errors gracefully
-  - [ ] Test with actual Mailchimp account
-- [ ] **Google Drive Integration:**
-  - [ ] Set up OAuth authentication
-  - [ ] Implement CSV upload to Drive
-  - [ ] Implement database backup to Drive
-  - [ ] Create folder structure in Drive
-  - [ ] Handle API errors gracefully
-  - [ ] Test with actual Google account
-
-### 14. Testing & Quality Assurance
-- [ ] Write unit tests (target >80% coverage)
-  - [ ] Registration model validation tests
-  - [ ] Event model tests
-  - [ ] Organization model tests
-  - [ ] Sync logic tests
-  - [ ] CSV export tests
-- [ ] Write widget tests for UI components
-  - [ ] Registration form validation
-  - [ ] Consent radio button behavior
-  - [ ] Event dropdown pre-selection
-  - [ ] Organization autocomplete
-  - [ ] Check-in/out buttons
-- [ ] Write integration tests for user flows
-  - [ ] Complete registration flow (Attendee)
-  - [ ] Complete registration flow (Volunteer)
-  - [ ] Check-in → Check-out flow
-  - [ ] Sync to Airtable flow
-  - [ ] CSV export flow
-- [ ] Perform accessibility testing
-  - [ ] Screen reader compatibility
-  - [ ] Touch target sizes (48x48 dp minimum)
-  - [ ] Color contrast (WCAG AA)
-  - [ ] Font scaling support
-- [ ] Performance testing with 500+ registrations
-  - [ ] List scrolling performance
-  - [ ] Search/filter performance
-  - [ ] Database query performance
-- [ ] Test on multiple tablet models
-- [ ] Test offline functionality thoroughly
-  - [ ] Register while offline
-  - [ ] Check-in/out while offline
-  - [ ] Sync when back online
-- [ ] Security audit (data encryption, GDPR compliance)
-  - [ ] Token storage security
-  - [ ] Data encryption at rest
-  - [ ] HTTPS-only communication
-- [ ] User acceptance testing with Power2Inspire
-  - [ ] Test with actual event data
-  - [ ] Verify consent text matches requirements
-  - [ ] Verify orange wristband language
-
-### 15. Documentation & Deployment
-- [ ] Create user manual/guide
+### 12. Documentation & Handoff
+- [ ] Update README.md with:
+  - [ ] Project overview
+  - [ ] Setup instructions
+  - [ ] Environment variables guide
+  - [ ] Deployment instructions
+  - [ ] Testing instructions
+- [ ] Create user guide
   - [ ] How to register attendees/volunteers
-  - [ ] How to check in/out
-  - [ ] How to sync with Airtable
+  - [ ] How to track attendance
   - [ ] How to export CSV reports
-  - [ ] Screenshots from wireframe V2
-- [ ] Create training materials for charity staff
-  - [ ] Video walkthrough of app
-  - [ ] Quick reference guide
-  - [ ] Troubleshooting guide
-- [ ] Document API integration setup
-  - [ ] How to create Airtable base with V2 schema
-  - [ ] How to generate access token
-  - [ ] How to configure app with token
-  - [ ] How to import organization data
-- [ ] Create deployment guide
-  - [ ] Device setup instructions
-  - [ ] App installation process
-  - [ ] Initial configuration steps
-- [ ] Set up CI/CD pipeline (optional)
-- [ ] Prepare for Google Play Store submission (if needed)
-- [ ] Prepare for Apple App Store submission (if needed)
-- [ ] Create privacy policy
-  - [ ] GDPR compliance
-  - [ ] Data retention policy
-  - [ ] Consent management
-- [ ] Create terms of service
+  - [ ] Troubleshooting common issues
+- [ ] Create admin guide
+  - [ ] How to manage events in Airtable
+  - [ ] How to manage organizations in Airtable
+  - [ ] How to access and interpret data
+  - [ ] How to update environment variables
+- [ ] Training session
+  - [ ] Walk through all features
+  - [ ] Demonstrate on real tablets
+  - [ ] Answer questions
+  - [ ] Provide support contact info
 
 ---
 
@@ -384,29 +292,29 @@
 12. **Conditional Fields:** Which 1-2 fields should be different between Attendee and Volunteer forms?
 
 ### Technical Decisions:
-- [ ] Flutter SDK upgrade to resolve dependency conflicts? (Recommended)
-- [ ] Use code generation or manual models? (Depends on SDK upgrade)
-- [ ] Implement database encryption? (Recommended for GDPR)
-- [ ] Add biometric/PIN lock for app access?
+- [x] **Technology Stack:** NextJS + Vercel (approved by client)
+- [ ] Add authentication for admin features? (password protect admin menu)
 - [ ] Support multiple languages? (i18n)
+- [ ] Add PWA features? (install to home screen, offline support)
 
 ---
 
 ## 📝 Notes
 
-- Project is currently in **Documentation Complete - Ready for Implementation** phase
+- Project is currently in **NextJS Architecture Complete - Ready for Implementation** phase
 - **Version 2.0** specifications based on existing PowerHouseGames Airtable volunteer signup form
-- Direct API access approach approved for controlled environment
+- **Technology:** NextJS 14 + Vercel (web application, not Flutter mobile app)
+- **Timeline:** 10-15 days (60% faster than Flutter approach)
+- **Hosting:** Vercel free tier ($0 cost)
 - Data model updated to V2 with required fields (eventId, email, organization, impairment)
 - Phone field removed from V2 (not needed)
 - Consent fields use radio buttons (not checkboxes) to force explicit choice
 - Orange wristband language preserved for photo consent refusal
 - Event dropdown with pre-selection to current event
 - All documentation is version controlled in git
-- Dependencies are installed and ready to use
 - Airtable base needs to be created with V2 schema (updated field names)
-- Interactive HTML wireframe V2 available for stakeholder review
-- All core documentation aligned: UI_WIREFRAMES_V2.md, DATA_MODELS.md V2, AIRTABLE_INTEGRATION.md V2
+- Interactive HTML wireframe V2 available for stakeholder review and can be used as styling reference
+- All core documentation aligned: NEXTJS_ARCHITECTURE.md, UI_WIREFRAMES_V2.md, DATA_MODELS.md V2, AIRTABLE_INTEGRATION.md V2
 
 ---
 
@@ -417,23 +325,25 @@
    - Conditional fields for Attendee vs Volunteer (1-2 fields difference)
    - Airtable workspace details and access
    - Token management process
-   - Mailchimp sync approach
-   - Data retention policy
 2. **Create Airtable base** with V2 schema:
    - Events table (with Event Name, Event Date, Location, Status)
    - Organizations table (with Organization Name)
    - Registrations table (with V2 field names: First Name, Last Name, Email, Organization, Do you have an impairment, Photo Consent, Marketing Consent)
 3. **Generate access token** for development and testing
 4. **Import organization data** (if provided by charity)
-5. **Set up local database** with Drift:
-   - Run build_runner to generate code
-   - Create tables matching V2 data models
-   - Add indexes for performance
-6. **Begin Flutter UI development** based on Wireframe V2:
-   - Start with Home Screen (Screen 1)
-   - Build Registration Type Screen (Screen 3)
-   - Build Registration Forms (Screens 4 & 5) with all V2 fields
+5. **Set up Vercel deployment**:
+   - Connect GitHub repository to Vercel
+   - Configure environment variables (AIRTABLE_API_KEY, AIRTABLE_BASE_ID)
+   - Test preview deployments
+6. **Initialize NextJS project**:
+   - Run `npx create-next-app@latest event-crm-web --typescript --tailwind --app`
+   - Install dependencies (Airtable.js, Zod, React Hook Form, Shadcn/ui)
+   - Set up project structure (lib/, components/, app/api/)
+7. **Begin NextJS development** based on Wireframe V2:
+   - Create TypeScript types and Zod schemas
+   - Build API routes (registrations, events, organizations, attendance, export)
+   - Build React components for all 8 screens
    - Implement consent radio buttons with exact text
-7. **Implement Airtable API client** with V2 field mappings
 8. **Test end-to-end flow** with actual Airtable base
+9. **Deploy to production** on Vercel
 
