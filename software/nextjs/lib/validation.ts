@@ -87,14 +87,8 @@ export const registrationFormSchema = z.object({
     .min(1, "Please specify accessibility needs (or enter 'None' if not applicable)")
     .max(500, "Accessibility needs must be at most 500 characters"),
   role: registrationRoleSchema,
-  photoConsent: z.boolean({
-    required_error: "Photo consent is required",
-    invalid_type_error: "Photo consent must be true or false",
-  }),
-  marketingConsent: z.boolean({
-    required_error: "Marketing consent is required",
-    invalid_type_error: "Marketing consent must be true or false",
-  }),
+  photoConsent: z.boolean(),
+  marketingConsent: z.boolean(),
 });
 
 /**
