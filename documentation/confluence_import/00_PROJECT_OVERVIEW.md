@@ -1,93 +1,104 @@
 # Power2Inspire Event CRM App - Project Overview
 
-**Project Type:** Flutter Mobile Application  
-**Organization:** Power2Inspire (Charity)  
-**Purpose:** Event registration, volunteer coordination, and attendance tracking  
-**Status:** Airtable Integration Design Phase  
+**Project Type:** NextJS Web Application
+**Organization:** Power2Inspire (Charity)
+**Purpose:** Event registration, volunteer coordination, and attendance tracking
+**Status:** NextJS Architecture Complete - Ready for Implementation
 **Last Updated:** 2026-02-11
 
 ---
 
 ## 🎯 Project Mission
 
-Build a tablet-based, offline-first mobile application for Power2Inspire charity events that enables:
+Build a web-based application for Power2Inspire charity events that enables:
 - Quick and accessible attendee/volunteer registration
 - Real-time attendance tracking for safety compliance
 - Contact capture with GDPR-compliant consent management
-- Seamless synchronization with Airtable CRM and Mailchimp
+- Direct integration with Airtable CRM for real-time data management
 
 ---
 
-## 📱 Application Overview
+## 🌐 Application Overview
 
 ### Target Platform
-- **Devices:** Charity-owned Android/iOS tablets
-- **Deployment:** Controlled environment (not public app stores)
-- **Usage Model:** Kiosk-style, shared device at events
-- **Connectivity:** Offline-first with on-demand sync
+- **Devices:** Tablets (primary), phones (secondary), desktop (tertiary)
+- **Deployment:** Vercel (free tier, $0 hosting cost)
+- **Usage Model:** Web browser access, kiosk-style at events
+- **Connectivity:** Requires internet connection (direct Airtable integration)
 
 ### Core Features
-1. **Event Management** - Single active event per device
-2. **Registration** - Attendee and volunteer sign-up
+1. **Event Management** - Multiple events with dropdown selection
+2. **Registration** - Attendee and volunteer sign-up with V2 fields
 3. **Attendance Tracking** - Check-in/check-out for fire drill compliance
-4. **Contact Capture** - Email/phone with marketing consent
+4. **Contact Capture** - Email with marketing consent (no phone number)
 5. **CSV Reporting** - Export event data for analysis
-6. **Airtable Sync** - Bi-directional data synchronization
+6. **Airtable Integration** - Direct real-time data synchronization
 
 ---
 
 ## 🏗️ Technical Stack
 
-- **Framework:** Flutter 3.32.0 (Dart 3.8.0)
-- **Architecture:** Clean Architecture (4-layer)
-- **State Management:** Riverpod 3.2.1
-- **Database:** Drift (SQLite) - offline-first
-- **Networking:** Dio 5.9.1 with retry logic
-- **Backend:** Airtable (direct REST API access)
-- **Export:** CSV package for reporting
+- **Framework:** NextJS 14 (App Router)
+- **UI Library:** React 18
+- **Language:** TypeScript 5
+- **Styling:** Tailwind CSS 3
+- **Components:** Shadcn/ui (accessible component library)
+- **Forms:** React Hook Form 7
+- **Validation:** Zod 3 (client + server)
+- **Backend:** Airtable (direct REST API access via serverless functions)
+- **Hosting:** Vercel (serverless, edge network)
+- **Export:** CSV generation via API route
 
 ---
 
 ## 📚 Documentation Structure
 
 ### 1. Project Planning
-- **[Requirements](./01_PLANNING/REQUIREMENTS.md)** - Functional and non-functional requirements
-- **[TODO & Task Tracking](./01_PLANNING/TODO.md)** - Current tasks and progress
-- **[Project Status](./01_PLANNING/PROJECT_STATUS.md)** - Status snapshot and known issues
+- **[Requirements V2](../REQUIREMENTS_V2.md)** - NextJS web application requirements (359 lines)
+- **[Requirements V1](./01_PLANNING/REQUIREMENTS.md)** - Original Flutter requirements (archived)
+- **[TODO & Task Tracking](../TODO.md)** - Current tasks organized into 4 phases (10-15 days)
+- **[V2 Changes Summary](../V2_CHANGES_SUMMARY.md)** - Summary of all V2 changes for stakeholders
 
 ### 2. Technical Design
-- **[Architecture](./02_TECHNICAL/ARCHITECTURE.md)** - System architecture and design decisions
-- **[Data Models](./02_TECHNICAL/DATA_MODELS.md)** - Entity definitions and validation rules
+- **[NextJS Architecture](../NEXTJS_ARCHITECTURE.md)** - Complete NextJS architecture (596 lines)
+- **[Architecture V1](./02_TECHNICAL/ARCHITECTURE.md)** - Original Flutter architecture (archived)
+- **[Data Models V2](../DATA_MODELS.md)** - V2 entity definitions with required fields
+- **[UI Wireframes V2](../UI_WIREFRAMES_V2.md)** - Complete wireframe specifications (552 lines)
+- **[Interactive Wireframe V2](../wireframes/interactive-wireframe-v2.html)** - Clickable prototype
 
 ### 3. Integration Design
-- **[Airtable Integration](./03_INTEGRATION/AIRTABLE_INTEGRATION.md)** - Backend integration specification
-- **[Integration Discussion](./03_INTEGRATION/INTEGRATION_DISCUSSION.md)** - Decisions and outstanding questions
+- **[Airtable Integration V2](../AIRTABLE_INTEGRATION.md)** - V2 field mappings and API examples
+- **[Vercel Deployment Guide](../VERCEL_DEPLOYMENT_GUIDE.md)** - Step-by-step deployment (150 lines)
 
 ### 4. Development Notes
-- **[Data Requirements](./04_DEVELOPMENT/data_requirements.md)** - Field requirements and working notes
+- **[Existing Form Analysis](../EXISTING_FORM_ANALYSIS.md)** - Analysis of PowerHouseGames form
+- **[Confluence Upload Guide](../CONFLUENCE_UPLOAD_GUIDE.md)** - How to upload docs to Confluence
 
 ---
 
 ## 🎨 Key Design Principles
 
 ### Accessibility First
-- WCAG AA compliance
-- Large touch targets (72x72 dp preferred)
+- WCAG AA compliance (Lighthouse Accessibility score 100)
+- Large touch targets (minimum 48x48 dp, prefer 72x72 dp)
 - High contrast UI for visually impaired users
-- Screen reader support
+- Screen reader support (semantic HTML + ARIA labels)
+- Keyboard navigation support
 - Clear, simple navigation
 
-### Offline First
-- All operations work without internet
-- Local SQLite database as primary storage
-- On-demand sync to Airtable
-- Graceful handling of sync failures
+### Real-Time Integration
+- Direct Airtable integration (no offline sync complexity)
+- Immediate data visibility across all devices
+- Server-side API routes for security
+- Graceful error handling with user-friendly messages
+- Automatic retry for failed API calls
 
 ### Security & Privacy
 - GDPR compliant consent management
-- Secure token storage (iOS Keychain/Android Keystore)
-- HTTPS-only communication
-- Data encryption at rest
+- Airtable API keys stored server-side only (never exposed to browser)
+- HTTPS-only communication (enforced by Vercel)
+- Input validation (client-side + server-side with Zod)
+- XSS prevention (React auto-escaping + CSP headers)
 - Minimal data retention
 
 ### Medical Device Standards
@@ -122,27 +133,35 @@ Build a tablet-based, offline-first mobile application for Power2Inspire charity
 
 ---
 
-## 🔄 Current Phase: Airtable Integration Design
+## 🔄 Current Phase: NextJS Architecture Complete - Ready for Implementation
 
 ### ✅ Completed
-- Project infrastructure setup
-- Comprehensive documentation
-- Dependencies installed
-- Airtable integration approach defined
-- Data models updated with new fields
-- Security assessment completed
+- ✅ Project infrastructure setup (git repository)
+- ✅ Comprehensive V2 documentation (requirements, architecture, wireframes)
+- ✅ NextJS architecture document (596 lines)
+- ✅ Vercel deployment configuration (vercel.json, .env.example, .vercelignore)
+- ✅ Vercel deployment guide (150 lines)
+- ✅ Requirements V2 specification (359 lines)
+- ✅ Data models updated with V2 fields (Event, Email, Organization, Impairment all required)
+- ✅ Airtable integration approach defined (direct API access via serverless functions)
+- ✅ Security assessment completed (server-side API keys, HTTPS, validation)
+- ✅ All V2 documentation aligned (TODO.md, V2_CHANGES_SUMMARY.md updated)
 
-### 🔄 In Progress
-- Finalizing Airtable setup
-- Awaiting answers to integration questions
-- Planning database schema implementation
+### 🔄 Outstanding Questions (Need Answers Before Development)
+1. **HIGH PRIORITY:** Organization field implementation (dropdown/autocomplete/free text)
+2. **HIGH PRIORITY:** Conditional fields for Attendee vs Volunteer (which 1-2 fields differ)
+3. **MEDIUM:** Admin authentication (password protect admin features?)
+4. **MEDIUM:** Mailchimp integration (direct or via Airtable automation)
+5. **MEDIUM:** Google Drive backup (direct or via Airtable automation)
 
 ### 📋 Next Steps
-1. Get answers to outstanding questions
-2. Create Airtable base with proposed schema
-3. Generate access token for development
-4. Resolve dependency conflicts
-5. Begin UI development
+1. Get answers to 2 high-priority questions
+2. Create Airtable base with V2 schema (Events, Organizations, Registrations tables)
+3. Generate Airtable access token for development
+4. Initialize NextJS project (`npx create-next-app@latest`)
+5. Install dependencies (Airtable.js, Zod, React Hook Form, Shadcn/ui)
+6. Begin NextJS development (4 phases, 10-15 days total)
+7. Deploy to Vercel production
 
 ---
 
@@ -156,11 +175,13 @@ Build a tablet-based, offline-first mobile application for Power2Inspire charity
 
 ## 🔗 Quick Links
 
-- [View All Requirements](./01_PLANNING/REQUIREMENTS.md)
-- [Technical Architecture](./02_TECHNICAL/ARCHITECTURE.md)
-- [Airtable Integration Plan](./03_INTEGRATION/AIRTABLE_INTEGRATION.md)
-- [Current TODO List](./01_PLANNING/TODO.md)
-- [Outstanding Questions](./03_INTEGRATION/INTEGRATION_DISCUSSION.md#outstanding-questions)
+- [Requirements V2 (NextJS)](../REQUIREMENTS_V2.md)
+- [NextJS Architecture](../NEXTJS_ARCHITECTURE.md)
+- [Airtable Integration V2](../AIRTABLE_INTEGRATION.md)
+- [Current TODO List](../TODO.md)
+- [V2 Changes Summary](../V2_CHANGES_SUMMARY.md)
+- [Vercel Deployment Guide](../VERCEL_DEPLOYMENT_GUIDE.md)
+- [Interactive Wireframe V2](../wireframes/interactive-wireframe-v2.html)
 
 ---
 
