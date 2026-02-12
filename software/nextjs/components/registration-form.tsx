@@ -194,6 +194,9 @@ export function RegistrationForm() {
           )}
         />
 
+        {/* Separator: Role -> Personal Details */}
+        <hr className="my-6 border-gray-200" />
+
         {/* First Name */}
         <FormField
           control={form.control}
@@ -277,6 +280,11 @@ export function RegistrationForm() {
           )}
         />
 
+        {/* Separator: Impairment -> Group Details (conditional) */}
+        {selectedRole === "Teacher / Coordinator" && (
+          <hr className="my-6 border-gray-200" />
+        )}
+
         {/* Conditional Fields for Teacher/Coordinator */}
         {selectedRole === "Teacher / Coordinator" && (
           <>
@@ -331,6 +339,9 @@ export function RegistrationForm() {
             />
           </>
         )}
+
+        {/* Separator: Personal/Group Details -> Consent */}
+        <hr className="my-6 border-gray-200" />
 
         {/* Photo Consent */}
         <FormField
