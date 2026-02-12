@@ -186,39 +186,42 @@ export function RegistrationForm() {
         {/* Separator: Role -> Personal Details */}
         <hr className="my-6 border-gray-200" />
 
-        {/* First Name */}
-        <FormField
-          control={form.control}
-          name="attendeeName"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>First Name *</FormLabel>
-              <FormControl>
-                <Input placeholder="Enter first name" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {/* First Name and Last Name - Side by Side */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* First Name */}
+          <FormField
+            control={form.control}
+            name="attendeeName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>First Name *</FormLabel>
+                <FormControl>
+                  <Input placeholder="Enter first name" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        {/* Last Name */}
-        <FormField
-          control={form.control}
-          name="attendeeSurname"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Last Name *</FormLabel>
-              <FormControl>
-                <Input placeholder="Enter last name" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+          {/* Last Name */}
+          <FormField
+            control={form.control}
+            name="attendeeSurname"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Last Name *</FormLabel>
+                <FormControl>
+                  <Input placeholder="Enter last name" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
         {/* Email Consent */}
         <div className="space-y-3">
-          <FormLabel>Please can we contact you to:</FormLabel>
+          <FormLabel>Please can we contact you:</FormLabel>
 
           {/* Feedback Consent */}
           <FormField
@@ -234,7 +237,7 @@ export function RegistrationForm() {
                 </FormControl>
                 <div className="space-y-1 leading-none">
                   <FormLabel className="cursor-pointer font-normal">
-                    Ask for your honest feedback after todays event?
+                    To ask for your honest feedback after todays event? (4 minute online survey)
                   </FormLabel>
                 </div>
               </FormItem>
@@ -255,7 +258,7 @@ export function RegistrationForm() {
                 </FormControl>
                 <div className="space-y-1 leading-none">
                   <FormLabel className="cursor-pointer font-normal">
-                    Share info about our next event?
+                    To share info about our next event?
                   </FormLabel>
                 </div>
               </FormItem>
@@ -269,9 +272,26 @@ export function RegistrationForm() {
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email</FormLabel>
+              <FormLabel>Your email</FormLabel>
               <FormControl>
                 <Input type="email" placeholder="your.email@example.com" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+
+
+        {/* Impairment */}
+        <FormField
+          control={form.control}
+          name="impairment"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Do you consider yourself to be a disabled person, or to have a long‑term physical or mental health condition or impairment?</FormLabel>
+              <FormControl>
+                <Input placeholder="e.g., wheelchair user, visual impairment, none" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -284,32 +304,17 @@ export function RegistrationForm() {
           name="organizationId"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Organization</FormLabel>
+              <FormLabel>Your organisation</FormLabel>
               <FormControl>
                 <Combobox
                   options={organizations}
                   value={field.value}
                   onValueChange={field.onChange}
-                  placeholder="Select or type organization..."
-                  searchPlaceholder="Search organizations..."
+                  placeholder="Select or type organisation name..."
+                  searchPlaceholder="Search organisations..."
                   emptyText="No organization found."
                   allowCustom={true}
                 />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        {/* Impairment */}
-        <FormField
-          control={form.control}
-          name="impairment"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Do you consider yourself to be a disabled person, or to have a long‑term physical or mental health condition or impairment?</FormLabel>
-              <FormControl>
-                <Input placeholder="e.g., wheelchair user, visual impairment, none" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
