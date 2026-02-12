@@ -194,7 +194,7 @@ export function RegistrationForm() {
             name="attendeeName"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>First Name *</FormLabel>
+                <FormLabel>Your first name: *</FormLabel>
                 <FormControl>
                   <Input placeholder="Enter first name" {...field} />
                 </FormControl>
@@ -209,7 +209,7 @@ export function RegistrationForm() {
             name="attendeeSurname"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Last Name *</FormLabel>
+                <FormLabel>Your last name: *</FormLabel>
                 <FormControl>
                   <Input placeholder="Enter last name" {...field} />
                 </FormControl>
@@ -272,7 +272,7 @@ export function RegistrationForm() {
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Your email</FormLabel>
+              <FormLabel>Your email:</FormLabel>
               <FormControl>
                 <Input type="email" placeholder="your.email@example.com" {...field} />
               </FormControl>
@@ -290,9 +290,18 @@ export function RegistrationForm() {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Do you consider yourself to be a disabled person, or to have a long‑term physical or mental health condition or impairment?</FormLabel>
-              <FormControl>
-                <Input placeholder="e.g., wheelchair user, visual impairment, none" {...field} />
-              </FormControl>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Please select..." />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="Yes">Yes</SelectItem>
+                  <SelectItem value="No">No</SelectItem>
+                  <SelectItem value="Rather not say">Rather not say</SelectItem>
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}
