@@ -203,7 +203,7 @@ export function RegistrationForm() {
           name="organizationId"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Organization *</FormLabel>
+              <FormLabel>Organization</FormLabel>
               <FormControl>
                 <Combobox
                   options={ORGANIZATION_OPTIONS}

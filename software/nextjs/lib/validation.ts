@@ -82,7 +82,10 @@ export const registrationFormSchema = z.object({
     .max(255, "Email must be at most 255 characters")
     .optional()
     .or(z.literal("")),
-  organizationId: z.string().min(1, "Organization is required"),
+  organizationId: z
+    .string()
+    .optional()
+    .or(z.literal("")),
   impairment: z
     .string()
     .max(500, "Accessibility needs must be at most 500 characters")

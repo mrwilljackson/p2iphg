@@ -47,7 +47,7 @@ export interface Registration {
   attendeeName: string; // First name (REQUIRED, 2-100 chars)
   attendeeSurname: string; // Last name (REQUIRED, 2-100 chars)
   email?: string; // Email address (OPTIONAL, valid format if provided)
-  organizationId: string; // Airtable organization record ID (REQUIRED)
+  organizationId?: string; // Airtable organization record ID (OPTIONAL)
   impairment?: string; // Accessibility needs (OPTIONAL, free text)
   role: RegistrationRole; // "Attendee" | "Volunteer" | "Teacher / Coordinator" (REQUIRED)
   photoConsent: boolean; // true = yes, false = orange wristband (REQUIRED)
