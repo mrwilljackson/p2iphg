@@ -21,12 +21,13 @@ export type SyncStatus = "pending" | "synced" | "failed";
  * Represents a charitable event organized by Power2Inspire
  */
 export interface Event {
-  id: string; // Airtable record ID
+  id: string; // Local ID
   name: string; // Event name (required)
   date: string; // ISO 8601 date string (required)
   location?: string; // Event venue/address (optional)
   description?: string; // Event details (optional)
   status: EventStatus; // active | completed | cancelled
+  airtableRecordId?: string; // Airtable record ID (optional)
   createdAt?: string; // ISO 8601 timestamp
   modifiedAt?: string; // ISO 8601 timestamp
 }
@@ -65,11 +66,12 @@ export interface Registration {
  * Represents an organization that attendees/volunteers may be affiliated with
  */
 export interface Organization {
-  id: string; // Airtable record ID
+  id: string; // Local ID
   name: string; // Organization name (REQUIRED, 2-200 chars)
   contactEmail?: string; // Primary contact email (optional)
   contactPhone?: string; // Primary contact phone (optional)
   notes?: string; // Additional information (optional)
+  airtableRecordId?: string; // Airtable record ID (optional)
   createdAt?: string; // ISO 8601 timestamp
   modifiedAt?: string; // ISO 8601 timestamp
 }

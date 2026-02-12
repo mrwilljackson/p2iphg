@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { registrationFormSchema } from "@/lib/validation";
-import type { RegistrationFormData } from "@/lib/types";
+import type { RegistrationFormData, Event, Organization } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,26 +25,19 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
-
-// Common organizations - can be fetched from API in the future
-const ORGANIZATION_OPTIONS: ComboboxOption[] = [
-  { value: "Community Centre", label: "Community Centre" },
-  { value: "Local School", label: "Local School" },
-  { value: "Sports Club", label: "Sports Club" },
-  { value: "NHS Trust", label: "NHS Trust" },
-  { value: "Charity Organization", label: "Charity Organization" },
-  { value: "University", label: "University" },
-  { value: "Private Company", label: "Private Company" },
-];
+import { MockDataService, organizationsToOptions } from "@/lib/mock-data-service";
 
 export function RegistrationForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [currentEvent, setCurrentEvent] = useState<Event | null>(null);
+  const [organizations, setOrganizations] = useState<ComboboxOption[]>([]);
 
   const form = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationFormSchema),
     defaultValues: {
-      eventId: "event-1", // Pre-selected to current event
+      eventId: "",
       attendeeName: "",
       attendeeSurname: "",
       email: "",
@@ -55,6 +48,36 @@ export function RegistrationForm() {
       marketingConsent: false,
     },
   });
+
+  // Load pre-populated data on component mount
+  useEffect(() => {
+    async function loadData() {
+      try {
+        setIsLoading(true);
+
+        // Fetch current event and organizations from mock data service
+        const [event, orgs] = await Promise.all([
+          MockDataService.getCurrentEvent(),
+          MockDataService.getOrganizations(),
+        ]);
+
+        if (event) {
+          setCurrentEvent(event);
+          // Pre-populate the event field
+          form.setValue('eventId', event.id);
+        }
+
+        // Convert organizations to combobox options
+        setOrganizations(organizationsToOptions(orgs));
+      } catch (error) {
+        console.error('Failed to load data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadData();
+  }, [form]);
 
   const onSubmit = async (data: RegistrationFormData) => {
     setIsSubmitting(true);
@@ -73,6 +96,16 @@ export function RegistrationForm() {
     }, 2000);
   };
 
+  // Show loading state while fetching data
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
+        <div className="text-4xl mb-4">⏳</div>
+        <p className="text-gray-600">Loading event information...</p>
+      </div>
+    );
+  }
+
   if (submitSuccess) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
@@ -88,24 +121,26 @@ export function RegistrationForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        {/* Event Selection */}
+        {/* Event Selection - Pre-populated from mock data service */}
         <FormField
           control={form.control}
           name="eventId"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Event *</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select event" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="event-1">PowerHouseGames 2026</SelectItem>
-                  <SelectItem value="event-2">Summer Festival 2026</SelectItem>
-                </SelectContent>
-              </Select>
+              <FormControl>
+                <Input
+                  value={currentEvent?.name || 'No event selected'}
+                  disabled
+                  className="bg-gray-50"
+                />
+              </FormControl>
+              {currentEvent && (
+                <p className="text-sm text-gray-500">
+                  {currentEvent.date && `Date: ${currentEvent.date}`}
+                  {currentEvent.location && ` • Location: ${currentEvent.location}`}
+                </p>
+              )}
               <FormMessage />
             </FormItem>
           )}
@@ -197,7 +232,7 @@ export function RegistrationForm() {
           )}
         />
 
-        {/* Organization */}
+        {/* Organization - Loaded from mock data service */}
         <FormField
           control={form.control}
           name="organizationId"
@@ -206,7 +241,7 @@ export function RegistrationForm() {
               <FormLabel>Organization</FormLabel>
               <FormControl>
                 <Combobox
-                  options={ORGANIZATION_OPTIONS}
+                  options={organizations}
                   value={field.value}
                   onValueChange={field.onChange}
                   placeholder="Select or type organization..."
