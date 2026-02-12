@@ -169,8 +169,8 @@ export function RegistrationForm() {
                   <div className="flex items-center space-x-2 border rounded-lg p-4 cursor-pointer hover:bg-gray-50">
                     <RadioGroupItem value="Attendee" id="attendee" />
                     <Label htmlFor="attendee" className="cursor-pointer flex-1">
-                      <div className="font-semibold">👤 Attendee</div>
-                      <div className="text-sm text-gray-600">You are participating in todays event!</div>
+                      <div className="font-semibold">👤 I&apos;m an Attendee</div>
+                      <div className="text-sm text-gray-600">I&apos;m here to take part in the event today - Hooray!</div>
                     </Label>
                   </div>
                   <div className="flex items-center space-x-2 border rounded-lg p-4 cursor-pointer hover:bg-gray-50">
