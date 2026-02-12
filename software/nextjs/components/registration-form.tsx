@@ -183,8 +183,8 @@ export function RegistrationForm() {
                   <div className="flex items-center space-x-2 border rounded-lg p-4 cursor-pointer hover:bg-gray-50">
                     <RadioGroupItem value="Teacher / Coordinator" id="teacher" />
                     <Label htmlFor="teacher" className="cursor-pointer flex-1">
-                      <div className="font-semibold">👨‍🏫 Teacher / Coordinator</div>
-                      <div className="text-sm text-gray-600">You have either brought a group of participants or volunteers with you today</div>
+                      <div className="font-semibold">👨‍🏫 I am a Teacher, Parent or Coordinator of a group</div>
+                      <div className="text-sm text-gray-600">I have brought one or more participants and/or volunteers to take part in todays event</div>
                     </Label>
                   </div>
                 </RadioGroup>
