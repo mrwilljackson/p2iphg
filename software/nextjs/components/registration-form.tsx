@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
   FormControl,
@@ -45,7 +46,8 @@ export function RegistrationForm() {
       impairment: "",
       role: "Attendee",
       photoConsent: false,
-      marketingConsent: false,
+      feedbackConsent: false,
+      nextEventConsent: false,
       groupSize: undefined,
       senStudents: undefined,
     },
@@ -362,37 +364,52 @@ export function RegistrationForm() {
           )}
         />
 
-        {/* Marketing Consent */}
-        <FormField
-          control={form.control}
-          name="marketingConsent"
-          render={({ field }) => (
-            <FormItem className="space-y-3">
-              <FormLabel>I would like to receive emails about Power2Inspire&apos;s work *</FormLabel>
-              <FormControl>
-                <RadioGroup
-                  onValueChange={(value) => field.onChange(value === "true")}
-                  defaultValue={field.value ? "true" : "false"}
-                  className="flex flex-col space-y-2"
-                >
-                  <div className="flex items-start space-x-2 border rounded-lg p-4">
-                    <RadioGroupItem value="true" id="marketing-yes" className="mt-1" />
-                    <Label htmlFor="marketing-yes" className="cursor-pointer font-normal">
-                      Yes, I would like to hear from Power2Inspire
-                    </Label>
-                  </div>
-                  <div className="flex items-start space-x-2 border rounded-lg p-4">
-                    <RadioGroupItem value="false" id="marketing-no" className="mt-1" />
-                    <Label htmlFor="marketing-no" className="cursor-pointer font-normal">
-                      No, please don&apos;t add me to the mailing list
-                    </Label>
-                  </div>
-                </RadioGroup>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {/* Email Consent */}
+        <div className="space-y-3">
+          <FormLabel>Please can we contact you to:</FormLabel>
+
+          {/* Feedback Consent */}
+          <FormField
+            control={form.control}
+            name="feedbackConsent"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-start space-x-3 space-y-0 border rounded-lg p-4">
+                <FormControl>
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+                <div className="space-y-1 leading-none">
+                  <FormLabel className="cursor-pointer font-normal">
+                    Ask for your honest feedback after todays event?
+                  </FormLabel>
+                </div>
+              </FormItem>
+            )}
+          />
+
+          {/* Next Event Consent */}
+          <FormField
+            control={form.control}
+            name="nextEventConsent"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-start space-x-3 space-y-0 border rounded-lg p-4">
+                <FormControl>
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+                <div className="space-y-1 leading-none">
+                  <FormLabel className="cursor-pointer font-normal">
+                    Share info about our next event?
+                  </FormLabel>
+                </div>
+              </FormItem>
+            )}
+          />
+        </div>
 
         {/* Submit Button */}
         <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>

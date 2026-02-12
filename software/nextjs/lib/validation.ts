@@ -62,7 +62,8 @@ export const organizationSchema = z.object({
  * V2 Requirements:
  * - eventId, email, organizationId, impairment are REQUIRED
  * - Phone field REMOVED
- * - photoConsent and marketingConsent are boolean (radio buttons)
+ * - photoConsent is boolean (radio buttons)
+ * - feedbackConsent and nextEventConsent are optional booleans (checkboxes)
  * - Teacher/Coordinator role requires groupSize and senStudents fields
  */
 export const registrationFormSchema = z.object({
@@ -94,7 +95,8 @@ export const registrationFormSchema = z.object({
     .or(z.literal("")),
   role: registrationRoleSchema,
   photoConsent: z.boolean(),
-  marketingConsent: z.boolean(),
+  feedbackConsent: z.boolean().optional(),
+  nextEventConsent: z.boolean().optional(),
   // Teacher/Coordinator specific fields
   groupSize: z
     .number()

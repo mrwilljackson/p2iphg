@@ -40,7 +40,8 @@ export interface Event {
  * - eventId, email, organizationId, impairment are now REQUIRED
  * - Phone field REMOVED (not needed)
  * - photoConsent: false = orange wristband (no photos)
- * - marketingConsent: false = no mailing list
+ * - feedbackConsent: optional checkbox for post-event feedback
+ * - nextEventConsent: optional checkbox for next event info
  * - Teacher/Coordinator role includes groupSize and senStudents
  */
 export interface Registration {
@@ -53,7 +54,8 @@ export interface Registration {
   impairment?: string; // Accessibility needs (OPTIONAL, free text)
   role: RegistrationRole; // "Attendee" | "Volunteer" | "Teacher / Coordinator" (REQUIRED)
   photoConsent: boolean; // true = yes, false = orange wristband (REQUIRED)
-  marketingConsent: boolean; // true = yes, false = no emails (REQUIRED)
+  feedbackConsent?: boolean; // true = yes to post-event feedback (OPTIONAL)
+  nextEventConsent?: boolean; // true = yes to next event info (OPTIONAL)
   groupSize?: number; // Number of participants in group (REQUIRED for Teacher/Coordinator)
   senStudents?: number; // Number of SEN/disabled students (REQUIRED for Teacher/Coordinator)
   checkinTime?: string; // ISO 8601 timestamp (optional)
@@ -96,7 +98,8 @@ export interface RegistrationFormData {
   impairment?: string;
   role: RegistrationRole;
   photoConsent: boolean;
-  marketingConsent: boolean;
+  feedbackConsent?: boolean; // Optional: consent for post-event feedback
+  nextEventConsent?: boolean; // Optional: consent for next event info
   groupSize?: number; // Required for Teacher/Coordinator
   senStudents?: number; // Required for Teacher/Coordinator
 }
