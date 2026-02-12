@@ -291,12 +291,11 @@ export function RegistrationForm() {
                       min="1"
                       max="999"
                       placeholder="e.g., 25"
-                      {...field}
+                      value={field.value ?? ""}
                       onChange={(e) => {
                         const value = e.target.value;
                         field.onChange(value === "" ? undefined : parseInt(value, 10));
                       }}
-                      value={field.value ?? ""}
                     />
                   </FormControl>
                   <FormMessage />
@@ -317,12 +316,11 @@ export function RegistrationForm() {
                       min="0"
                       max="999"
                       placeholder="e.g., 5"
-                      {...field}
+                      value={field.value ?? ""}
                       onChange={(e) => {
                         const value = e.target.value;
                         field.onChange(value === "" ? undefined : parseInt(value, 10));
                       }}
-                      value={field.value ?? ""}
                     />
                   </FormControl>
                   <FormMessage />
