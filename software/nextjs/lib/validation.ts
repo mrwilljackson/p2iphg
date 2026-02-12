@@ -78,14 +78,16 @@ export const registrationFormSchema = z.object({
     .regex(/^[a-zA-Z\s'-]+$/, "Last name can only contain letters, spaces, hyphens, and apostrophes"),
   email: z
     .string()
-    .min(1, "Email is required")
     .email("Invalid email address")
-    .max(255, "Email must be at most 255 characters"),
+    .max(255, "Email must be at most 255 characters")
+    .optional()
+    .or(z.literal("")),
   organizationId: z.string().min(1, "Organization is required"),
   impairment: z
     .string()
-    .min(1, "Please specify accessibility needs (or enter 'None' if not applicable)")
-    .max(500, "Accessibility needs must be at most 500 characters"),
+    .max(500, "Accessibility needs must be at most 500 characters")
+    .optional()
+    .or(z.literal("")),
   role: registrationRoleSchema,
   photoConsent: z.boolean(),
   marketingConsent: z.boolean(),

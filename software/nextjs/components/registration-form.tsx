@@ -188,7 +188,7 @@ export function RegistrationForm() {
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email *</FormLabel>
+              <FormLabel>Email</FormLabel>
               <FormControl>
                 <Input type="email" placeholder="your.email@example.com" {...field} />
               </FormControl>
@@ -226,7 +226,7 @@ export function RegistrationForm() {
           name="impairment"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Do you have an impairment *</FormLabel>
+              <FormLabel>Do you have an impairment</FormLabel>
               <FormControl>
                 <Input placeholder="e.g., wheelchair user, visual impairment, none" {...field} />
               </FormControl>
