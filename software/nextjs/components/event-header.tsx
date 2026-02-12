@@ -14,20 +14,20 @@ export function EventHeader({ eventName, eventDate, eventLocation }: EventHeader
     <header className="w-full bg-white border-b border-gray-200 shadow-sm">
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
         <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-4 sm:gap-6">
-          {/* Logo - Left Side */}
-          <div className="flex-shrink-0">
+          {/* Logo - Left Side - 50% width */}
+          <div className="w-full sm:w-1/2 flex justify-center sm:justify-start">
             <Image
               src="/p2i-logo.png"
               alt="Power2Inspire"
-              width={200}
-              height={200}
-              className="w-32 h-32 sm:w-40 sm:h-40 object-contain"
+              width={400}
+              height={400}
+              className="w-full max-w-50 sm:max-w-none h-auto object-contain"
               priority
             />
           </div>
 
-          {/* Event Details - Right Side */}
-          <div className="flex-1 text-center sm:text-right space-y-1 sm:space-y-1.5">
+          {/* Event Details - Right Side - 50% width */}
+          <div className="w-full sm:w-1/2 text-center sm:text-right space-y-1 sm:space-y-1.5 flex flex-col justify-center">
             <h1 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight font-(family-name:--font-roboto)">
               {eventName}
             </h1>
