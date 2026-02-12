@@ -228,18 +228,20 @@ export function RegistrationForm() {
             control={form.control}
             name="feedbackConsent"
             render={({ field }) => (
-              <FormItem className="flex flex-row items-start space-x-3 space-y-0 border rounded-lg p-4 cursor-pointer hover:bg-gray-50">
-                <FormControl>
-                  <Checkbox
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                </FormControl>
-                <div className="space-y-1 leading-none flex-1">
-                  <FormLabel className="cursor-pointer font-normal">
-                    To ask for your honest feedback after todays event? (4 minute online survey)
-                  </FormLabel>
-                </div>
+              <FormItem>
+                <label className="flex flex-row items-start space-x-3 border rounded-lg p-4 cursor-pointer hover:bg-gray-50">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none flex-1">
+                    <span className="font-normal text-sm">
+                      To ask for your honest feedback after todays event? (4 minute online survey)
+                    </span>
+                  </div>
+                </label>
               </FormItem>
             )}
           />
@@ -249,18 +251,20 @@ export function RegistrationForm() {
             control={form.control}
             name="nextEventConsent"
             render={({ field }) => (
-              <FormItem className="flex flex-row items-start space-x-3 space-y-0 border rounded-lg p-4 cursor-pointer hover:bg-gray-50">
-                <FormControl>
-                  <Checkbox
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                </FormControl>
-                <div className="space-y-1 leading-none flex-1">
-                  <FormLabel className="cursor-pointer font-normal">
-                    To share info about our next event?
-                  </FormLabel>
-                </div>
+              <FormItem>
+                <label className="flex flex-row items-start space-x-3 border rounded-lg p-4 cursor-pointer hover:bg-gray-50">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none flex-1">
+                    <span className="font-normal text-sm">
+                      To share info about our next event?
+                    </span>
+                  </div>
+                </label>
               </FormItem>
             )}
           />
