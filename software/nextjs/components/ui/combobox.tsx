@@ -50,6 +50,13 @@ export function Combobox({
   // Find the selected option
   const selectedOption = options.find((option) => option.value === value);
 
+  // Display label: use selected option label, or the value itself if it's a custom value, or placeholder
+  const displayLabel = selectedOption
+    ? selectedOption.label
+    : value
+      ? value // Show custom value if not in options
+      : placeholder;
+
   // Filter options based on search
   const filteredOptions = options.filter((option) =>
     option.label.toLowerCase().includes(searchValue.toLowerCase())
@@ -86,7 +93,7 @@ export function Combobox({
           aria-expanded={open}
           className={cn("w-full justify-between", className)}
         >
-          {selectedOption ? selectedOption.label : placeholder}
+          {displayLabel}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
