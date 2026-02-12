@@ -1,29 +1,36 @@
 import { RegistrationForm } from "@/components/registration-form";
+import { EventHeader } from "@/components/event-header";
 
 export default function TestFormPage() {
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="container mx-auto px-4 max-w-2xl">
-        {/* Header */}
-        <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Event Registration
-          </h1>
-          <p className="text-gray-600">PowerHouseGames 2026</p>
-          <p className="text-sm text-orange-600 mt-2">
+    <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100">
+      {/* Event Header */}
+      <EventHeader
+        eventName="PowerHouseGames 2026"
+        eventDate="Saturday, 15th March 2026"
+        eventLocation="Cambridge United Community Centre"
+      />
+
+      {/* Main Content */}
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Test Page Notice */}
+        <div className="mb-6 bg-orange-50 border border-orange-200 rounded-lg p-4 text-center">
+          <p className="text-sm text-orange-800 font-medium">
             ⚠️ Test Page - Form UI Only (No Database)
+          </p>
+          <p className="text-xs text-orange-600 mt-1">
+            Form data is logged to the browser console
           </p>
         </div>
 
         {/* Form Card */}
-        <div className="bg-white rounded-lg shadow-md p-6 md:p-8">
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 sm:p-8">
           <RegistrationForm />
         </div>
 
         {/* Footer Note */}
-        <div className="mt-6 text-center text-sm text-gray-500">
-          <p>This is a test page to verify the form UI and validation.</p>
-          <p>Form data is logged to the browser console.</p>
+        <div className="mt-6 text-center text-xs text-gray-500">
+          <p>Power2Inspire Event Registration System</p>
         </div>
       </div>
     </div>
