@@ -86,9 +86,9 @@ export interface RegistrationFormData {
   eventId: string;
   attendeeName: string;
   attendeeSurname: string;
-  email: string;
-  organizationId: string;
-  impairment: string;
+  email?: string;
+  organizationId?: string;
+  impairment?: string;
   role: RegistrationRole;
   photoConsent: boolean;
   marketingConsent: boolean;
