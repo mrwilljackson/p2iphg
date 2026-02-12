@@ -12,7 +12,7 @@ import { z } from "zod";
 
 export const eventStatusSchema = z.enum(["active", "completed", "cancelled"]);
 
-export const registrationRoleSchema = z.enum(["Attendee", "Volunteer"]);
+export const registrationRoleSchema = z.enum(["Attendee", "Volunteer", "Teacher / Coordinator"]);
 
 export const syncStatusSchema = z.enum(["pending", "synced", "failed"]);
 

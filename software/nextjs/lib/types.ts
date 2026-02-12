@@ -9,7 +9,7 @@
 // ============================================================================
 
 export type EventStatus = "active" | "completed" | "cancelled";
-export type RegistrationRole = "Attendee" | "Volunteer";
+export type RegistrationRole = "Attendee" | "Volunteer" | "Teacher / Coordinator";
 export type SyncStatus = "pending" | "synced" | "failed";
 
 // ============================================================================
