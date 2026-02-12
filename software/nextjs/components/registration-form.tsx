@@ -142,7 +142,7 @@ export function RegistrationForm() {
                     <RadioGroupItem value="Teacher / Coordinator" id="teacher" />
                     <Label htmlFor="teacher" className="cursor-pointer flex-1">
                       <div className="font-semibold">👨‍🏫 Teacher / Coordinator</div>
-                      <div className="text-sm text-gray-600">Organizing or supervising</div>
+                      <div className="text-sm text-gray-600">You have either brought a group of participants or volunteers with you today</div>
                     </Label>
                   </div>
                 </RadioGroup>
