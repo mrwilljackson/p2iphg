@@ -466,7 +466,12 @@ export function RegistrationForm() {
         />
 
         {/* Submit Button */}
-        <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
+        <Button
+          type="submit"
+          className="w-full bg-lime-500 hover:bg-lime-600 active:bg-purple-600 text-white font-semibold transition-colors"
+          size="lg"
+          disabled={isSubmitting}
+        >
           {isSubmitting ? "Submitting..." : "Click here to register!"}
         </Button>
       </form>
