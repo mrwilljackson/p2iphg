@@ -128,27 +128,15 @@ export function RegistrationForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        {/* Event Selection - Pre-populated from mock data service */}
+        {/* Event ID - Hidden field, automatically set from header/context */}
         <FormField
           control={form.control}
           name="eventId"
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>Event *</FormLabel>
+            <FormItem className="hidden">
               <FormControl>
-                <Input
-                  value={currentEvent?.name || 'No event selected'}
-                  disabled
-                  className="bg-gray-50"
-                />
+                <input type="hidden" {...field} />
               </FormControl>
-              {currentEvent && (
-                <p className="text-sm text-gray-500">
-                  {currentEvent.date && `Date: ${currentEvent.date}`}
-                  {currentEvent.location && ` • Location: ${currentEvent.location}`}
-                </p>
-              )}
-              <FormMessage />
             </FormItem>
           )}
         />
