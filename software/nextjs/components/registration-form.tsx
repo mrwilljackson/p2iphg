@@ -46,8 +46,13 @@ export function RegistrationForm() {
       role: "Attendee",
       photoConsent: false,
       marketingConsent: false,
+      groupSize: undefined,
+      senStudents: undefined,
     },
   });
+
+  // Watch the role field to show/hide conditional fields
+  const selectedRole = form.watch("role");
 
   // Load pre-populated data on component mount
   useEffect(() => {
@@ -269,6 +274,63 @@ export function RegistrationForm() {
             </FormItem>
           )}
         />
+
+        {/* Conditional Fields for Teacher/Coordinator */}
+        {selectedRole === "Teacher / Coordinator" && (
+          <>
+            {/* Group Size */}
+            <FormField
+              control={form.control}
+              name="groupSize"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Number of participants in your group *</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min="1"
+                      max="999"
+                      placeholder="e.g., 25"
+                      {...field}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        field.onChange(value === "" ? undefined : parseInt(value, 10));
+                      }}
+                      value={field.value ?? ""}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* SEN Students */}
+            <FormField
+              control={form.control}
+              name="senStudents"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Number of SEN / disabled students in your group *</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min="0"
+                      max="999"
+                      placeholder="e.g., 5"
+                      {...field}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        field.onChange(value === "" ? undefined : parseInt(value, 10));
+                      }}
+                      value={field.value ?? ""}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </>
+        )}
 
         {/* Photo Consent */}
         <FormField

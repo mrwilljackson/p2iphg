@@ -60,6 +60,11 @@ const MOCK_ORGANIZATIONS: Organization[] = [
     name: 'Charity Organization',
     airtableRecordId: 'recORG005',
   },
+    {
+    id: 'org_006',
+    name: 'University of Manchester',
+    airtableRecordId: 'recORG006',
+  },
 ];
 
 /**

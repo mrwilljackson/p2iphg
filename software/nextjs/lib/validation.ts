@@ -58,11 +58,12 @@ export const organizationSchema = z.object({
 /**
  * Registration Form Schema
  * Validates registration form data from client
- * 
+ *
  * V2 Requirements:
  * - eventId, email, organizationId, impairment are REQUIRED
  * - Phone field REMOVED
  * - photoConsent and marketingConsent are boolean (radio buttons)
+ * - Teacher/Coordinator role requires groupSize and senStudents fields
  */
 export const registrationFormSchema = z.object({
   eventId: z.string().min(1, "Event is required"),
@@ -94,7 +95,32 @@ export const registrationFormSchema = z.object({
   role: registrationRoleSchema,
   photoConsent: z.boolean(),
   marketingConsent: z.boolean(),
-});
+  // Teacher/Coordinator specific fields
+  groupSize: z
+    .number()
+    .int("Must be a whole number")
+    .min(1, "Group size must be at least 1")
+    .max(999, "Group size must be at most 999")
+    .optional(),
+  senStudents: z
+    .number()
+    .int("Must be a whole number")
+    .min(0, "Cannot be negative")
+    .max(999, "SEN students must be at most 999")
+    .optional(),
+}).refine(
+  (data) => {
+    // If role is Teacher/Coordinator, groupSize and senStudents are required
+    if (data.role === "Teacher / Coordinator") {
+      return data.groupSize !== undefined && data.senStudents !== undefined;
+    }
+    return true;
+  },
+  {
+    message: "Group size and SEN students are required for Teacher / Coordinator role",
+    path: ["groupSize"],
+  }
+);
 
 /**
  * Registration Schema (Full)

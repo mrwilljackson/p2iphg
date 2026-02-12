@@ -35,12 +35,13 @@ export interface Event {
 /**
  * Registration Entity
  * Represents an attendee or volunteer registration for an event
- * 
+ *
  * V2 Changes:
  * - eventId, email, organizationId, impairment are now REQUIRED
  * - Phone field REMOVED (not needed)
  * - photoConsent: false = orange wristband (no photos)
  * - marketingConsent: false = no mailing list
+ * - Teacher/Coordinator role includes groupSize and senStudents
  */
 export interface Registration {
   id?: string; // Local UUID (optional for new records)
@@ -53,6 +54,8 @@ export interface Registration {
   role: RegistrationRole; // "Attendee" | "Volunteer" | "Teacher / Coordinator" (REQUIRED)
   photoConsent: boolean; // true = yes, false = orange wristband (REQUIRED)
   marketingConsent: boolean; // true = yes, false = no emails (REQUIRED)
+  groupSize?: number; // Number of participants in group (REQUIRED for Teacher/Coordinator)
+  senStudents?: number; // Number of SEN/disabled students (REQUIRED for Teacher/Coordinator)
   checkinTime?: string; // ISO 8601 timestamp (optional)
   checkoutTime?: string; // ISO 8601 timestamp (optional)
   syncStatus?: SyncStatus; // pending | synced | failed (optional, for offline mode)
@@ -94,6 +97,8 @@ export interface RegistrationFormData {
   role: RegistrationRole;
   photoConsent: boolean;
   marketingConsent: boolean;
+  groupSize?: number; // Required for Teacher/Coordinator
+  senStudents?: number; // Required for Teacher/Coordinator
 }
 
 /**

@@ -57,6 +57,8 @@ export const registrations = pgTable('registrations', {
   role: text('role').notNull(), // 'Attendee' | 'Volunteer' | 'Teacher / Coordinator'
   photoConsent: boolean('photo_consent').notNull(),
   marketingConsent: boolean('marketing_consent').notNull(),
+  groupSize: text('group_size'), // Number of participants (Teacher/Coordinator only)
+  senStudents: text('sen_students'), // Number of SEN students (Teacher/Coordinator only)
   createdAt: timestamp('created_at').defaultNow(),
   syncedToAirtable: boolean('synced_to_airtable').default(false),
   airtableRecordId: text('airtable_record_id'),
