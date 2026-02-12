@@ -215,6 +215,53 @@ export function RegistrationForm() {
           )}
         />
 
+        {/* Email Consent */}
+        <div className="space-y-3">
+          <FormLabel>Please can we contact you to:</FormLabel>
+
+          {/* Feedback Consent */}
+          <FormField
+            control={form.control}
+            name="feedbackConsent"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-start space-x-3 space-y-0 border rounded-lg p-4">
+                <FormControl>
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+                <div className="space-y-1 leading-none">
+                  <FormLabel className="cursor-pointer font-normal">
+                    Ask for your honest feedback after todays event?
+                  </FormLabel>
+                </div>
+              </FormItem>
+            )}
+          />
+
+          {/* Next Event Consent */}
+          <FormField
+            control={form.control}
+            name="nextEventConsent"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-start space-x-3 space-y-0 border rounded-lg p-4">
+                <FormControl>
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+                <div className="space-y-1 leading-none">
+                  <FormLabel className="cursor-pointer font-normal">
+                    Share info about our next event?
+                  </FormLabel>
+                </div>
+              </FormItem>
+            )}
+          />
+        </div>
+
         {/* Email */}
         <FormField
           control={form.control}
@@ -362,53 +409,6 @@ export function RegistrationForm() {
             </FormItem>
           )}
         />
-
-        {/* Email Consent */}
-        <div className="space-y-3">
-          <FormLabel>Please can we contact you to:</FormLabel>
-
-          {/* Feedback Consent */}
-          <FormField
-            control={form.control}
-            name="feedbackConsent"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-start space-x-3 space-y-0 border rounded-lg p-4">
-                <FormControl>
-                  <Checkbox
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                </FormControl>
-                <div className="space-y-1 leading-none">
-                  <FormLabel className="cursor-pointer font-normal">
-                    Ask for your honest feedback after todays event?
-                  </FormLabel>
-                </div>
-              </FormItem>
-            )}
-          />
-
-          {/* Next Event Consent */}
-          <FormField
-            control={form.control}
-            name="nextEventConsent"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-start space-x-3 space-y-0 border rounded-lg p-4">
-                <FormControl>
-                  <Checkbox
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                </FormControl>
-                <div className="space-y-1 leading-none">
-                  <FormLabel className="cursor-pointer font-normal">
-                    Share info about our next event?
-                  </FormLabel>
-                </div>
-              </FormItem>
-            )}
-          />
-        </div>
 
         {/* Submit Button */}
         <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
