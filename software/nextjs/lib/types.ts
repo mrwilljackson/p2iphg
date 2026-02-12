@@ -57,7 +57,8 @@ export interface Registration {
   feedbackConsent?: boolean; // true = yes to post-event feedback (OPTIONAL)
   nextEventConsent?: boolean; // true = yes to next event info (OPTIONAL)
   groupSize?: number; // Number of participants in group (REQUIRED for Teacher/Coordinator)
-  senStudents?: number; // Number of SEN/disabled students (REQUIRED for Teacher/Coordinator)
+  disabledStudents?: number; // Number of disabled participants (REQUIRED for Teacher/Coordinator)
+  senStudents?: number; // Number of SEN/additional learning support students (REQUIRED for Teacher/Coordinator)
   checkinTime?: string; // ISO 8601 timestamp (optional)
   checkoutTime?: string; // ISO 8601 timestamp (optional)
   syncStatus?: SyncStatus; // pending | synced | failed (optional, for offline mode)
@@ -101,6 +102,7 @@ export interface RegistrationFormData {
   feedbackConsent?: boolean; // Optional: consent for post-event feedback
   nextEventConsent?: boolean; // Optional: consent for next event info
   groupSize?: number; // Required for Teacher/Coordinator
+  disabledStudents?: number; // Required for Teacher/Coordinator
   senStudents?: number; // Required for Teacher/Coordinator
 }
 

@@ -59,7 +59,8 @@ export const registrations = pgTable('registrations', {
   feedbackConsent: boolean('feedback_consent'), // Optional: consent for post-event feedback
   nextEventConsent: boolean('next_event_consent'), // Optional: consent for next event info
   groupSize: text('group_size'), // Number of participants (Teacher/Coordinator only)
-  senStudents: text('sen_students'), // Number of SEN students (Teacher/Coordinator only)
+  disabledStudents: text('disabled_students'), // Number of disabled participants (Teacher/Coordinator only)
+  senStudents: text('sen_students'), // Number of SEN/additional learning support students (Teacher/Coordinator only)
   createdAt: timestamp('created_at').defaultNow(),
   syncedToAirtable: boolean('synced_to_airtable').default(false),
   airtableRecordId: text('airtable_record_id'),

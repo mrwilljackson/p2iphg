@@ -49,6 +49,7 @@ export function RegistrationForm() {
       feedbackConsent: false,
       nextEventConsent: false,
       groupSize: undefined,
+      disabledStudents: undefined,
       senStudents: undefined,
     },
   });
@@ -306,7 +307,7 @@ export function RegistrationForm() {
           name="impairment"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Do you have an impairment</FormLabel>
+              <FormLabel>Do you consider yourself to be a disabled person, or to have a long‑term physical or mental health condition or impairment?</FormLabel>
               <FormControl>
                 <Input placeholder="e.g., wheelchair user, visual impairment, none" {...field} />
               </FormControl>
@@ -329,7 +330,7 @@ export function RegistrationForm() {
               name="groupSize"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Number of participants in your group *</FormLabel>
+                  <FormLabel>How many participants are you responsible for in your group *</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -348,19 +349,44 @@ export function RegistrationForm() {
               )}
             />
 
-            {/* SEN Students */}
+            {/* Disabled Students */}
             <FormField
               control={form.control}
-              name="senStudents"
+              name="disabledStudents"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Number of SEN / disabled students in your group *</FormLabel>
+                  <FormLabel>How many of your participants are disabled people, or to have a long‑term physical or mental health condition or impairment? *</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
                       min="0"
                       max="999"
                       placeholder="e.g., 5"
+                      value={field.value ?? ""}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        field.onChange(value === "" ? undefined : parseInt(value, 10));
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* SEN Students */}
+            <FormField
+              control={form.control}
+              name="senStudents"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Do you have any special educational needs (SEN) or require additional learning support (for example dyslexia support, autism support, or similar)? *</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min="0"
+                      max="999"
+                      placeholder="e.g., 3"
                       value={field.value ?? ""}
                       onChange={(e) => {
                         const value = e.target.value;
@@ -412,7 +438,7 @@ export function RegistrationForm() {
 
         {/* Submit Button */}
         <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
-          {isSubmitting ? "Submitting..." : "Submit Registration"}
+          {isSubmitting ? "Submitting..." : "Click here to register!"}
         </Button>
       </form>
     </Form>

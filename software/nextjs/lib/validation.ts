@@ -104,6 +104,12 @@ export const registrationFormSchema = z.object({
     .min(1, "Group size must be at least 1")
     .max(999, "Group size must be at most 999")
     .optional(),
+  disabledStudents: z
+    .number()
+    .int("Must be a whole number")
+    .min(0, "Cannot be negative")
+    .max(999, "Disabled students must be at most 999")
+    .optional(),
   senStudents: z
     .number()
     .int("Must be a whole number")
@@ -112,9 +118,9 @@ export const registrationFormSchema = z.object({
     .optional(),
 }).refine(
   (data) => {
-    // If role is Teacher/Coordinator, groupSize and senStudents are required
+    // If role is Teacher/Coordinator, groupSize, disabledStudents, and senStudents are required
     if (data.role === "Teacher / Coordinator") {
-      return data.groupSize !== undefined && data.senStudents !== undefined;
+      return data.groupSize !== undefined && data.disabledStudents !== undefined && data.senStudents !== undefined;
     }
     return true;
   },
