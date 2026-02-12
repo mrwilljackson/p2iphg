@@ -135,7 +135,7 @@ export function RegistrationForm() {
                     <RadioGroupItem value="Volunteer" id="volunteer" />
                     <Label htmlFor="volunteer" className="cursor-pointer flex-1">
                       <div className="font-semibold">🙋 Volunteer</div>
-                      <div className="text-sm text-gray-600">Helping at event</div>
+                      <div className="text-sm text-gray-600">You have volunteered to help run todays event</div>
                     </Label>
                   </div>
                   <div className="flex items-center space-x-2 border rounded-lg p-4 cursor-pointer hover:bg-gray-50">
