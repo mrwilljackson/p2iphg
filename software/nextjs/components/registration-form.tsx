@@ -7,7 +7,6 @@ import { registrationFormSchema } from "@/lib/validation";
 import type { RegistrationFormData, Event, Organization } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -155,27 +154,27 @@ export function RegistrationForm() {
                   defaultValue={field.value}
                   className="flex flex-col space-y-2"
                 >
-                  <div className="flex items-center space-x-2 border rounded-lg p-4 cursor-pointer hover:bg-gray-50">
+                  <label className="flex items-center space-x-2 border rounded-lg p-4 cursor-pointer hover:bg-gray-50">
                     <RadioGroupItem value="Attendee" id="attendee" />
-                    <Label htmlFor="attendee" className="cursor-pointer flex-1">
+                    <div className="flex-1">
                       <div className="font-semibold">👤 I&apos;m an Attendee</div>
                       <div className="text-sm text-gray-600">I&apos;m here to take part in the event today - Hooray!</div>
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2 border rounded-lg p-4 cursor-pointer hover:bg-gray-50">
+                    </div>
+                  </label>
+                  <label className="flex items-center space-x-2 border rounded-lg p-4 cursor-pointer hover:bg-gray-50">
                     <RadioGroupItem value="Volunteer" id="volunteer" />
-                    <Label htmlFor="volunteer" className="cursor-pointer flex-1">
+                    <div className="flex-1">
                       <div className="font-semibold">🙋 I&apos;m a Volunteer</div>
                       <div className="text-sm text-gray-600">I&apos;m here to help support and run the event today</div>
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2 border rounded-lg p-4 cursor-pointer hover:bg-gray-50">
+                    </div>
+                  </label>
+                  <label className="flex items-center space-x-2 border rounded-lg p-4 cursor-pointer hover:bg-gray-50">
                     <RadioGroupItem value="Teacher / Coordinator" id="teacher" />
-                    <Label htmlFor="teacher" className="cursor-pointer flex-1">
+                    <div className="flex-1">
                       <div className="font-semibold">👨‍🏫 I am a Teacher, Parent or Coordinator of a group</div>
                       <div className="text-sm text-gray-600">I have brought one or more participants and/or volunteers to take part in todays event</div>
-                    </Label>
-                  </div>
+                    </div>
+                  </label>
                 </RadioGroup>
               </FormControl>
               <FormMessage />
@@ -447,18 +446,18 @@ export function RegistrationForm() {
                   defaultValue={field.value ? "true" : "false"}
                   className="flex flex-col space-y-2"
                 >
-                  <div className="flex items-start space-x-2 border rounded-lg p-4">
+                  <label className="flex items-start space-x-2 border rounded-lg p-4 cursor-pointer hover:bg-gray-50">
                     <RadioGroupItem value="true" id="photo-yes" className="mt-1" />
-                    <Label htmlFor="photo-yes" className="cursor-pointer font-normal">
+                    <span className="font-normal flex-1">
                       Yes, I consent to the use of photographs as specified
-                    </Label>
-                  </div>
-                  <div className="flex items-start space-x-2 border rounded-lg p-4">
+                    </span>
+                  </label>
+                  <label className="flex items-start space-x-2 border rounded-lg p-4 cursor-pointer hover:bg-gray-50">
                     <RadioGroupItem value="false" id="photo-no" className="mt-1" />
-                    <Label htmlFor="photo-no" className="cursor-pointer font-normal">
+                    <span className="font-normal flex-1">
                       No, I will wear an orange wristband to denote I do not wish photos of me to be used in this way
-                    </Label>
-                  </div>
+                    </span>
+                  </label>
                 </RadioGroup>
               </FormControl>
               <FormMessage />
