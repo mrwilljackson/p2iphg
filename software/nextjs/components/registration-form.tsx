@@ -283,49 +283,57 @@ export function RegistrationForm() {
 
 
 
-        {/* Impairment */}
+        {/* Impairment - Label and Input Side by Side */}
         <FormField
           control={form.control}
           name="impairment"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Do you consider yourself to be a disabled person, or to have a long‑term physical or mental health condition or impairment?</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Please select..." />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="Yes">Yes</SelectItem>
-                  <SelectItem value="No">No</SelectItem>
-                  <SelectItem value="Rather not say">Rather not say</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormMessage />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+                <FormLabel className="sm:pt-2">Do you consider yourself to be a disabled person, or to have a long‑term physical or mental health condition or impairment?</FormLabel>
+                <div className="space-y-2">
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Please select..." />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="Yes">Yes</SelectItem>
+                      <SelectItem value="No">No</SelectItem>
+                      <SelectItem value="Rather not say">Rather not say</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </div>
+              </div>
             </FormItem>
           )}
         />
 
-        {/* Organization - Loaded from mock data service */}
+        {/* Organization - Label and Input Side by Side */}
         <FormField
           control={form.control}
           name="organizationId"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Your organisation</FormLabel>
-              <FormControl>
-                <Combobox
-                  options={organizations}
-                  value={field.value}
-                  onValueChange={field.onChange}
-                  placeholder="Select or type organisation name..."
-                  searchPlaceholder="Search organisations..."
-                  emptyText="No organization found."
-                  allowCustom={true}
-                />
-              </FormControl>
-              <FormMessage />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+                <FormLabel className="sm:pt-2">Your organisation</FormLabel>
+                <div className="space-y-2">
+                  <FormControl>
+                    <Combobox
+                      options={organizations}
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      placeholder="Select or type organisation name..."
+                      searchPlaceholder="Search organisations..."
+                      emptyText="No organization found."
+                      allowCustom={true}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </div>
+              </div>
             </FormItem>
           )}
         />
