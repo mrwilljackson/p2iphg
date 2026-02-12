@@ -24,6 +24,18 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
+
+// Common organizations - can be fetched from API in the future
+const ORGANIZATION_OPTIONS: ComboboxOption[] = [
+  { value: "Community Centre", label: "Community Centre" },
+  { value: "Local School", label: "Local School" },
+  { value: "Sports Club", label: "Sports Club" },
+  { value: "NHS Trust", label: "NHS Trust" },
+  { value: "Charity Organization", label: "Charity Organization" },
+  { value: "University", label: "University" },
+  { value: "Private Company", label: "Private Company" },
+];
 
 export function RegistrationForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -185,19 +197,17 @@ export function RegistrationForm() {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Organization *</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select or type organization..." />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="org-1">Community Centre</SelectItem>
-                  <SelectItem value="org-2">Local School</SelectItem>
-                  <SelectItem value="org-3">Sports Club</SelectItem>
-                  <SelectItem value="org-4">Other</SelectItem>
-                </SelectContent>
-              </Select>
+              <FormControl>
+                <Combobox
+                  options={ORGANIZATION_OPTIONS}
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  placeholder="Select or type organization..."
+                  searchPlaceholder="Search organizations..."
+                  emptyText="No organization found."
+                  allowCustom={true}
+                />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
