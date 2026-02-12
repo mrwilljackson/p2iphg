@@ -266,17 +266,21 @@ export function RegistrationForm() {
           />
         </div>
 
-        {/* Email */}
+        {/* Email - Label and Input Side by Side */}
         <FormField
           control={form.control}
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Your email:</FormLabel>
-              <FormControl>
-                <Input type="email" placeholder="your.email@example.com" {...field} />
-              </FormControl>
-              <FormMessage />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+                <FormLabel className="sm:pt-2">Your email:</FormLabel>
+                <div className="space-y-2">
+                  <FormControl>
+                    <Input type="email" placeholder="your.email@example.com" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </div>
+              </div>
             </FormItem>
           )}
         />
