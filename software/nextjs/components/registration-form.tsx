@@ -41,6 +41,7 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
   const [organizations, setOrganizations] = useState<ComboboxOption[]>([]);
   const [volunteerEmails, setVolunteerEmails] = useState<string[]>([]);
   const [showVolunteerAlert, setShowVolunteerAlert] = useState(false);
+  const [showOrganizationAlert, setShowOrganizationAlert] = useState(false);
 
   const form = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationFormSchema),
@@ -71,6 +72,7 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
   // Watch the role field to show/hide conditional fields
   const selectedRole = form.watch("role") as RegistrationType;
   const attendeeSurname = form.watch("attendeeSurname");
+  const volunteerEmail = form.watch("email");
 
   // Debug: Log the selected role and field visibility
   console.log("Selected Role:", selectedRole);
@@ -81,6 +83,13 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
   useEffect(() => {
     if (selectedRole !== "Volunteer") {
       setShowVolunteerAlert(false);
+    }
+  }, [selectedRole]);
+
+  // Reset organization alert when role changes away from Group
+  useEffect(() => {
+    if (selectedRole !== "Group") {
+      setShowOrganizationAlert(false);
     }
   }, [selectedRole]);
 
@@ -240,10 +249,10 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
         />
 
         {/* Separator: Role -> Personal Details */}
-        <hr className="my-6 border-gray-200" />
+        {!showOrganizationAlert && <hr className="my-6 border-gray-200" />}
 
         {/* First Name and Last Name - Side by Side */}
-        {(isFieldVisible("attendeeName", selectedRole) || isFieldVisible("attendeeSurname", selectedRole)) && (
+        {!showOrganizationAlert && (isFieldVisible("attendeeName", selectedRole) || isFieldVisible("attendeeSurname", selectedRole)) && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* First Name */}
             {isFieldVisible("attendeeName", selectedRole) && (
@@ -282,7 +291,7 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
         )}
 
         {/* Email and Organization - Side by Side for Participant/Group, Stacked for Volunteer */}
-        {(isFieldVisible("email", selectedRole) || isFieldVisible("organizationId", selectedRole)) && (
+        {!showOrganizationAlert && (isFieldVisible("email", selectedRole) || isFieldVisible("organizationId", selectedRole)) && (
           <>
             {selectedRole === "Volunteer" ? (
               // Volunteer: Email field with label on left
@@ -367,15 +376,46 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
                       <FormItem>
                         <FormLabel>Your Organisation or Group</FormLabel>
                         <FormControl>
-                          <Combobox
-                            options={organizations}
-                            value={field.value}
-                            onValueChange={field.onChange}
-                            placeholder="Select or type organisation name..."
-                            searchPlaceholder="- choose here -"
-                            emptyText="No organization found."
-                            allowCustom={true}
-                          />
+                          {selectedRole === "Group" ? (
+                            // Group: Dropdown with "not listed" option
+                            <Select
+                              onValueChange={(value) => {
+                                if (value === "NOT_LISTED") {
+                                  setShowOrganizationAlert(true);
+                                  field.onChange("");
+                                } else {
+                                  setShowOrganizationAlert(false);
+                                  field.onChange(value);
+                                }
+                              }}
+                              value={field.value}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select your organisation" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {organizations.map((org) => (
+                                  <SelectItem key={org.value} value={org.value}>
+                                    {org.label}
+                                  </SelectItem>
+                                ))}
+                                <SelectItem value="NOT_LISTED" className="text-orange-600 font-medium">
+                                  ⚠️ My organisation isn&apos;t listed here!
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            // Participant: Combobox with custom entry
+                            <Combobox
+                              options={organizations}
+                              value={field.value}
+                              onValueChange={field.onChange}
+                              placeholder="Select or type organisation name..."
+                              searchPlaceholder="- choose here -"
+                              emptyText="No organization found."
+                              allowCustom={true}
+                            />
+                          )}
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -409,8 +449,33 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
           </div>
         )}
 
+        {/* Organization Not Listed Alert */}
+        {showOrganizationAlert && selectedRole === "Group" && (
+          <div className="bg-orange-50 border-2 border-orange-400 rounded-lg p-6 space-y-3">
+            <div className="flex items-start space-x-3">
+              <div className="text-3xl">🏢</div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-orange-900 text-lg mb-2">
+                  Organisation Not Listed
+                </h3>
+                <p className="text-orange-800 mb-3">
+                  Your organisation isn&apos;t currently registered for this event.
+                  Please speak to a <strong>Power2Inspire team member</strong> so we can add your organisation
+                  and get your group registered.
+                </p>
+                <p className="text-orange-700 text-sm">
+                  Look for someone wearing a P2I staff badge - they&apos;ll be happy to help you! 🎉
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Email Consent */}
-        {!showVolunteerAlert && (isFieldVisible("feedbackConsent", selectedRole) || isFieldVisible("nextEventConsent", selectedRole)) && (
+        {!showVolunteerAlert && !showOrganizationAlert && (isFieldVisible("feedbackConsent", selectedRole) || isFieldVisible("nextEventConsent", selectedRole)) && (
+          // For volunteers, only show if an email is selected (not empty and not NOT_LISTED)
+          selectedRole !== "Volunteer" || (volunteerEmail && volunteerEmail !== "" && volunteerEmail !== "NOT_LISTED")
+        ) && (
           <div className="space-y-3">
             <FormLabel>Please can we contact you:</FormLabel>
 
@@ -466,7 +531,7 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
           </div>
         )}
         {/* Impairment - Label and Input Side by Side */}
-        {isFieldVisible("impairment", selectedRole) && (
+        {!showOrganizationAlert && isFieldVisible("impairment", selectedRole) && (
           <FormField
             control={form.control}
             name="impairment"
@@ -498,14 +563,14 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
 
 
         {/* Separator: Impairment -> Group Details (conditional) */}
-        {(isFieldVisible("groupSize", selectedRole) ||
+        {!showOrganizationAlert && (isFieldVisible("groupSize", selectedRole) ||
           isFieldVisible("disabledStudents", selectedRole) ||
           isFieldVisible("senStudents", selectedRole)) && (
           <hr className="my-6 border-gray-200" />
         )}
 
         {/* Conditional Fields for Teacher/Coordinator */}
-        {(isFieldVisible("groupSize", selectedRole) ||
+        {!showOrganizationAlert && (isFieldVisible("groupSize", selectedRole) ||
           isFieldVisible("disabledStudents", selectedRole) ||
           isFieldVisible("senStudents", selectedRole)) && (
           <>
@@ -593,10 +658,13 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
         )}
 
         {/* Separator: Personal/Group Details -> Consent */}
-        <hr className="my-6 border-gray-200" />
+        {!showOrganizationAlert && <hr className="my-6 border-gray-200" />}
 
         {/* Photo Consent */}
-        {!showVolunteerAlert && isFieldVisible("photoConsent", selectedRole) && (
+        {!showVolunteerAlert && !showOrganizationAlert && isFieldVisible("photoConsent", selectedRole) && (
+          // For volunteers, only show if an email is selected (not empty and not NOT_LISTED)
+          selectedRole !== "Volunteer" || (volunteerEmail && volunteerEmail !== "" && volunteerEmail !== "NOT_LISTED")
+        ) && (
           <FormField
             control={form.control}
             name="photoConsent"
@@ -630,7 +698,7 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
         )}
 
         {/* Submit Button */}
-        {!showVolunteerAlert && (
+        {!showVolunteerAlert && !showOrganizationAlert && (
           <Button
             type="submit"
             className="w-full bg-lime-500 hover:bg-lime-600 active:bg-purple-600 text-white font-semibold transition-colors"
