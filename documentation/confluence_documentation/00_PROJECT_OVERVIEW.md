@@ -123,8 +123,15 @@ Build a web-based application for Power2Inspire charity events that enables:
 - Marked with "Volunteer" role
 - May have additional responsibilities
 
+### Teachers / Coordinators / Parents
+- Group Leaders from a school, university, Company or a Parent
+- Same registration process as volunteers with additions
+- Total number in their group
+- Total number of disabled participants (for P2I reporting)
+- Total number of SEN participants (for P2I reporting)
+
 ### Staff (App Operators)
-- Charity employees operating the tablet
+- P2I staff running the event
 - Manage event details
 - Trigger sync operations
 - Export CSV reports

@@ -11,6 +11,7 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
+  CommandSeparator,
 } from "@/components/ui/command";
 import {
   Popover,
@@ -60,6 +61,14 @@ export function Combobox({
   // Filter options based on search
   const filteredOptions = options.filter((option) =>
     option.label.toLowerCase().includes(searchValue.toLowerCase())
+  );
+
+  // Split options into Family Group and others
+  const familyGroupOption = filteredOptions.find((option) =>
+    option.label.toLowerCase().includes("family group")
+  );
+  const otherOptions = filteredOptions.filter((option) =>
+    !option.label.toLowerCase().includes("family group")
   );
 
   // Check if search value matches any existing option
@@ -121,23 +130,47 @@ export function Combobox({
                 <div className="py-6 text-center text-sm">{emptyText}</div>
               )}
             </CommandEmpty>
-            <CommandGroup>
-              {filteredOptions.map((option) => (
+            {familyGroupOption && (
+              <CommandGroup>
                 <CommandItem
-                  key={option.value}
-                  value={option.value}
-                  onSelect={() => handleSelect(option.value)}
+                  key={familyGroupOption.value}
+                  value={familyGroupOption.value}
+                  onSelect={() => handleSelect(familyGroupOption.value)}
                 >
                   <Check
                     className={cn(
                       "mr-2 h-4 w-4",
-                      value === option.value ? "opacity-100" : "opacity-0"
+                      value === familyGroupOption.value ? "opacity-100" : "opacity-0"
                     )}
                   />
-                  {option.label}
+                  {familyGroupOption.label}
                 </CommandItem>
-              ))}
-            </CommandGroup>
+              </CommandGroup>
+            )}
+
+            {familyGroupOption && otherOptions.length > 0 && (
+              <CommandSeparator />
+            )}
+
+            {otherOptions.length > 0 && (
+              <CommandGroup>
+                {otherOptions.map((option) => (
+                  <CommandItem
+                    key={option.value}
+                    value={option.value}
+                    onSelect={() => handleSelect(option.value)}
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        value === option.value ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    {option.label}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            )}
           </CommandList>
         </Command>
       </PopoverContent>

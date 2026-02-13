@@ -11,7 +11,7 @@
  * - Server-side data fetching
  */
 
-import { Event, Organization } from './types';
+import { Event, Organization, Volunteer } from './types';
 
 // Mock Events Data
 const MOCK_EVENTS: Event[] = [
@@ -35,6 +35,11 @@ const MOCK_EVENTS: Event[] = [
 
 // Mock Organizations Data
 const MOCK_ORGANIZATIONS: Organization[] = [
+  {
+    id: 'org_000',
+    name: 'Family Group',
+    airtableRecordId: 'recORG000',
+  },
   {
     id: 'org_001',
     name: 'NHS Trust',
@@ -64,6 +69,51 @@ const MOCK_ORGANIZATIONS: Organization[] = [
     id: 'org_006',
     name: 'University of Manchester',
     airtableRecordId: 'recORG006',
+  },
+];
+
+// Mock Volunteer Data
+// These are pre-registered volunteers with their details
+const MOCK_VOLUNTEERS: Volunteer[] = [
+  {
+    email: 'sarah.jones@gmail.com',
+    firstName: 'Sarah',
+    lastName: 'Jones',
+    photoConsent: true,
+    feedbackConsent: true,
+    nextEventConsent: true,
+  },
+  {
+    email: 'mike.thompson@hotmail.com',
+    firstName: 'Mike',
+    lastName: 'Thompson',
+    photoConsent: true,
+    feedbackConsent: false,
+    nextEventConsent: true,
+  },
+  {
+    email: 'emma.wilson@yahoo.co.uk',
+    firstName: 'Emma',
+    lastName: 'Wilson',
+    photoConsent: false,
+    feedbackConsent: true,
+    nextEventConsent: false,
+  },
+  {
+    email: 'james.brown@gmail.com',
+    firstName: 'James',
+    lastName: 'Brown',
+    photoConsent: true,
+    feedbackConsent: true,
+    nextEventConsent: true,
+  },
+  {
+    email: 'lucy.davies@outlook.com',
+    firstName: 'Lucy',
+    lastName: 'Davies',
+    photoConsent: false,
+    feedbackConsent: false,
+    nextEventConsent: true,
   },
 ];
 
@@ -123,13 +173,49 @@ export class MockDataService {
    */
   static async searchOrganizations(query: string): Promise<Organization[]> {
     await new Promise(resolve => setTimeout(resolve, 50));
-    
+
     if (!query) return MOCK_ORGANIZATIONS;
-    
+
     const lowerQuery = query.toLowerCase();
-    return MOCK_ORGANIZATIONS.filter(org => 
+    return MOCK_ORGANIZATIONS.filter(org =>
       org.name.toLowerCase().includes(lowerQuery)
     );
+  }
+
+  /**
+   * Check if an email address belongs to a registered volunteer
+   * In production, this would query the volunteer database
+   */
+  static async isRegisteredVolunteer(email: string): Promise<boolean> {
+    await new Promise(resolve => setTimeout(resolve, 50));
+    return MOCK_VOLUNTEERS.some(v => v.email.toLowerCase() === email.toLowerCase());
+  }
+
+  /**
+   * Get all registered volunteer emails
+   * Useful for admin/testing purposes
+   */
+  static async getVolunteerEmails(): Promise<string[]> {
+    await new Promise(resolve => setTimeout(resolve, 50));
+    return MOCK_VOLUNTEERS.map(v => v.email);
+  }
+
+  /**
+   * Get volunteer details by email
+   * Returns null if volunteer not found
+   */
+  static async getVolunteerByEmail(email: string): Promise<Volunteer | null> {
+    await new Promise(resolve => setTimeout(resolve, 50));
+    return MOCK_VOLUNTEERS.find(v => v.email.toLowerCase() === email.toLowerCase()) || null;
+  }
+
+  /**
+   * Get all registered volunteers
+   * Useful for admin/testing purposes
+   */
+  static async getAllVolunteers(): Promise<Volunteer[]> {
+    await new Promise(resolve => setTimeout(resolve, 50));
+    return [...MOCK_VOLUNTEERS];
   }
 }
 

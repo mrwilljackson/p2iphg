@@ -12,7 +12,7 @@ import { z } from "zod";
 
 export const eventStatusSchema = z.enum(["active", "completed", "cancelled"]);
 
-export const registrationRoleSchema = z.enum(["Attendee", "Volunteer", "Teacher / Coordinator"]);
+export const registrationRoleSchema = z.enum(["Participant", "Volunteer", "Group"]);
 
 export const syncStatusSchema = z.enum(["pending", "synced", "failed"]);
 
@@ -64,7 +64,7 @@ export const organizationSchema = z.object({
  * - Phone field REMOVED
  * - photoConsent is boolean (radio buttons)
  * - feedbackConsent and nextEventConsent are optional booleans (checkboxes)
- * - Teacher/Coordinator role requires groupSize and senStudents fields
+ * - Group role requires groupSize, disabledStudents, and senStudents fields
  */
 export const registrationFormSchema = z.object({
   eventId: z.string().min(1, "Event is required"),
@@ -97,7 +97,7 @@ export const registrationFormSchema = z.object({
   photoConsent: z.boolean(),
   feedbackConsent: z.boolean().optional(),
   nextEventConsent: z.boolean().optional(),
-  // Teacher/Coordinator specific fields
+  // Group specific fields
   groupSize: z
     .number()
     .int("Must be a whole number")
@@ -118,14 +118,14 @@ export const registrationFormSchema = z.object({
     .optional(),
 }).refine(
   (data) => {
-    // If role is Teacher/Coordinator, groupSize, disabledStudents, and senStudents are required
-    if (data.role === "Teacher / Coordinator") {
+    // If role is Group, groupSize, disabledStudents, and senStudents are required
+    if (data.role === "Group") {
       return data.groupSize !== undefined && data.disabledStudents !== undefined && data.senStudents !== undefined;
     }
     return true;
   },
   {
-    message: "Group size and SEN students are required for Teacher / Coordinator role",
+    message: "Group size, disabled students, and SEN students are required for Group role",
     path: ["groupSize"],
   }
 );

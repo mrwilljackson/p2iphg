@@ -1,7 +1,23 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { RegistrationForm } from "@/components/registration-form";
 import { EventHeader } from "@/components/event-header";
+import { AdminLoginModal } from "@/components/admin-login-modal";
+import type { RegistrationRole } from "@/lib/types";
 
 export default function TestFormPage() {
+  const [showAdminModal, setShowAdminModal] = useState(false);
+  const searchParams = useSearchParams();
+  const [preselectedRole, setPreselectedRole] = useState<RegistrationRole | undefined>();
+
+  useEffect(() => {
+    const roleParam = searchParams.get("role");
+    if (roleParam === "Participant" || roleParam === "Volunteer" || roleParam === "Group") {
+      setPreselectedRole(roleParam as RegistrationRole);
+    }
+  }, [searchParams]);
   return (
     <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100">
       {/* Event Header */}
@@ -25,14 +41,28 @@ export default function TestFormPage() {
 
         {/* Form Card */}
         <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 sm:p-8">
-          <RegistrationForm />
+          <RegistrationForm preselectedRole={preselectedRole} />
         </div>
 
         {/* Footer Note */}
         <div className="mt-6 text-center text-xs text-gray-500">
-          <p>Power2Inspire Event Registration System</p>
+          <p>
+            Power2Inspire Event Registration System |{" "}
+            <button
+              onClick={() => setShowAdminModal(true)}
+              className="text-gray-600 hover:text-gray-900 underline transition-colors"
+            >
+              Admin
+            </button>
+          </p>
         </div>
       </div>
+
+      {/* Admin Login Modal */}
+      <AdminLoginModal
+        open={showAdminModal}
+        onOpenChange={setShowAdminModal}
+      />
     </div>
   );
 }

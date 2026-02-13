@@ -9,7 +9,7 @@
 // ============================================================================
 
 export type EventStatus = "active" | "completed" | "cancelled";
-export type RegistrationRole = "Attendee" | "Volunteer" | "Teacher / Coordinator";
+export type RegistrationRole = "Participant" | "Volunteer" | "Group";
 export type SyncStatus = "pending" | "synced" | "failed";
 
 // ============================================================================
@@ -34,7 +34,7 @@ export interface Event {
 
 /**
  * Registration Entity
- * Represents an attendee or volunteer registration for an event
+ * Represents a participant, volunteer, or group leader registration for an event
  *
  * V2 Changes:
  * - eventId, email, organizationId, impairment are now REQUIRED
@@ -42,7 +42,7 @@ export interface Event {
  * - photoConsent: false = orange wristband (no photos)
  * - feedbackConsent: optional checkbox for post-event feedback
  * - nextEventConsent: optional checkbox for next event info
- * - Teacher/Coordinator role includes groupSize and senStudents
+ * - Group role includes groupSize, disabledStudents, and senStudents
  */
 export interface Registration {
   id?: string; // Local UUID (optional for new records)
@@ -52,13 +52,13 @@ export interface Registration {
   email?: string; // Email address (OPTIONAL, valid format if provided)
   organizationId?: string; // Airtable organization record ID (OPTIONAL)
   impairment?: string; // Accessibility needs (OPTIONAL, free text)
-  role: RegistrationRole; // "Attendee" | "Volunteer" | "Teacher / Coordinator" (REQUIRED)
+  role: RegistrationRole; // "Participant" | "Volunteer" | "Group" (REQUIRED)
   photoConsent: boolean; // true = yes, false = orange wristband (REQUIRED)
   feedbackConsent?: boolean; // true = yes to post-event feedback (OPTIONAL)
   nextEventConsent?: boolean; // true = yes to next event info (OPTIONAL)
-  groupSize?: number; // Number of participants in group (REQUIRED for Teacher/Coordinator)
-  disabledStudents?: number; // Number of disabled participants (REQUIRED for Teacher/Coordinator)
-  senStudents?: number; // Number of SEN/additional learning support students (REQUIRED for Teacher/Coordinator)
+  groupSize?: number; // Number of participants in group (REQUIRED for Group)
+  disabledStudents?: number; // Number of disabled participants (REQUIRED for Group)
+  senStudents?: number; // Number of SEN/additional learning support students (REQUIRED for Group)
   checkinTime?: string; // ISO 8601 timestamp (optional)
   checkoutTime?: string; // ISO 8601 timestamp (optional)
   syncStatus?: SyncStatus; // pending | synced | failed (optional, for offline mode)
@@ -82,6 +82,19 @@ export interface Organization {
   modifiedAt?: string; // ISO 8601 timestamp
 }
 
+/**
+ * Volunteer Entity
+ * Represents a pre-registered volunteer with their details
+ */
+export interface Volunteer {
+  email: string; // Volunteer email (unique identifier)
+  firstName: string; // First name
+  lastName: string; // Last name
+  photoConsent: boolean; // Photo consent preference
+  feedbackConsent: boolean; // Feedback survey consent
+  nextEventConsent: boolean; // Next event info consent
+}
+
 // ============================================================================
 // API Request/Response Types
 // ============================================================================
@@ -101,9 +114,9 @@ export interface RegistrationFormData {
   photoConsent: boolean;
   feedbackConsent?: boolean; // Optional: consent for post-event feedback
   nextEventConsent?: boolean; // Optional: consent for next event info
-  groupSize?: number; // Required for Teacher/Coordinator
-  disabledStudents?: number; // Required for Teacher/Coordinator
-  senStudents?: number; // Required for Teacher/Coordinator
+  groupSize?: number; // Required for Group
+  disabledStudents?: number; // Required for Group
+  senStudents?: number; // Required for Group
 }
 
 /**
