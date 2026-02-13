@@ -44,7 +44,7 @@ export function RegistrationForm() {
       organizationId: "",
       impairment: "",
       role: "Attendee",
-      photoConsent: false,
+      photoConsent: true,
       feedbackConsent: false,
       nextEventConsent: false,
       groupSize: undefined,
@@ -237,7 +237,7 @@ export function RegistrationForm() {
                   </FormControl>
                   <div className="space-y-1 leading-none flex-1">
                     <span className="font-normal text-sm">
-                      To ask for your honest feedback after todays event? (4 minute online survey)
+                      To ask for your honest feedback after todays event?<br /> (4 minute online survey)
                     </span>
                   </div>
                 </label>
@@ -288,7 +288,32 @@ export function RegistrationForm() {
           )}
         />
 
-
+        {/* Organization - Label and Input Side by Side */}
+        <FormField
+          control={form.control}
+          name="organizationId"
+          render={({ field }) => (
+            <FormItem>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+                <FormLabel className="sm:pt-2">Your organisation</FormLabel>
+                <div className="space-y-2">
+                  <FormControl>
+                    <Combobox
+                      options={organizations}
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      placeholder="Select or type organisation name..."
+                      searchPlaceholder="Search organisations..."
+                      emptyText="No organization found."
+                      allowCustom={true}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </div>
+              </div>
+            </FormItem>
+          )}
+        />
 
         {/* Impairment - Label and Input Side by Side */}
         <FormField
@@ -318,32 +343,7 @@ export function RegistrationForm() {
           )}
         />
 
-        {/* Organization - Label and Input Side by Side */}
-        <FormField
-          control={form.control}
-          name="organizationId"
-          render={({ field }) => (
-            <FormItem>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
-                <FormLabel className="sm:pt-2">Your organisation</FormLabel>
-                <div className="space-y-2">
-                  <FormControl>
-                    <Combobox
-                      options={organizations}
-                      value={field.value}
-                      onValueChange={field.onChange}
-                      placeholder="Select or type organisation name..."
-                      searchPlaceholder="Search organisations..."
-                      emptyText="No organization found."
-                      allowCustom={true}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </div>
-              </div>
-            </FormItem>
-          )}
-        />
+
 
         {/* Separator: Impairment -> Group Details (conditional) */}
         {selectedRole === "Teacher / Coordinator" && (
