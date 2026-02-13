@@ -1,8 +1,8 @@
 # NextJS Architecture - Power2Inspire Event CRM Web App
 
-**Document Version:** 1.0  
-**Date:** 2026-02-11  
-**Status:** Architecture Design  
+**Document Version:** 1.1
+**Date:** 2026-02-13
+**Status:** Implementation In Progress
 **Replaces:** Flutter offline-first mobile app approach
 
 ---
@@ -26,19 +26,26 @@ Following client review, the Power2Inspire Event CRM App will be built as a **Ne
 ### 1.1 Frontend
 | Technology | Version | Purpose |
 |------------|---------|---------|
-| **NextJS** | 14.x (App Router) | React framework with server-side rendering |
-| **React** | 18.x | UI component library |
+| **NextJS** | 16.1.6 (App Router + Turbopack) | React framework with server-side rendering |
+| **React** | 19.2.3 | UI component library |
 | **TypeScript** | 5.x | Type safety and developer experience |
-| **Tailwind CSS** | 3.x | Utility-first CSS framework |
+| **Tailwind CSS** | 4.x | Utility-first CSS framework |
 | **Shadcn/ui** | Latest | Accessible, customizable component library |
 | **React Hook Form** | 7.x | Form state management and validation |
 | **Zod** | 3.x | Schema validation (client + server) |
+| **Lucide React** | Latest | Icon library (Calendar, MapPin icons) |
+| **next/font** | Built-in | Google Fonts integration (Roboto) |
+| **cmdk** | Latest | Command palette/search functionality |
 
 ### 1.2 Backend (Serverless)
 | Technology | Version | Purpose |
 |------------|---------|---------|
-| **NextJS API Routes** | 14.x | Serverless functions on Vercel |
-| **Airtable.js** | 0.12.x | Official Airtable SDK |
+| **NextJS API Routes** | 16.x | Serverless functions on Vercel |
+| **Neon PostgreSQL** | Latest | Serverless PostgreSQL database (EU West London) |
+| **Drizzle ORM** | Latest | Type-safe database queries and migrations |
+| **Drizzle Kit** | Latest | Database migration tool |
+| **@neondatabase/serverless** | Latest | Neon serverless driver |
+| **Airtable.js** | 0.12.x | Official Airtable SDK (for sync) |
 | **CSV Writer** | npm package | CSV export generation |
 
 ### 1.3 Hosting & Deployment
@@ -46,7 +53,8 @@ Following client review, the Power2Inspire Event CRM App will be built as a **Ne
 |---------|------|---------|
 | **Vercel** | Free (Hobby) | Hosting, CDN, serverless functions |
 | **GitHub** | Free | Version control and CI/CD trigger |
-| **Airtable** | Paid | Backend database |
+| **Neon** | Free (512MB) | PostgreSQL database (EU West London, GDPR compliant) |
+| **Airtable** | Paid | Long-term data storage and sync target |
 
 ---
 
@@ -519,7 +527,198 @@ Maps TypeScript types to Airtable field names (from V2 documentation):
 
 ---
 
-## 13. Development Timeline
+## 13. Implementation Status (As of 2026-02-13)
+
+### 13.1 Completed Features ✅
+
+#### **Phase 1: Setup & Infrastructure (COMPLETE)**
+- ✅ NextJS 16.1.6 project initialized with App Router and Turbopack
+- ✅ TypeScript 5.x configured
+- ✅ Tailwind CSS 4.x installed and configured
+- ✅ Shadcn/ui components installed (button, input, label, select, radio-group, form, checkbox, command, popover, dialog)
+- ✅ React Hook Form 7.x + Zod 3.x validation setup
+- ✅ Vercel deployment configured and live at: `https://p2iphg-ewodz4p4i-mrwilljackson-com.vercel.app`
+- ✅ GitHub repository connected for CI/CD
+- ✅ Environment variables configured (.env.local)
+- ✅ Neon PostgreSQL database setup (EU West London region, GDPR compliant)
+- ✅ Drizzle ORM configured with schema and migrations
+- ✅ Database schema created (events, organizations, registrations tables)
+
+#### **Phase 2: Registration Form (COMPLETE)**
+- ✅ Generic registration form component built
+- ✅ Three registration types implemented:
+  - Attendee
+  - Volunteer
+  - Teacher / Coordinator (with conditional fields)
+- ✅ All V2 required fields implemented:
+  - Event (hidden field, pre-populated from header)
+  - First name and last name (side-by-side layout)
+  - Email (optional, horizontal layout)
+  - Organization (optional, autocomplete combobox, horizontal layout)
+  - Impairment (optional, dropdown select with 3 options, horizontal layout)
+  - Registration type (3 radio button options)
+  - Photo consent (2 radio button options, defaults to "Yes")
+  - Contact consent (2 independent checkboxes)
+- ✅ Conditional fields for Teacher/Coordinator:
+  - Group size (required number input)
+  - Disabled students count (required number input)
+  - SEN students count (required number input)
+- ✅ Client-side validation with Zod schema
+- ✅ Form state management with React Hook Form
+- ✅ Mock data service for testing (pre-populated event and organizations)
+
+#### **UI/UX Enhancements (COMPLETE)**
+- ✅ Event header component with P2I logo and event details
+- ✅ Roboto font applied to headings (matches P2I website)
+- ✅ Responsive layout (mobile-first, tablet-optimized)
+- ✅ Fully clickable selection boxes using native `<label>` wrapper pattern:
+  - Registration type boxes (3 options)
+  - Photo consent boxes (2 options)
+  - Contact consent boxes (2 checkboxes)
+- ✅ Hover effects on all interactive elements
+- ✅ Lime green submit button (matches P2I logo) with purple click effect
+- ✅ Horizontal field layouts for email, organization, and impairment
+- ✅ Visual separators (horizontal rules) between form sections
+- ✅ Gradient background for modern look
+- ✅ Centered layout with max-width for readability
+
+#### **Field Labels & Text (COMPLETE)**
+All field labels updated to match client requirements:
+- ✅ "Your first name: *"
+- ✅ "Your last name: *"
+- ✅ "Your email:"
+- ✅ "Your organisation:"
+- ✅ "Do you consider yourself to be a disabled person, or to have a long‑term physical or mental health condition or impairment?"
+- ✅ "How many participants are you responsible for in your group *"
+- ✅ "How many of your participants are disabled people, or to have a long‑term physical or mental health condition or impairment? *"
+- ✅ "Do you have any special educational needs (SEN) or require additional learning support? *"
+- ✅ Photo consent "No" option: "No, I will wear an orange wristband to denote I do not wish photos of me to be used in this way"
+- ✅ Submit button: "Click here to register!"
+
+### 13.2 Database Architecture (IMPLEMENTED)
+
+#### **Three-Phase Workflow:**
+1. **Pre-Event:** Admin fetches data from Airtable → Stores in Neon database
+2. **During Event:** Registrations stored in Neon (fast, no Airtable API calls)
+3. **Post-Event:** Admin syncs all registrations to Airtable → Wipes Neon database
+
+#### **Database Schema (Neon PostgreSQL):**
+
+**Events Table:**
+```sql
+CREATE TABLE events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  date DATE NOT NULL,
+  location TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+**Organizations Table:**
+```sql
+CREATE TABLE organizations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL UNIQUE,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+**Registrations Table:**
+```sql
+CREATE TABLE registrations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  event_id UUID NOT NULL REFERENCES events(id),
+  attendee_name TEXT NOT NULL,
+  attendee_surname TEXT NOT NULL,
+  email TEXT,
+  organization_id UUID REFERENCES organizations(id),
+  organization_name TEXT,
+  impairment TEXT,
+  role TEXT NOT NULL,
+  photo_consent BOOLEAN NOT NULL,
+  feedback_consent BOOLEAN,
+  next_event_consent BOOLEAN,
+  group_size TEXT,
+  disabled_students TEXT,
+  sen_students TEXT,
+  created_at TIMESTAMP DEFAULT NOW(),
+  synced_to_airtable BOOLEAN DEFAULT FALSE,
+  airtable_record_id TEXT
+);
+```
+
+### 13.3 In Progress / Pending 🚧
+
+#### **API Routes (NOT STARTED)**
+- [ ] POST /api/admin/seed - Seed database with mock data
+- [ ] GET /api/events/current - Get current active event
+- [ ] GET /api/organizations - Get all organizations
+- [ ] POST /api/registrations - Submit registration to Neon database
+- [ ] POST /api/admin/fetch-airtable - Fetch data from Airtable to Neon
+- [ ] POST /api/admin/sync-airtable - Sync registrations from Neon to Airtable
+- [ ] POST /api/admin/wipe-database - Clear all data from Neon
+
+#### **Admin Dashboard (NOT STARTED)**
+- [ ] Pre-event: "Fetch from Airtable" button
+- [ ] During event: Live registration count display
+- [ ] Post-event: "Sync to Airtable" button
+- [ ] Post-event: "Wipe Database" button
+- [ ] Sync status indicators
+
+#### **Attendance Tracking (NOT STARTED)**
+- [ ] Attendance list screen
+- [ ] Check-in functionality
+- [ ] Check-out functionality
+- [ ] Real-time attendance count
+
+#### **Airtable Integration (NOT STARTED)**
+- [ ] Airtable API key configuration
+- [ ] Airtable base ID configuration
+- [ ] Fetch service (Airtable → Neon)
+- [ ] Sync service (Neon → Airtable)
+- [ ] Field mapping configuration
+
+#### **Testing & Polish (NOT STARTED)**
+- [ ] Cross-browser testing
+- [ ] Accessibility audit
+- [ ] Performance optimization
+- [ ] User acceptance testing
+- [ ] Production deployment
+
+### 13.4 Technical Decisions Made
+
+#### **Database Selection: Neon PostgreSQL**
+- **Why:** Auto-wakes in 1-2 seconds after inactivity (acceptable for event start)
+- **Region:** EU West (London) for GDPR compliance
+- **Tier:** Free (512MB storage, sufficient as data is wiped after each event)
+- **Rejected alternatives:**
+  - Supabase (pauses after 7 days, requires manual reactivation)
+  - PlanetScale (good option, but Neon chosen for EU region)
+  - Turso (good option, but Neon chosen for PostgreSQL familiarity)
+
+#### **UI Pattern: Native Label Wrappers**
+- **Why:** Entire selection boxes are clickable using native HTML `<label>` behavior
+- **Implementation:** Wrap radio buttons and checkboxes in `<label>` elements
+- **Benefits:**
+  - No custom JavaScript needed
+  - Accessible by default
+  - Works reliably across all browsers
+  - Larger click targets for better UX
+
+#### **Photo Consent Default: Opt-Out**
+- **Decision:** Photo consent defaults to "Yes" (opt-out model)
+- **Rationale:** Simplifies registration flow, users can still decline
+- **Note:** Ensure this aligns with privacy policy and legal requirements
+
+#### **Form Layout: Horizontal Fields**
+- **Decision:** Email, organization, and impairment fields use horizontal layout (label left, input right)
+- **Rationale:** Better use of screen space on tablets, cleaner visual hierarchy
+- **Responsive:** Stacks vertically on mobile devices
+
+---
+
+## 14. Development Timeline
 
 ### Phase 1: Setup (1-2 days)
 - [ ] Initialize NextJS project
