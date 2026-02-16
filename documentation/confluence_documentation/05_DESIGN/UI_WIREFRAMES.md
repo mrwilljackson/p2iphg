@@ -1,24 +1,28 @@
-# UI Wireframes V2 - Based on Existing Form
+# UI Wireframes V3 - NextJS Web Application
 
-**Version:** 2.0  
-**Date:** 2026-02-11  
-**Status:** Updated based on existing Airtable form feedback  
-**Previous Version:** [UI_WIREFRAMES.md](./UI_WIREFRAMES.md)
+**Version:** 3.0
+**Date:** 2026-02-16
+**Status:** Current Implementation (NextJS Web App)
+**Previous Version:** V2.0 (Flutter Mobile App - Deprecated)
 
 ---
 
 ## Overview
 
-This version of the wireframes is based on the **existing PowerHouseGames volunteer signup form** with approved enhancements. The design maintains the simplicity of the current form while adding essential fields (Organization, Impairment) and supporting both Attendees and Volunteers.
+This version documents the **current NextJS web application** for PowerHouseGames event registration. The application is a simplified web-based form hosted on Vercel with a Neon PostgreSQL database, replacing the previous Flutter mobile app architecture.
 
-### Key Changes from V1
-- ✅ Event selection via dropdown (pre-selected to current event)
-- ✅ Radio buttons for consents (not checkboxes)
-- ✅ "Orange wristband" language preserved
-- ✅ Organization field added (required)
-- ✅ "Do you have an impairment" field added (renamed from Accessibility Needs)
-- ❌ Phone number removed (not needed)
-- ✅ Same form for Attendee/Volunteer with conditional fields
+### Key Changes from V2
+- ✅ **Three registration roles:** Participant, Volunteer, Group (was: Attendee, Volunteer)
+- ✅ **Web-based form:** NextJS application instead of Flutter mobile app
+- ✅ **Role selection:** Radio buttons on single page (not separate screen)
+- ✅ **Dynamic fields:** Conditional fields based on role and organization type
+- ✅ **Auto-population:** Contact details pre-fill for Group and Volunteer roles
+- ✅ **Alert systems:** Volunteer not listed, Organization not listed
+- ✅ **Group-specific fields:** Group size, disabled students, SEN students
+- ✅ **Group leader participation:** Tracks if group leader participates in games
+- ✅ **Consent split:** Feedback consent and next event consent (separate from marketing)
+- ❌ **Phone field removed:** Not collected in V3
+- ❌ **Check-in/Check-out:** Not yet implemented (future feature)
 
 ---
 
@@ -26,527 +30,545 @@ This version of the wireframes is based on the **existing PowerHouseGames volunt
 
 ```mermaid
 graph TD
-    A[Home Screen] --> B[Event Info Screen]
-    B --> C[Registration Type Screen]
-    C --> D[Registration Form]
-    D --> E[Consent Screen]
-    E --> F[Confirmation Screen]
-    
-    A --> G[Attendance List]
-    A --> H[Admin Menu]
-    
-    H --> I[Sync Data]
-    H --> J[Export CSV]
-    H --> K[Settings]
-    
-    style A fill:#4CAF50
-    style F fill:#4CAF50
-    style C fill:#2196F3
-    style D fill:#2196F3
-    style E fill:#2196F3
+    A[Landing Page] --> B[Registration Form]
+    B --> C{Select Role}
+    C -->|Participant| D[Participant Fields]
+    C -->|Volunteer| E[Volunteer Fields]
+    C -->|Group| F[Group Fields]
+
+    E -->|Email Not Listed| G[Volunteer Alert]
+    F -->|Org Not Listed| H[Organization Alert]
+
+    G -->|Switch| D
+    G -->|Find P2I Team| I[Manual Registration]
+    H -->|Find P2I Team| I
+
+    D --> J[Submit Form]
+    E --> J
+    F --> J
+
+    J --> K[Success Confirmation]
+
+    L[Admin Dashboard] --> M[Event Admin]
+    L --> N[P2I Admin]
+
+    M --> O[Register Organization]
+    M --> P[Register Volunteer]
+
+    style A fill:#84cc16
+    style K fill:#84cc16
+    style C fill:#3b82f6
+    style D fill:#3b82f6
+    style E fill:#84cc16
+    style F fill:#a855f7
+    style G fill:#f97316
+    style H fill:#f97316
 ```
 
 ---
 
-## Screen Designs
+## Application Structure
 
-### 1. Home Screen
+### Current Implementation (V3)
 
-```
-┌─────────────────────────────────────┐
-│  Power2Inspire Event CRM            │
-│                                     │
-│  ┌───────────────────────────────┐ │
-│  │                               │ │
-│  │      [Event Icon]             │ │
-│  │                               │ │
-│  │   Current Event:              │ │
-│  │   PowerHouseGames 2026        │ │
-│  │   Date: 15 March 2026         │ │
-│  │                               │ │
-│  └───────────────────────────────┘ │
-│                                     │
-│  ┌─────────────────────────────┐   │
-│  │   📝 NEW REGISTRATION       │   │
-│  └─────────────────────────────┘   │
-│                                     │
-│  ┌─────────────────────────────┐   │
-│  │   ✓ ATTENDANCE LIST         │   │
-│  └─────────────────────────────┘   │
-│                                     │
-│  ┌─────────────────────────────┐   │
-│  │   ⚙️ ADMIN                  │   │
-│  └─────────────────────────────┘   │
-│                                     │
-└─────────────────────────────────────┘
-```
+The application is a **single-page web form** with dynamic field visibility based on role selection. There are no separate screens for role selection or consents - everything is on one scrollable form.
 
-**Elements:**
-- Event info card (read-only, shows current event)
-- Large touch-friendly buttons (72x72 dp minimum)
-- Clear visual hierarchy
+**URL Structure:**
+- Public Form: `/test-form` or `/test-form?role=Participant|Volunteer|Group`
+- Admin Dashboard: `/admin` (PIN: 1234 for Event Admin, 9876 for P2I Admin)
+- Event Admin: `/admin/event`
+- P2I Admin: `/admin/p2i`
+- Register Organization: `/admin/event/register-organization`
+- Register Volunteer: `/admin/event/register-volunteer`
 
-**Actions:**
-- Tap "NEW REGISTRATION" → Go to Registration Type Screen
-- Tap "ATTENDANCE LIST" → Go to Attendance List Screen
-- Tap "ADMIN" → Go to Admin Menu Screen
+**Key Features:**
+- URL parameter-based role preselection
+- Dynamic event loading from database
+- Conditional field visibility
+- Auto-population of contact details
+- Alert systems for "not listed" scenarios
+- Two-level admin authentication
 
 ---
 
-### 2. Event Info Screen
+## Registration Form Wireframes
+
+### Main Registration Form (Single Page)
+
+The registration form is a **single-page scrollable form** with dynamic fields based on role selection. All fields, consents, and submit button are on one page.
 
 ```
-┌─────────────────────────────────────┐
-│  ← Back          Event Info         │
-│                                     │
-│  Event: PowerHouseGames 2026        │
-│  Date: 15 March 2026                │
-│  Location: Community Centre         │
-│  Time: 10:00 - 16:00                │
-│                                     │
-│  Description:                       │
-│  Annual gaming event for disabled   │
-│  and non-disabled participants.     │
-│                                     │
-│  Expected Attendees: 150            │
-│  Volunteers Needed: 25              │
-│                                     │
-│  ┌─────────────────────────────┐   │
-│  │   CLOSE                     │   │
-│  └─────────────────────────────┘   │
-│                                     │
-└─────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│  PowerHouseGames Registration                           │
+│  Leicester 2026 - 15 March 2026                         │
+│                                                         │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │ ROLE SELECTION (Radio Buttons)                  │   │
+│  │                                                 │   │
+│  │ ○ Participant - I'm playing in the games       │   │
+│  │ ○ Volunteer - I'm helping at the event         │   │
+│  │ ○ Group - I'm bringing a group                 │   │
+│  └─────────────────────────────────────────────────┘   │
+│                                                         │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │ DYNAMIC FIELDS (Based on Role)                  │   │
+│  │                                                 │   │
+│  │ [Organization/Email fields - side by side]     │   │
+│  │ [First Name] [Last Name] - side by side        │   │
+│  │                                                 │   │
+│  │ [Conditional: Group Leader Participation]      │   │
+│  │ [Conditional: Instructional Note]              │   │
+│  │                                                 │   │
+│  │ Impairment Question: [Dropdown]                │   │
+│  │                                                 │   │
+│  │ [Conditional: Group Size, Disabled, SEN]       │   │
+│  │                                                 │   │
+│  │ ☐ Feedback consent (optional)                  │   │
+│  │ ☐ Next event consent (optional)                │   │
+│  │                                                 │   │
+│  │ Photo Consent: ○ Yes ○ No                      │   │
+│  │                                                 │   │
+│  │ [SUBMIT REGISTRATION]                          │   │
+│  └─────────────────────────────────────────────────┘   │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
 ```
-
-**Elements:**
-- Back button (top left)
-- Event details (read-only)
-- Close button
-
-**Actions:**
-- Tap "← Back" or "CLOSE" → Return to Home Screen
 
 ---
 
-### 3. Registration Type Screen
+### Participant Role Form
 
 ```
-┌─────────────────────────────────────┐
-│  ← Back      Registration Type      │
-│                                     │
-│  Please select registration type:  │
-│                                     │
-│  ┌─────────────────────────────┐   │
-│  │                             │   │
-│  │   👤 ATTENDEE               │   │
-│  │                             │   │
-│  │   Participating in event    │   │
-│  │                             │   │
-│  └─────────────────────────────┘   │
-│                                     │
-│  ┌─────────────────────────────┐   │
-│  │                             │   │
-│  │   🙋 VOLUNTEER              │   │
-│  │                             │   │
-│  │   Helping run the event     │   │
-│  │                             │   │
-│  └─────────────────────────────┘   │
-│                                     │
-└─────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│  ● Participant ○ Volunteer ○ Group                      │
+│                                                         │
+│  Your Group Name (optional)    Your email (optional)   │
+│  ┌──────────────────────┐     ┌──────────────────────┐ │
+│  │ Select or type... ▼  │     │ your.email@...       │ │
+│  └──────────────────────┘     └──────────────────────┘ │
+│                                                         │
+│  Your first name: *            Your last name: *       │
+│  ┌──────────────────────┐     ┌──────────────────────┐ │
+│  │ Enter first name     │     │ Enter last name      │ │
+│  └──────────────────────┘     └──────────────────────┘ │
+│                                                         │
+│  Do you consider yourself to be a disabled person...   │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │ Select...                                     ▼  │  │
+│  └──────────────────────────────────────────────────┘  │
+│                                                         │
+│  ☐ I consent to being contacted for post-event feedback│
+│  ☐ I would like to receive information about future... │
+│                                                         │
+│  Photo Consent                                          │
+│  ● I consent to photos being taken                     │
+│  ○ I do not consent to photos being taken              │
+│                                                         │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │         SUBMIT REGISTRATION                     │   │
+│  └─────────────────────────────────────────────────┘   │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
 ```
 
-**Elements:**
-- Back button
-- Two large cards for selection
-- Clear labels and descriptions
-
-**Actions:**
-- Tap "ATTENDEE" → Go to Registration Form (Attendee mode)
-- Tap "VOLUNTEER" → Go to Registration Form (Volunteer mode)
-- Tap "← Back" → Return to Home Screen
-
----
-
-### 4. Registration Form Screen
-
-```
-┌─────────────────────────────────────┐
-│  ← Back      Registration Form      │
-│                                     │
-│  Event *                            │
-│  ┌─────────────────────────────┐   │
-│  │ PowerHouseGames 2026    ▼   │   │
-│  └─────────────────────────────┘   │
-│                                     │
-│  First Name *                       │
-│  ┌─────────────────────────────┐   │
-│  │ Enter first name            │   │
-│  └─────────────────────────────┘   │
-│                                     │
-│  Last Name *                        │
-│  ┌─────────────────────────────┐   │
-│  │ Enter last name             │   │
-│  └─────────────────────────────┘   │
-│                                     │
-│  Email *                            │
-│  ┌─────────────────────────────┐   │
-│  │ your.email@example.com      │   │
-│  └─────────────────────────────┘   │
-│                                     │
-│  Organization *                     │
-│  ┌─────────────────────────────┐   │
-│  │ Select or type...       ▼   │   │
-│  └─────────────────────────────┘   │
-│                                     │
-│  Do you have an impairment *        │
-│  ┌─────────────────────────────┐   │
-│  │ e.g., wheelchair user       │   │
-│  └─────────────────────────────┘   │
-│                                     │
-│  [Conditional fields here]          │
-│                                     │
-│  ┌─────────────────────────────┐   │
-│  │   NEXT                      │   │
-│  └─────────────────────────────┘   │
-│                                     │
-└─────────────────────────────────────┘
-```
-
-**Elements:**
-- Event dropdown (pre-selected to current event)
-- First Name text input (required)
-- Last Name text input (required)
-- Email input (required)
-- Organization dropdown/autocomplete (required)
-- Impairment text input (required)
-- Conditional fields based on Attendee/Volunteer type
-- Next button (validates before proceeding)
-
-**Validation:**
-- All fields marked with * are required
-- Email must be valid format
-- Show inline error messages
-
-**Actions:**
-- Tap "NEXT" → Validate, then go to Consent Screen
-- Tap "← Back" → Return to Registration Type Screen
-
----
-
-### 5. Consent Screen
-
-```
-┌─────────────────────────────────────┐
-│  ← Back          Consents           │
-│                                     │
-│  Consent to photography *           │
-│                                     │
-│  ○ Yes, I consent to the use of    │
-│    photographs as specified         │
-│                                     │
-│  ○ No, I will wear an orange       │
-│    wristband to denote I do not    │
-│    wish photos of me to be used    │
-│    in this way                      │
-│                                     │
-│  ─────────────────────────────────  │
-│                                     │
-│  I would like to receive emails    │
-│  about Power2Inspire's work *       │
-│                                     │
-│  ○ Yes, I would like to hear from  │
-│    Power2Inspire                    │
-│                                     │
-│  ○ No, please don't add me to the  │
-│    mailing list                     │
-│                                     │
-│  ─────────────────────────────────  │
-│                                     │
-│  ┌─────────────────────────────┐   │
-│  │   SUBMIT                    │   │
-│  └─────────────────────────────┘   │
-│                                     │
-└─────────────────────────────────────┘
-```
-
-**Elements:**
+**Key Features:**
+- Organization field is optional combobox (can select or type custom)
+- Email is optional text input
+- Name fields are required
+- Impairment dropdown is optional
+- Two optional consent checkboxes
 - Photo consent radio buttons (required)
-  - Option 1: Yes with consent text
-  - Option 2: No with orange wristband text
-- Marketing consent radio buttons (required)
-  - Option 1: Yes
-  - Option 2: No
-- Submit button
-
-**Validation:**
-- Both consent questions must be answered
-- Show error if user tries to submit without selecting both
-
-**Actions:**
-- Tap "SUBMIT" → Validate, save to database, go to Confirmation Screen
-- Tap "← Back" → Return to Registration Form Screen
+- Blue color scheme for participant elements
 
 ---
 
-### 6. Confirmation Screen
+### Volunteer Role Form
 
 ```
-┌─────────────────────────────────────┐
-│         Registration Complete       │
-│                                     │
-│  ┌─────────────────────────────┐   │
-│  │                             │   │
-│  │         ✓                   │   │
-│  │                             │   │
-│  │   Thank you for             │   │
-│  │   registering!              │   │
-│  │                             │   │
-│  │   Name: John Smith          │   │
-│  │   Email: john@example.com   │   │
-│  │   Type: Volunteer           │   │
-│  │                             │   │
-│  └─────────────────────────────┘   │
-│                                     │
-│  ┌─────────────────────────────┐   │
-│  │   DONE                      │   │
-│  └─────────────────────────────┘   │
-│                                     │
-│  ┌─────────────────────────────┐   │
-│  │   REGISTER ANOTHER          │   │
-│  └─────────────────────────────┘   │
-│                                     │
-└─────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│  ○ Participant ● Volunteer ○ Group                      │
+│                                                         │
+│  Your first name: *            Your last name: *       │
+│  ┌──────────────────────┐     ┌──────────────────────┐ │
+│  │ John (auto-filled)   │     │ Smith (auto-filled)  │ │
+│  └──────────────────────┘     └──────────────────────┘ │
+│                                                         │
+│  Your email:                                            │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │ john.smith@example.com                        ▼  │  │
+│  │ jane.doe@example.com                             │  │
+│  │ ⚠️ My email isn't listed here!                   │  │
+│  └──────────────────────────────────────────────────┘  │
+│                                                         │
+│  Do you consider yourself to be a disabled person...   │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │ Select...                                     ▼  │  │
+│  └──────────────────────────────────────────────────┘  │
+│                                                         │
+│  ☐ I consent to being contacted for post-event feedback│
+│  ☐ I would like to receive information about future... │
+│                                                         │
+│  Photo Consent                                          │
+│  ● I consent to photos being taken                     │
+│  ○ I do not consent to photos being taken              │
+│                                                         │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │         SUBMIT REGISTRATION                     │   │
+│  └─────────────────────────────────────────────────┘   │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Key Features:**
+- Email dropdown with pre-registered volunteers + "not listed" option
+- Name fields auto-populate when email is selected (display only)
+- Selecting email auto-fills first and last name
+- Impairment, consents only visible when valid email selected
+- Lime green color scheme for volunteer elements
+
+**Special Behavior - Email Not Listed:**
+When volunteer selects "⚠️ My email isn't listed here!", an alert appears:
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  ┌─────────────────────────────────────────────────┐   │
+│  │ 👋 OK - first can we check if you are going to │   │
+│  │    join in with the Games as a player?         │   │
+│  │                                                 │   │
+│  │ ┌─────────────────────────────────────────────┐│   │
+│  ││ 🎯 If you are playing in the Games          ││   │
+│  ││                                             ││   │
+│  ││ [🎯 Switch to Participant Registration]    ││   │
+│  │└─────────────────────────────────────────────┘│   │
+│  │                                                 │   │
+│  │ ┌─────────────────────────────────────────────┐│   │
+│  ││ 🙋 If you are not taking part               ││   │
+│  ││                                             ││   │
+│  ││ Please find a P2I team member to add you   ││   │
+│  ││ to the volunteer system                     ││   │
+│  │└─────────────────────────────────────────────┘│   │
+│  └─────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────┘
+```
+
+---
+
+### Group Role Form
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  ○ Participant ○ Volunteer ● Group                      │
+│                                                         │
+│  Your Organisation or Group Name: *                     │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │ Glenfield SEN School                          ▼  │  │
+│  │ Next PLC                                         │  │
+│  │ Family Group                                     │  │
+│  │ ⚠️ My organisation isn't listed here!            │  │
+│  └──────────────────────────────────────────────────┘  │
+│                                                         │
+│  Your email (optional)                                  │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │ contact@glenfield.sch.uk (auto-filled)           │  │
+│  └──────────────────────────────────────────────────┘  │
+│                                                         │
+│  Your first name: *            Your last name: *       │
+│  ┌──────────────────────┐     ┌──────────────────────┐ │
+│  │ Sarah (auto-filled)  │     │ Johnson (auto-filled)│ │
+│  └──────────────────────┘     └──────────────────────┘ │
+│                                                         │
+│  ℹ️ Please check your details are correct - sometimes  │
+│     other staff attend on behalf of the original...    │
+│                                                         │
+│  Will you be participating in the games?                │
+│  ● I will be joining in the games as a participant     │
+│  ○ I will not be taking part in the games              │
+│                                                         │
+│  Do you consider yourself to be a disabled person...   │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │ Select...                                     ▼  │  │
+│  └──────────────────────────────────────────────────┘  │
+│                                                         │
+│  How many participants are you responsible for? *       │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │ e.g., 25                                         │  │
+│  └──────────────────────────────────────────────────┘  │
+│                                                         │
+│  How many of your participants are disabled people? *  │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │ e.g., 5                                          │  │
+│  └──────────────────────────────────────────────────┘  │
+│                                                         │
+│  How many of your participants have SEN? *              │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │ e.g., 3                                          │  │
+│  └──────────────────────────────────────────────────┘  │
+│                                                         │
+│  ☐ I consent to being contacted for post-event feedback│
+│  ☐ I would like to receive information about future... │
+│                                                         │
+│  Photo Consent                                          │
+│  ● I consent to photos being taken                     │
+│  ○ I do not consent to photos being taken              │
+│                                                         │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │         SUBMIT REGISTRATION                     │   │
+│  └─────────────────────────────────────────────────┘   │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Key Features:**
+- Organization dropdown (required)
+- Email, first name, last name auto-populate from organization contact details
+- Instructional note appears for disability organizations (not Family Group)
+- Group leader participation radio buttons (required)
+- Group-specific fields (size, disabled, SEN) only for disability/family groups
+- Purple color scheme for group elements
+
+**Special Behavior - Organization Not Listed:**
+When group leader selects "⚠️ My organisation isn't listed here!", an alert appears:
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  ┌─────────────────────────────────────────────────┐   │
+│  │ 🏢 Your organisation isn't currently registered │   │
+│  │    for this event                               │   │
+│  │                                                 │   │
+│  │ Please speak to a P2I team member to add your  │   │
+│  │ organisation to the system. Look for staff     │   │
+│  │ wearing a P2I badge.                           │   │
+│  └─────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────┘
+```
+
+---
+
+### Success Confirmation Screen
+
+```
+┌─────────────────────────────────────────────────────────┐
+│         ✅ Registration Successful!                     │
+│                                                         │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │                                                 │   │
+│  │         ✓                                       │   │
+│  │                                                 │   │
+│  │   Thank you for registering!                   │   │
+│  │                                                 │   │
+│  │   Name: John Smith                             │   │
+│  │   Role: Participant                            │   │
+│  │   Event: PowerHouseGames Leicester 2026        │   │
+│  │                                                 │   │
+│  │   See you at the event!                        │   │
+│  │                                                 │   │
+│  └─────────────────────────────────────────────────┘   │
+│                                                         │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │         REGISTER ANOTHER PERSON                 │   │
+│  └─────────────────────────────────────────────────┘   │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
 ```
 
 **Elements:**
 - Success icon (large checkmark)
 - Confirmation message
-- Summary of registration (name, email, type)
-- Two action buttons
+- Summary of registration (name, role, event)
+- Button to register another person
 
 **Actions:**
-- Tap "DONE" → Return to Home Screen
-- Tap "REGISTER ANOTHER" → Return to Registration Type Screen
-
----
-
-### 7. Attendance List Screen
-
-```
-┌─────────────────────────────────────┐
-│  ← Back      Attendance List        │
-│                                     │
-│  Search: ┌──────────────────────┐   │
-│          │ 🔍 Search name...    │   │
-│          └──────────────────────┘   │
-│                                     │
-│  Filter: [All ▼] [Attendees] [Vols]│
-│                                     │
-│  ┌─────────────────────────────┐   │
-│  │ ✓ John Smith                │   │
-│  │   Volunteer | Checked In    │   │
-│  │   [CHECK OUT]               │   │
-│  └─────────────────────────────┘   │
-│                                     │
-│  ┌─────────────────────────────┐   │
-│  │   Jane Doe                  │   │
-│  │   Attendee | Not Checked In │   │
-│  │   [CHECK IN]                │   │
-│  └─────────────────────────────┘   │
-│                                     │
-│  ┌─────────────────────────────┐   │
-│  │ ✓ Bob Wilson                │   │
-│  │   Attendee | Checked In     │   │
-│  │   [CHECK OUT]               │   │
-│  └─────────────────────────────┘   │
-│                                     │
-│  Total: 45 | Checked In: 32         │
-│                                     │
-└─────────────────────────────────────┘
-```
-
-**Elements:**
-- Back button
-- Search box
-- Filter buttons (All, Attendees, Volunteers)
-- List of registrations with check-in status
-- Check In/Check Out buttons
-- Summary counts
-
-**Actions:**
-- Tap "CHECK IN" → Mark as checked in, update UI
-- Tap "CHECK OUT" → Mark as checked out, update UI
-- Type in search → Filter list by name
-- Tap filter buttons → Show only selected type
-- Tap "← Back" → Return to Home Screen
-
----
-
-### 8. Admin Menu Screen
-
-```
-┌─────────────────────────────────────┐
-│  ← Back          Admin Menu         │
-│                                     │
-│  ┌─────────────────────────────┐   │
-│  │   🔄 SYNC DATA              │   │
-│  │                             │   │
-│  │   Last sync: 2 hours ago    │   │
-│  │   Status: ✓ Up to date      │   │
-│  └─────────────────────────────┘   │
-│                                     │
-│  ┌─────────────────────────────┐   │
-│  │   📊 EXPORT CSV             │   │
-│  │                             │   │
-│  │   Export all registrations  │   │
-│  │   and attendance data       │   │
-│  └─────────────────────────────┘   │
-│                                     │
-│  ┌─────────────────────────────┐   │
-│  │   ⚙️ SETTINGS               │   │
-│  │                             │   │
-│  │   Configure app settings    │   │
-│  │                             │   │
-│  └─────────────────────────────┘   │
-│                                     │
-└─────────────────────────────────────┘
-```
-
-**Elements:**
-- Back button
-- Three admin function cards
-- Sync status indicator
-- Descriptive text for each function
-
-**Actions:**
-- Tap "SYNC DATA" → Trigger sync with Airtable, show progress
-- Tap "EXPORT CSV" → Generate and share CSV file
-- Tap "SETTINGS" → Go to Settings Screen
-- Tap "← Back" → Return to Home Screen
+- Click "REGISTER ANOTHER PERSON" → Reload form with blank fields
+- Form automatically resets after 10 seconds
 
 ---
 
 ## Design Principles
 
+### Web Application Design
+- **Responsive layout** - Works on desktop, tablet, and mobile
+- **Single-page form** - All fields on one scrollable page
+- **Progressive disclosure** - Fields appear/hide based on role selection
+- **Clear visual hierarchy** - Role selection → Fields → Consents → Submit
+- **Immediate feedback** - Validation errors shown inline
+
 ### Accessibility
 - **WCAG AA compliance** - Minimum contrast ratio 4.5:1
-- **Touch targets** - Minimum 48x48 dp, preferred 72x72 dp
-- **Font sizes** - Minimum 16sp for body text, 20sp for labels
-- **Screen reader support** - All elements properly labeled
-- **High contrast mode** - Support for users with visual impairments
+- **Keyboard navigation** - Full keyboard support for all interactions
+- **Screen reader support** - All elements properly labeled with ARIA attributes
+- **Focus indicators** - Clear visual focus states
+- **Error messages** - Clear, descriptive validation messages
 
-### Tablet-First Design
-- **Landscape orientation** - Primary orientation
-- **Large buttons** - Easy to tap with fingers
-- **Clear spacing** - Prevent accidental taps
-- **Readable text** - Large fonts, high contrast
+### Color Coding System
+- **Blue (#3b82f6)** - Participant role elements and informational notes
+- **Lime Green (#84cc16)** - Volunteer role elements and buttons
+- **Purple (#a855f7)** - Group role elements and buttons
+- **Orange (#f97316)** - Alerts, warnings, and admin functions
 
-### Offline-First
-- **Local storage** - All data saved locally first
-- **Sync indicator** - Clear status of sync state
-- **Queue actions** - Sync when connection available
-- **No blocking** - App works without internet
+### Form UX Patterns
+- **Auto-population** - Contact details pre-fill when available
+- **Conditional fields** - Dynamic visibility based on role and organization
+- **Side-by-side layout** - Related fields paired horizontally on larger screens
+- **Alert systems** - Clear guidance when data not found
+- **Validation on submit** - All validation happens when user clicks submit
 
 ---
 
 ## Field Specifications
 
-### Event Dropdown
-- **Type:** Dropdown/Picker
-- **Required:** Yes
-- **Default:** Current active event (pre-selected)
-- **Options:** List of all events from database
-- **Validation:** Must select an event
+For complete field specifications by role, see **[REGISTRATION_FORM_FIELDS.md](./REGISTRATION_FORM_FIELDS.md)**.
 
-### First Name
-- **Type:** Text input
-- **Required:** Yes
-- **Max length:** 50 characters
-- **Validation:** Cannot be empty, no special characters
+### Common Fields (All Roles)
 
-### Last Name
-- **Type:** Text input
-- **Required:** Yes
-- **Max length:** 50 characters
-- **Validation:** Cannot be empty, no special characters
+**First Name**
+- Type: Text input
+- Required: Yes
+- Validation: 2-100 characters, letters/spaces/hyphens/apostrophes only
+- Auto-population: Yes (Volunteer and Group roles)
 
-### Email
-- **Type:** Email input
-- **Required:** Yes
-- **Validation:** Must be valid email format (contains @)
-- **Keyboard:** Email keyboard on mobile
+**Last Name**
+- Type: Text input
+- Required: Yes
+- Validation: 2-100 characters, letters/spaces/hyphens/apostrophes only
+- Auto-population: Yes (Volunteer and Group roles)
 
-### Organization
-- **Type:** Dropdown with autocomplete OR free text (TBD)
-- **Required:** Yes
-- **Options:** Predefined list of organizations (if dropdown)
-- **Validation:** Cannot be empty
+**Impairment Question**
+- Type: Dropdown select
+- Label: "Do you consider yourself to be a disabled person, or to have a long-term physical or mental health condition or impairment?"
+- Options: "Yes", "No", "Rather not say"
+- Required: No
+- Layout: Label left, dropdown right
 
-### Do you have an impairment
-- **Type:** Text input (free text)
-- **Required:** Yes
-- **Placeholder:** "e.g., wheelchair user, hearing aid, visual impairment"
-- **Max length:** 200 characters
-- **Validation:** Cannot be empty
+**Photo Consent**
+- Type: Radio buttons
+- Options: "I consent to photos being taken" / "I do not consent to photos being taken"
+- Required: Yes
+- Default: Consent given (true)
 
-### Photo Consent
-- **Type:** Radio buttons (single choice)
-- **Required:** Yes
-- **Options:**
-  1. "Yes, I consent to the use of photographs as specified"
-  2. "No, I will wear an orange wristband to denote I do not wish photos of me to be used in this way"
-- **Validation:** Must select one option
+**Feedback Consent**
+- Type: Checkbox
+- Label: "I consent to being contacted for post-event feedback"
+- Required: No
+- Default: Unchecked
 
-### Marketing Consent
-- **Type:** Radio buttons (single choice)
-- **Required:** Yes
-- **Options:**
-  1. "Yes, I would like to hear from Power2Inspire"
-  2. "No, please don't add me to the mailing list"
-- **Validation:** Must select one option
+**Next Event Consent**
+- Type: Checkbox
+- Label: "I would like to receive information about future PowerHouseGames events"
+- Required: No
+- Default: Unchecked
 
 ---
 
-## Conditional Fields (To Be Defined)
+### Role-Specific Fields
 
-**Question for Power2Inspire:**
+**Participant Role:**
+- Organization (optional combobox - select or type custom)
+- Email (optional text input)
 
-Which 1-2 fields should be different for Attendees vs Volunteers?
+**Volunteer Role:**
+- Email (required dropdown - pre-registered volunteers + "not listed")
+- Name fields auto-populate when email selected (display only)
 
-**Possible options:**
-- Role/Position (Volunteer only)
-- T-shirt size (Volunteer only)
-- Availability/Shift preference (Volunteer only)
-- Special skills (Volunteer only)
-- Dietary requirements (Both, but different options?)
-- Emergency contact (Volunteer only)
+**Group Role:**
+- Organization (required dropdown - registered organizations + "not listed")
+- Email (optional, auto-populated from organization contact)
+- Group Leader Participation (required radio buttons)
+- Group Size (required for disability/family groups)
+- Disabled Students (required for disability/family groups)
+- SEN Students (required for disability/family groups)
 
-**Or:** Should all fields be exactly the same for both types?
+---
+
+### Conditional Visibility Rules
+
+**Volunteer Role - Fields Hidden When "Not Listed":**
+- Impairment dropdown
+- Feedback consent checkbox
+- Next event consent checkbox
+
+**Group Role - Fields Only for Disability/Family Groups:**
+- Group Size number input
+- Disabled Students number input
+- SEN Students number input
+
+**Group Role - Instructional Note:**
+- Only shown for disability organizations (not Family Group)
+- Blue informational text below name fields
 
 ---
 
 ## Summary
 
-- **Total Screens:** 8
-- **Main User Flow:** Home → Type Selection → Form → Consent → Confirmation (5 screens)
-- **Admin Flow:** Home → Admin Menu → Sync/Export/Settings (3 screens)
-- **Required Fields:** 8 (Event, First Name, Last Name, Email, Organization, Impairment, Photo Consent, Marketing Consent)
-- **Optional Fields:** 0-2 conditional fields (TBD)
-- **Navigation Depth:** Maximum 3 levels deep
+### Current Implementation (V3.0)
+
+**Application Type:** NextJS 16.1.6 web application hosted on Vercel
+
+**Database:** Neon PostgreSQL (serverless, EU West London)
+
+**Form Structure:**
+- Single-page scrollable form
+- Dynamic field visibility based on role selection
+- Three registration roles: Participant, Volunteer, Group
+- URL parameter support for role preselection
+
+**Required Fields by Role:**
+- **Participant:** First Name, Last Name, Photo Consent (3 fields)
+- **Volunteer:** Email, First Name, Last Name, Photo Consent (4 fields)
+- **Group:** Organization, First Name, Last Name, Group Leader Participation, Photo Consent (5 fields)
+- **Group (Disability/Family):** + Group Size, Disabled Students, SEN Students (8 fields total)
+
+**Optional Fields:**
+- Organization (Participant only)
+- Email (Participant and Group)
+- Impairment dropdown (all roles)
+- Feedback consent (all roles)
+- Next event consent (all roles)
+
+**Special Features:**
+- Auto-population of contact details (Volunteer and Group roles)
+- Alert systems for "not listed" scenarios
+- Conditional field visibility based on organization type
+- Two-level admin authentication (Event Admin PIN: 1234, P2I Admin PIN: 9876)
+
+**Admin Features:**
+- Register organizations for events
+- Register volunteers for events
+- View registrations (future feature)
+- Export data (future feature)
 
 ---
 
 ## Next Steps
 
-1. ✅ **Wireframes updated** - Based on existing form
-2. ❓ **Define conditional fields** - Which fields differ for Attendee vs Volunteer?
-3. ❓ **Clarify organization field** - Dropdown, free text, or autocomplete?
-4. ⏳ **Update interactive HTML** - Rebuild with new structure
-5. ⏳ **Update data models** - Align with final field list
+### Completed ✅
+1. ✅ **Wireframes updated to V3.0** - Reflects current NextJS implementation
+2. ✅ **Three registration roles defined** - Participant, Volunteer, Group
+3. ✅ **Conditional fields implemented** - Role-specific and organization-specific
+4. ✅ **Data models updated** - V2.0 aligned with current implementation
+5. ✅ **Field specifications documented** - REGISTRATION_FORM_FIELDS.md created
+
+### Future Enhancements ⏳
+1. ⏳ **Check-in/Check-out system** - Track attendance at event
+2. ⏳ **View registrations page** - Admin dashboard to view all registrations
+3. ⏳ **Export to CSV** - Download registration data
+4. ⏳ **Sync to Airtable** - Post-event data synchronization
+5. ⏳ **Email confirmations** - Send confirmation emails to registrants
+6. ⏳ **QR code check-in** - Faster check-in process at event
 
 ---
 
-*Document Version: 2.0*
-*Created: 2026-02-11*
-*Based on: Existing Airtable form + User feedback*
+## Document History
+
+| Version | Date | Changes | Status |
+|---------|------|---------|--------|
+| 1.0 | 2026-02-06 | Initial wireframes for Flutter mobile app | Deprecated |
+| 2.0 | 2026-02-11 | Updated based on Airtable form feedback | Deprecated |
+| 3.0 | 2026-02-16 | Complete rewrite for NextJS web application | Current |
+
+---
+
+*Document Version: 3.0*
+*Last Updated: 2026-02-16*
+*Status: Current Implementation (NextJS Web App)*
+*Reference: REGISTRATION_FORM_FIELDS.md, DATA_MODELS.md V2.0*
 
