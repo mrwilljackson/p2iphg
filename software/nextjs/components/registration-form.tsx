@@ -545,7 +545,7 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
                   <Button
                     type="button"
                     onClick={() => {
-                      router.push('/test-form?role=Participant');
+                      window.location.href = '/test-form?role=Participant';
                     }}
                     className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold"
                   >
