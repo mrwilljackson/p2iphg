@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { EventHeader } from "@/components/event-header";
+import { AdminEventHeader } from "@/components/admin-event-header";
 
 export default function EventAdminDashboard() {
   const router = useRouter();
@@ -48,11 +48,7 @@ export default function EventAdminDashboard() {
   return (
     <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100">
       {/* Event Header */}
-      <EventHeader
-        eventName="PowerHouseGames 2026"
-        eventDate="Saturday, 15th March 2026"
-        eventLocation="Cambridge United Community Centre"
-      />
+      <AdminEventHeader />
 
       {/* Main Content */}
       <main className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
@@ -124,11 +120,25 @@ export default function EventAdminDashboard() {
               >
                 👨‍👩‍👧‍👦 New Group Registration
               </Button>
+
+            </div>
+          </div>
+
+          {/* Admin Functions */}
+          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 sm:p-8">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Admin Functions</h2>
+            <div className="space-y-3">
               <Button
                 className="w-full justify-start text-lg h-16 bg-lime-500 hover:bg-lime-600 text-white"
                 onClick={() => router.push("/admin/event/register-volunteer")}
               >
                 🙋 New Volunteer Registration
+              </Button>
+              <Button
+                className="w-full justify-start text-lg h-16 bg-orange-500 hover:bg-orange-600 text-white"
+                onClick={() => router.push("/admin/event/register-organization")}
+              >
+                🏢 Add New Organization or Group
               </Button>
             </div>
           </div>

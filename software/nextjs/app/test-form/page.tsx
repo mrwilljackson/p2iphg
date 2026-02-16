@@ -5,12 +5,23 @@ import { useSearchParams } from "next/navigation";
 import { RegistrationForm } from "@/components/registration-form";
 import { EventHeader } from "@/components/event-header";
 import { AdminLoginModal } from "@/components/admin-login-modal";
-import type { RegistrationRole } from "@/lib/types";
+import { MockDataService } from "@/lib/mock-data-service";
+import type { RegistrationRole, Event } from "@/lib/types";
 
 function TestFormContent() {
   const [showAdminModal, setShowAdminModal] = useState(false);
+  const [currentEvent, setCurrentEvent] = useState<Event | null>(null);
   const searchParams = useSearchParams();
   const [preselectedRole, setPreselectedRole] = useState<RegistrationRole | undefined>();
+
+  // Load current event
+  useEffect(() => {
+    async function loadEvent() {
+      const event = await MockDataService.getCurrentEvent();
+      setCurrentEvent(event);
+    }
+    loadEvent();
+  }, []);
 
   useEffect(() => {
     const roleParam = searchParams.get("role");
@@ -19,14 +30,27 @@ function TestFormContent() {
     }
   }, [searchParams]);
 
+  // Format date for display
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-GB', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+  };
+
   return (
     <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100">
       {/* Event Header */}
-      <EventHeader
-        eventName="PowerHouseGames 2026"
-        eventDate="Saturday, 15th March 2026"
-        eventLocation="Cambridge United Community Centre"
-      />
+      {currentEvent && (
+        <EventHeader
+          eventName={currentEvent.name}
+          eventDate={formatDate(currentEvent.date)}
+          eventLocation={currentEvent.location || ""}
+        />
+      )}
 
       {/* Main Content */}
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">

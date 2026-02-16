@@ -1,82 +1,153 @@
 /**
  * Mock Data Service
- * 
+ *
  * Simulates a local database/datastore that would contain data
  * pre-fetched from Airtable. This allows us to test form pre-population
  * without setting up a real database.
- * 
+ *
  * In production, this would be replaced with actual calls to:
  * - Local SQLite/IndexedDB
  * - Airtable API
  * - Server-side data fetching
+ *
+ * V2 Enhancement: Multi-Event Support
+ * - Each event has its own set of organizations and volunteers
+ * - Organizations and volunteers are linked to specific events via eventId
+ * - This demonstrates how the system adapts to different events
  */
 
 import { Event, Organization, Volunteer } from './types';
 
-// Mock Events Data
+// ============================================================================
+// Event Data
+// ============================================================================
+
 const MOCK_EVENTS: Event[] = [
   {
     id: 'evt_001',
-    name: 'PowerHouseGames Spring 2026',
+    name: 'Leicester Tigers 2026',
     date: '2026-03-15',
-    location: 'London Sports Centre',
-    status: 'active',
-    airtableRecordId: 'recABC123',
+    location: 'Leicester Sports Arena',
+    status: 'active', // Change to 'inactive' to switch to Manchester
+    airtableRecordId: 'recLEICESTER2026',
   },
   {
     id: 'evt_002',
-    name: 'PowerHouseGames Summer 2026',
+    name: 'Manchester 2026',
     date: '2026-06-20',
     location: 'Manchester Arena',
-    status: 'active',
-    airtableRecordId: 'recDEF456',
+    status: 'active', // Change to 'active' to use Manchester
+    airtableRecordId: 'recMANCHESTER2026',
   },
 ];
 
-// Mock Organizations Data
+// ============================================================================
+// Organization Data (Event-Specific)
+// ============================================================================
+
 const MOCK_ORGANIZATIONS: Organization[] = [
+  // Leicester Event Organizations
   {
-    id: 'org_000',
+    id: 'org_lei_000',
+    eventId: 'evt_001',
     name: 'Family Group',
-    airtableRecordId: 'recORG000',
+    isDisabilityGroup: false,
+    imageUrl: '/logos/family-group.png', // Placeholder - family icon
+    airtableRecordId: 'recLEI_ORG000',
   },
   {
-    id: 'org_001',
-    name: 'NHS Trust',
-    airtableRecordId: 'recORG001',
+    id: 'org_lei_001',
+    eventId: 'evt_001',
+    name: 'Next PLC',
+    isDisabilityGroup: false,
+    imageUrl: '/logos/next-plc.png', // Placeholder - will use actual logo
+    airtableRecordId: 'recLEI_ORG001',
   },
   {
-    id: 'org_002',
-    name: 'Local School',
-    airtableRecordId: 'recORG002',
+    id: 'org_lei_002',
+    eventId: 'evt_001',
+    name: 'Leicester Tigers',
+    isDisabilityGroup: false,
+    imageUrl: '/logos/leicester-tigers.png', // Placeholder - will use actual logo
+    airtableRecordId: 'recLEI_ORG002',
   },
   {
-    id: 'org_003',
-    name: 'Community Centre',
-    airtableRecordId: 'recORG003',
+    id: 'org_lei_003',
+    eventId: 'evt_001',
+    name: 'De Montfort University',
+    isDisabilityGroup: false,
+    imageUrl: '/logos/dmu.png', // Placeholder - will use actual logo
+    airtableRecordId: 'recLEI_ORG003',
   },
   {
-    id: 'org_004',
-    name: 'Sports Club',
-    airtableRecordId: 'recORG004',
+    id: 'org_lei_004',
+    eventId: 'evt_001',
+    name: 'Glenfield SEN School',
+    isDisabilityGroup: true, // SEN School - disability group
+    imageUrl: '/logos/glenfield-sen.png', // Placeholder - will use actual logo
+    airtableRecordId: 'recLEI_ORG004',
+  },
+
+  // Manchester Event Organizations
+  {
+    id: 'org_man_000',
+    eventId: 'evt_002',
+    name: 'Family Group',
+    isDisabilityGroup: false,
+    imageUrl: '/logos/family-group.png', // Placeholder - family icon
+    airtableRecordId: 'recMAN_ORG000',
   },
   {
-    id: 'org_005',
-    name: 'Charity Organization',
-    airtableRecordId: 'recORG005',
+    id: 'org_man_001',
+    eventId: 'evt_002',
+    name: 'Deloitte',
+    isDisabilityGroup: false,
+    imageUrl: '/logos/deloitte.png', // Placeholder - will use actual logo
+    airtableRecordId: 'recMAN_ORG001',
   },
-    {
-    id: 'org_006',
+  {
+    id: 'org_man_002',
+    eventId: 'evt_002',
+    name: 'Siemens',
+    isDisabilityGroup: false,
+    imageUrl: '/logos/siemens.png', // Placeholder - will use actual logo
+    airtableRecordId: 'recMAN_ORG002',
+  },
+  {
+    id: 'org_man_003',
+    eventId: 'evt_002',
+    name: 'Sale Sharks',
+    isDisabilityGroup: false,
+    imageUrl: '/logos/sale-sharks.png', // Placeholder - will use actual logo
+    airtableRecordId: 'recMAN_ORG002',
+  },
+  {
+    id: 'org_man_004',
+    eventId: 'evt_002',
     name: 'University of Manchester',
-    airtableRecordId: 'recORG006',
+    isDisabilityGroup: false,
+    imageUrl: '/logos/uni-manchester.png', // Placeholder - will use actual logo
+    airtableRecordId: 'recMAN_ORG003',
+  },
+  {
+    id: 'org_man_005',
+    eventId: 'evt_002',
+    name: 'Hazel Grove Special School',
+    isDisabilityGroup: true, // Special School - disability group
+    imageUrl: '/logos/hazel-grove.png', // Placeholder - will use actual logo
+    airtableRecordId: 'recMAN_ORG004',
   },
 ];
 
-// Mock Volunteer Data
-// These are pre-registered volunteers with their details
+// ============================================================================
+// Volunteer Data (Event-Specific)
+// ============================================================================
+
 const MOCK_VOLUNTEERS: Volunteer[] = [
+  // Leicester Event Volunteers
   {
-    email: 'sarah.jones@gmail.com',
+    eventId: 'evt_001',
+    email: 'sarah.jones@leicester.ac.uk',
     firstName: 'Sarah',
     lastName: 'Jones',
     photoConsent: true,
@@ -84,23 +155,28 @@ const MOCK_VOLUNTEERS: Volunteer[] = [
     nextEventConsent: true,
   },
   {
-    email: 'mike.thompson@hotmail.com',
+    eventId: 'evt_001',
+    email: 'mike.patel@tigers.com',
     firstName: 'Mike',
-    lastName: 'Thompson',
-    photoConsent: true,
-    feedbackConsent: false,
-    nextEventConsent: true,
-  },
-  {
-    email: 'emma.wilson@yahoo.co.uk',
-    firstName: 'Emma',
-    lastName: 'Wilson',
+    lastName: 'Patel',
     photoConsent: false,
     feedbackConsent: true,
     nextEventConsent: false,
   },
   {
-    email: 'james.brown@gmail.com',
+    eventId: 'evt_001',
+    email: 'emma.wilson@dmu.ac.uk',
+    firstName: 'Emma',
+    lastName: 'Wilson',
+    photoConsent: true,
+    feedbackConsent: false,
+    nextEventConsent: true,
+  },
+
+  // Manchester Event Volunteers
+  {
+    eventId: 'evt_002',
+    email: 'james.brown@manchester.ac.uk',
     firstName: 'James',
     lastName: 'Brown',
     photoConsent: true,
@@ -108,12 +184,22 @@ const MOCK_VOLUNTEERS: Volunteer[] = [
     nextEventConsent: true,
   },
   {
-    email: 'lucy.davies@outlook.com',
+    eventId: 'evt_002',
+    email: 'lucy.taylor@mufc.com',
     firstName: 'Lucy',
-    lastName: 'Davies',
+    lastName: 'Taylor',
     photoConsent: false,
     feedbackConsent: false,
     nextEventConsent: true,
+  },
+  {
+    eventId: 'evt_002',
+    email: 'david.khan@mcfc.com',
+    firstName: 'David',
+    lastName: 'Khan',
+    photoConsent: true,
+    feedbackConsent: true,
+    nextEventConsent: false,
   },
 ];
 
@@ -143,11 +229,14 @@ export class MockDataService {
   }
 
   /**
-   * Get all organizations
+   * Get all organizations for a specific event
    * In production, this would be pre-fetched from Airtable
    */
-  static async getOrganizations(): Promise<Organization[]> {
+  static async getOrganizations(eventId?: string): Promise<Organization[]> {
     await new Promise(resolve => setTimeout(resolve, 100));
+    if (eventId) {
+      return MOCK_ORGANIZATIONS.filter(org => org.eventId === eventId);
+    }
     return MOCK_ORGANIZATIONS;
   }
 
@@ -168,53 +257,69 @@ export class MockDataService {
   }
 
   /**
-   * Search organizations by name
+   * Search organizations by name for a specific event
    * Useful for the combobox search functionality
    */
-  static async searchOrganizations(query: string): Promise<Organization[]> {
+  static async searchOrganizations(query: string, eventId?: string): Promise<Organization[]> {
     await new Promise(resolve => setTimeout(resolve, 50));
 
-    if (!query) return MOCK_ORGANIZATIONS;
+    let orgs = eventId
+      ? MOCK_ORGANIZATIONS.filter(org => org.eventId === eventId)
+      : MOCK_ORGANIZATIONS;
+
+    if (!query) return orgs;
 
     const lowerQuery = query.toLowerCase();
-    return MOCK_ORGANIZATIONS.filter(org =>
+    return orgs.filter(org =>
       org.name.toLowerCase().includes(lowerQuery)
     );
   }
 
   /**
-   * Check if an email address belongs to a registered volunteer
+   * Check if an email address belongs to a registered volunteer for a specific event
    * In production, this would query the volunteer database
    */
-  static async isRegisteredVolunteer(email: string): Promise<boolean> {
+  static async isRegisteredVolunteer(email: string, eventId?: string): Promise<boolean> {
     await new Promise(resolve => setTimeout(resolve, 50));
-    return MOCK_VOLUNTEERS.some(v => v.email.toLowerCase() === email.toLowerCase());
+    const volunteers = eventId
+      ? MOCK_VOLUNTEERS.filter(v => v.eventId === eventId)
+      : MOCK_VOLUNTEERS;
+    return volunteers.some(v => v.email.toLowerCase() === email.toLowerCase());
   }
 
   /**
-   * Get all registered volunteer emails
+   * Get all registered volunteer emails for a specific event
    * Useful for admin/testing purposes
    */
-  static async getVolunteerEmails(): Promise<string[]> {
+  static async getVolunteerEmails(eventId?: string): Promise<string[]> {
     await new Promise(resolve => setTimeout(resolve, 50));
-    return MOCK_VOLUNTEERS.map(v => v.email);
+    const volunteers = eventId
+      ? MOCK_VOLUNTEERS.filter(v => v.eventId === eventId)
+      : MOCK_VOLUNTEERS;
+    return volunteers.map(v => v.email);
   }
 
   /**
-   * Get volunteer details by email
+   * Get volunteer details by email for a specific event
    * Returns null if volunteer not found
    */
-  static async getVolunteerByEmail(email: string): Promise<Volunteer | null> {
+  static async getVolunteerByEmail(email: string, eventId?: string): Promise<Volunteer | null> {
     await new Promise(resolve => setTimeout(resolve, 50));
-    return MOCK_VOLUNTEERS.find(v => v.email.toLowerCase() === email.toLowerCase()) || null;
+    const volunteers = eventId
+      ? MOCK_VOLUNTEERS.filter(v => v.eventId === eventId)
+      : MOCK_VOLUNTEERS;
+    return volunteers.find(v => v.email.toLowerCase() === email.toLowerCase()) || null;
   }
 
   /**
-   * Get all registered volunteers
+   * Get all registered volunteers for a specific event
    * Useful for admin/testing purposes
    */
-  static async getAllVolunteers(): Promise<Volunteer[]> {
+  static async getAllVolunteers(eventId?: string): Promise<Volunteer[]> {
     await new Promise(resolve => setTimeout(resolve, 50));
+    if (eventId) {
+      return MOCK_VOLUNTEERS.filter(v => v.eventId === eventId);
+    }
     return [...MOCK_VOLUNTEERS];
   }
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { registrationFormSchema } from "@/lib/validation";
@@ -34,6 +35,7 @@ interface RegistrationFormProps {
 }
 
 export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}) {
+  const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -42,6 +44,7 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
   const [volunteerEmails, setVolunteerEmails] = useState<string[]>([]);
   const [showVolunteerAlert, setShowVolunteerAlert] = useState(false);
   const [showOrganizationAlert, setShowOrganizationAlert] = useState(false);
+  const [allOrganizations, setAllOrganizations] = useState<Organization[]>([]);
 
   const form = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationFormSchema),
@@ -73,11 +76,13 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
   const selectedRole = form.watch("role") as RegistrationType;
   const attendeeSurname = form.watch("attendeeSurname");
   const volunteerEmail = form.watch("email");
+  const selectedOrgId = form.watch("organizationId");
 
-  // Debug: Log the selected role and field visibility
-  console.log("Selected Role:", selectedRole);
-  console.log("Group Size Visible:", isFieldVisible("groupSize", selectedRole));
-  console.log("Email Visible:", isFieldVisible("email", selectedRole));
+  // Check if selected organization is a disability group or Family Group
+  const selectedOrg = allOrganizations.find(org => org.id === selectedOrgId);
+  const shouldShowImpairmentFields =
+    selectedOrg?.isDisabilityGroup === true ||
+    selectedOrg?.name === "Family Group";
 
   // Reset volunteer alert when role changes away from Volunteer
   useEffect(() => {
@@ -96,7 +101,12 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
   // Update organizations list with personalized "Family Group" option
   useEffect(() => {
     const updateOrganizations = async () => {
-      const orgs = await MockDataService.getOrganizations();
+      const eventId = form.getValues("eventId");
+      const orgs = await MockDataService.getOrganizations(eventId);
+
+      // Store full organization objects for later reference
+      setAllOrganizations(orgs);
+
       const orgOptions = organizationsToOptions(orgs);
 
       // Find and update the "Family Group" option
@@ -114,7 +124,7 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
     };
 
     updateOrganizations();
-  }, [attendeeSurname]);
+  }, [attendeeSurname, form]);
 
   // Load pre-populated data on component mount
   useEffect(() => {
@@ -122,24 +132,26 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
       try {
         setIsLoading(true);
 
-        // Fetch current event, organizations, and volunteer emails from mock data service
-        const [event, orgs, emails] = await Promise.all([
-          MockDataService.getCurrentEvent(),
-          MockDataService.getOrganizations(),
-          MockDataService.getVolunteerEmails(),
-        ]);
+        // Fetch current event first
+        const event = await MockDataService.getCurrentEvent();
 
         if (event) {
           setCurrentEvent(event);
           // Pre-populate the event field
           form.setValue('eventId', event.id);
+
+          // Fetch event-specific organizations and volunteer emails
+          const [orgs, emails] = await Promise.all([
+            MockDataService.getOrganizations(event.id),
+            MockDataService.getVolunteerEmails(event.id),
+          ]);
+
+          // Convert organizations to combobox options
+          setOrganizations(organizationsToOptions(orgs));
+
+          // Store volunteer emails
+          setVolunteerEmails(emails);
         }
-
-        // Convert organizations to combobox options
-        setOrganizations(organizationsToOptions(orgs));
-
-        // Store volunteer emails
-        setVolunteerEmails(emails);
       } catch (error) {
         console.error('Failed to load data:', error);
       } finally {
@@ -215,7 +227,7 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
               <FormControl>
                 <RadioGroup
                   onValueChange={field.onChange}
-                  defaultValue={field.value}
+                  value={field.value}
                   className="flex flex-col space-y-2"
                 >
                   <label className="flex items-center space-x-2 border rounded-lg p-4 cursor-pointer hover:bg-gray-50">
@@ -250,6 +262,117 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
 
         {/* Separator: Role -> Personal Details */}
         {!showOrganizationAlert && <hr className="my-6 border-gray-200" />}
+
+        {/* GROUP ROLE: Organization and Email first (side by side) */}
+        {selectedRole === "Group" && !showOrganizationAlert && (isFieldVisible("organizationId", selectedRole) || isFieldVisible("email", selectedRole)) && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Organization - Left */}
+            {isFieldVisible("organizationId", selectedRole) && (
+              <FormField
+                control={form.control}
+                name="organizationId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Your Organisation or Group</FormLabel>
+                    <FormControl>
+                      <Select
+                        onValueChange={(value) => {
+                          if (value === "NOT_LISTED") {
+                            setShowOrganizationAlert(true);
+                            field.onChange("");
+                          } else {
+                            setShowOrganizationAlert(false);
+                            field.onChange(value);
+                          }
+                        }}
+                        value={field.value}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select your organisation" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {organizations.map((org) => (
+                            <SelectItem key={org.value} value={org.value}>
+                              {org.label}
+                            </SelectItem>
+                          ))}
+                          <SelectItem value="NOT_LISTED" className="text-orange-600 font-medium">
+                            ⚠️ My organisation isn&apos;t listed here!
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {/* Email - Right */}
+            {isFieldVisible("email", selectedRole) && (
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Your email:</FormLabel>
+                    <FormControl>
+                      <Input type="email" placeholder="your.email@example.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+          </div>
+        )}
+
+        {/* PARTICIPANT ROLE: Organization and Email first (side by side) */}
+        {selectedRole === "Participant" && !showOrganizationAlert && (isFieldVisible("organizationId", selectedRole) || isFieldVisible("email", selectedRole)) && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Organization - Left (Combobox for Participant) */}
+            {isFieldVisible("organizationId", selectedRole) && (
+              <FormField
+                control={form.control}
+                name="organizationId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Your Organisation or Group</FormLabel>
+                    <FormControl>
+                      <Combobox
+                        options={organizations}
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        placeholder="Select or type organisation name..."
+                        searchPlaceholder="- choose here -"
+                        emptyText="No organization found."
+                        allowCustom={true}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {/* Email - Right */}
+            {isFieldVisible("email", selectedRole) && (
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Your email:</FormLabel>
+                    <FormControl>
+                      <Input type="email" placeholder="your.email@example.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+          </div>
+        )}
 
         {/* First Name and Last Name - Side by Side */}
         {!showOrganizationAlert && (isFieldVisible("attendeeName", selectedRole) || isFieldVisible("attendeeSurname", selectedRole)) && (
@@ -290,160 +413,365 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
           </div>
         )}
 
-        {/* Email and Organization - Side by Side for Participant/Group, Stacked for Volunteer */}
-        {!showOrganizationAlert && (isFieldVisible("email", selectedRole) || isFieldVisible("organizationId", selectedRole)) && (
-          <>
-            {selectedRole === "Volunteer" ? (
-              // Volunteer: Email field with label on left
-              isFieldVisible("email", selectedRole) && (
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
-                        <FormLabel className="sm:pt-2">Your email:</FormLabel>
-                        <div className="space-y-2">
-                          <FormControl>
-                            <Select
-                              onValueChange={async (value) => {
-                                if (value === "NOT_LISTED") {
-                                  setShowVolunteerAlert(true);
-                                  field.onChange("");
-                                } else {
-                                  setShowVolunteerAlert(false);
-                                  field.onChange(value);
+        {/* Email - For Volunteer role only */}
+        {selectedRole === "Volunteer" && !showOrganizationAlert && isFieldVisible("email", selectedRole) && (
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+                  <FormLabel className="sm:pt-2">Your email:</FormLabel>
+                  <div className="space-y-2">
+                    <FormControl>
+                      <Select
+                        onValueChange={async (value) => {
+                          if (value === "NOT_LISTED") {
+                            setShowVolunteerAlert(true);
+                            field.onChange("");
+                          } else {
+                            setShowVolunteerAlert(false);
+                            field.onChange(value);
 
-                                  // Pre-populate volunteer details
-                                  const volunteer = await MockDataService.getVolunteerByEmail(value);
-                                  if (volunteer) {
-                                    form.setValue("attendeeName", volunteer.firstName);
-                                    form.setValue("attendeeSurname", volunteer.lastName);
-                                    form.setValue("photoConsent", volunteer.photoConsent);
-                                    form.setValue("feedbackConsent", volunteer.feedbackConsent);
-                                    form.setValue("nextEventConsent", volunteer.nextEventConsent);
-                                  }
-                                }
-                              }}
-                              value={field.value}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select your email" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {volunteerEmails.map((email) => (
-                                  <SelectItem key={email} value={email}>
-                                    {email}
-                                  </SelectItem>
-                                ))}
-                                <SelectItem value="NOT_LISTED" className="text-orange-600 font-medium">
-                                  ⚠️ My email isn&apos;t listed here!
-                                </SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </FormControl>
-                          <FormMessage />
-                        </div>
-                      </div>
-                    </FormItem>
-                  )}
-                />
-              )
-            ) : (
-              // Participant/Group: Email and Organization side by side with labels above
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {isFieldVisible("email", selectedRole) && (
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Your email:</FormLabel>
-                        <FormControl>
-                          <Input type="email" placeholder="your.email@example.com" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
+                            // Pre-populate volunteer details
+                            const eventId = form.getValues("eventId");
+                            const volunteer = await MockDataService.getVolunteerByEmail(value, eventId);
+                            if (volunteer) {
+                              form.setValue("attendeeName", volunteer.firstName);
+                              form.setValue("attendeeSurname", volunteer.lastName);
+                              form.setValue("photoConsent", volunteer.photoConsent);
+                              form.setValue("feedbackConsent", volunteer.feedbackConsent);
+                              form.setValue("nextEventConsent", volunteer.nextEventConsent);
+                            }
+                          }
+                        }}
+                        value={field.value}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select your email" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {volunteerEmails.map((email) => (
+                            <SelectItem key={email} value={email}>
+                              {email}
+                            </SelectItem>
+                          ))}
+                          <SelectItem value="NOT_LISTED" className="text-orange-600 font-medium">
+                            ⚠️ My email isn&apos;t listed here!
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </div>
+                </div>
+              </FormItem>
+            )}
+          />
+        )}
 
-                {isFieldVisible("organizationId", selectedRole) && (
-                  <FormField
-                    control={form.control}
-                    name="organizationId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Your Organisation or Group</FormLabel>
-                        <FormControl>
-                          {selectedRole === "Group" ? (
-                            // Group: Dropdown with "not listed" option
-                            <Select
-                              onValueChange={(value) => {
-                                if (value === "NOT_LISTED") {
-                                  setShowOrganizationAlert(true);
-                                  field.onChange("");
-                                } else {
-                                  setShowOrganizationAlert(false);
-                                  field.onChange(value);
-                                }
-                              }}
-                              value={field.value}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select your organisation" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {organizations.map((org) => (
-                                  <SelectItem key={org.value} value={org.value}>
-                                    {org.label}
-                                  </SelectItem>
-                                ))}
-                                <SelectItem value="NOT_LISTED" className="text-orange-600 font-medium">
-                                  ⚠️ My organisation isn&apos;t listed here!
-                                </SelectItem>
-                              </SelectContent>
-                            </Select>
-                          ) : (
-                            // Participant: Combobox with custom entry
-                            <Combobox
-                              options={organizations}
-                              value={field.value}
-                              onValueChange={field.onChange}
-                              placeholder="Select or type organisation name..."
-                              searchPlaceholder="- choose here -"
-                              emptyText="No organization found."
-                              allowCustom={true}
-                            />
-                          )}
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
+        {/* Organization Alert - For Group role only */}
+        {selectedRole === "Group" && showOrganizationAlert && (
+          <div className="bg-orange-50 border border-orange-200 rounded-lg p-6">
+            <div className="flex items-start space-x-3">
+              <div className="text-3xl">⚠️</div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-orange-900 mb-2">
+                  Organisation Not Listed
+                </h3>
+                <p className="text-orange-800 mb-4">
+                  Please find a member of the Power2Inspire team to add your organisation to the system.
+                </p>
+                <Button
+                  type="button"
+                  onClick={() => {
+                    setShowOrganizationAlert(false);
+                    form.setValue("organizationId", "");
+                  }}
+                  className="bg-orange-600 hover:bg-orange-700"
+                >
+                  ← Back to Organisation Selection
+                </Button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Volunteer Alert */}
+        {selectedRole === "Volunteer" && showVolunteerAlert && (
+          <div className="bg-orange-50 border border-orange-200 rounded-lg p-6">
+            <div className="flex items-start space-x-3">
+              <div className="text-3xl">⚠️</div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-orange-900 mb-4">
+                  Email Not Listed
+                </h3>
+                <p className="text-orange-800 mb-4">
+                  OK - first can we check if you are going to join in with the Games as a player?
+                </p>
+
+                {/* Option A: Blue box for participants */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-3">
+                  <p className="text-blue-900 font-medium mb-3">
+                    <strong>If you are playing in the Games</strong>
+                  </p>
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      setShowVolunteerAlert(false);
+                      form.setValue("email", "");
+                      form.setValue("role", "Participant");
+                      router.push("?role=Participant");
+                    }}
+                    className="bg-blue-600 hover:bg-blue-700 w-full"
+                  >
+                    🎯 Switch to Participant Registration
+                  </Button>
+                </div>
+
+                {/* Option B: Lime green box for volunteers */}
+                <div className="bg-lime-50 border border-lime-200 rounded-lg p-4 mb-4">
+                  <p className="text-lime-900 font-medium mb-3">
+                    <strong>If you are not taking part</strong> but are setting up, cleaning afterwards, or helping move equipment
+                  </p>
+                  <p className="text-lime-800 mb-3">
+                    Welcome! 🙋 We&apos;re glad you&apos;re here to help.
+                  </p>
+                  <p className="text-lime-800">
+                    Please find a member of the Power2Inspire team to add you to the volunteer list.
+                  </p>
+                </div>
+
+                <Button
+                  type="button"
+                  onClick={() => {
+                    setShowVolunteerAlert(false);
+                    form.setValue("email", "");
+                  }}
+                  className="bg-orange-600 hover:bg-orange-700"
+                >
+                  ← Back to Email Selection
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Impairment - Participant only */}
+        {!showOrganizationAlert && selectedRole === "Participant" && isFieldVisible("impairment", selectedRole) && (
+          <FormField
+            control={form.control}
+            name="impairment"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>
+                  Do you consider yourself to be a disabled person, or to have a long‑term physical or mental health condition or impairment? *
+                </FormLabel>
+                <FormControl>
+                  <RadioGroup
+                    onValueChange={field.onChange}
+                    value={field.value}
+                    className="space-y-2"
+                  >
+                    <label className="flex items-center space-x-2 border rounded-lg p-3 cursor-pointer hover:bg-gray-50">
+                      <RadioGroupItem value="yes" id="impairment-yes" />
+                      <div className="flex-1">Yes</div>
+                    </label>
+                    <label className="flex items-center space-x-2 border rounded-lg p-3 cursor-pointer hover:bg-gray-50">
+                      <RadioGroupItem value="no" id="impairment-no" />
+                      <div className="flex-1">No</div>
+                    </label>
+                    <label className="flex items-center space-x-2 border rounded-lg p-3 cursor-pointer hover:bg-gray-50">
+                      <RadioGroupItem value="prefer-not-to-say" id="impairment-prefer-not" />
+                      <div className="flex-1">Prefer not to say</div>
+                    </label>
+                  </RadioGroup>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+
+        {/* Consent Checkboxes */}
+        {!showOrganizationAlert && (isFieldVisible("feedbackConsent", selectedRole) || isFieldVisible("nextEventConsent", selectedRole)) && (
+          <div className="space-y-4">
+            <FormLabel>Please can we contact you:</FormLabel>
+
+            {isFieldVisible("feedbackConsent", selectedRole) && (
+              <FormField
+                control={form.control}
+                name="feedbackConsent"
+                render={({ field }) => (
+                  <FormItem>
+                    <label className="flex items-start space-x-3 cursor-pointer">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="flex-1 leading-tight">
+                        <div>To ask for your honest feedback after todays event?</div>
+                        <div className="text-sm text-gray-600">(4 minute online survey)</div>
+                      </div>
+                    </label>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {isFieldVisible("nextEventConsent", selectedRole) && (
+              <FormField
+                control={form.control}
+                name="nextEventConsent"
+                render={({ field }) => (
+                  <FormItem>
+                    <label className="flex items-start space-x-3 cursor-pointer">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="flex-1 leading-tight">
+                        To share info about our next event?
+                      </div>
+                    </label>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+          </div>
+        )}
+
+        {/* Separator: Impairment -> Group Details (conditional) */}
+        {!showOrganizationAlert && shouldShowImpairmentFields && (isFieldVisible("groupSize", selectedRole) ||
+          isFieldVisible("disabledStudents", selectedRole) ||
+          isFieldVisible("senStudents", selectedRole)) && (
+          <hr className="my-6 border-gray-200" />
+        )}
+
+        {/* Conditional Fields for Teacher/Coordinator - Only for Disability Groups and Family Groups */}
+        {!showOrganizationAlert && shouldShowImpairmentFields && (isFieldVisible("groupSize", selectedRole) ||
+          isFieldVisible("disabledStudents", selectedRole) ||
+          isFieldVisible("senStudents", selectedRole)) && (
+          <>
+            {/* Group Size */}
+            {isFieldVisible("groupSize", selectedRole) && (
+              <FormField
+                control={form.control}
+                name="groupSize"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>How many participants are you responsible for in your group *</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min="1"
+                        max="100"
+                        {...field}
+                        onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {/* Disabled Students */}
+            {isFieldVisible("disabledStudents", selectedRole) && (
+              <FormField
+                control={form.control}
+                name="disabledStudents"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      How many of your participants are disabled people, or to have a long‑term physical or mental health condition or impairment? *
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min="0"
+                        max="100"
+                        {...field}
+                        onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {/* SEN Students */}
+            {isFieldVisible("senStudents", selectedRole) && (
+              <FormField
+                control={form.control}
+                name="senStudents"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Do you have any special educational needs (SEN) or require additional learning support (for example dyslexia support, autism support, or similar)? *
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min="0"
+                        max="100"
+                        {...field}
+                        onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             )}
           </>
         )}
 
         {/* Volunteer Not Listed Alert */}
         {showVolunteerAlert && selectedRole === "Volunteer" && (
-          <div className="bg-orange-50 border-2 border-orange-400 rounded-lg p-6 space-y-3">
+          <div className="bg-orange-50 border-2 border-orange-400 rounded-lg p-6 space-y-4">
             <div className="flex items-start space-x-3">
               <div className="text-3xl">👋</div>
               <div className="flex-1">
-                <h3 className="font-semibold text-orange-900 text-lg mb-2">
-                  Welcome New Volunteer!
+                <h3 className="font-semibold text-orange-900 text-lg mb-3">
+                  OK - first can we check if you are going to join in with the Games as a player?
                 </h3>
-                <p className="text-orange-800 mb-3">
-                  We&apos;re excited to have you join us! Since this is your first time volunteering with us,
-                  please speak to a <strong>Power2Inspire team member</strong> so we can capture your details
-                  and get you registered properly.
-                </p>
-                <p className="text-orange-700 text-sm">
-                  Look for someone wearing a P2I staff badge - they&apos;ll be happy to help you! 🎉
-                </p>
+
+                {/* Participant Option */}
+                <div className="bg-white border-2 border-blue-300 rounded-lg p-4 mb-4">
+                  <p className="text-gray-800 mb-3">
+                    <strong>If you are playing in the Games</strong>, please sign up as a Participant instead:
+                  </p>
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      router.push('/test-form?role=Participant');
+                    }}
+                    className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold"
+                  >
+                    🎯 Switch to Participant Registration
+                  </Button>
+                </div>
+
+                {/* Volunteer Option */}
+                <div className="bg-white border-2 border-lime-300 rounded-lg p-4">
+                  <p className="text-gray-800 mb-2">
+                    <strong>If you are not taking part</strong> but are setting up, cleaning afterwards, or helping move equipment:
+                  </p>
+                  <p className="text-orange-800 mb-3">
+                    We&apos;re excited to have you join us - thank you! Please speak to a <strong>Power2Inspire team member</strong> so we can capture your details and get you registered properly.
+                  </p>
+                  <p className="text-orange-700 text-sm">
+                    Look for someone wearing a P2I staff badge - they&apos;ll be happy to help you! 🎉
+                  </p>
+                </div>
               </div>
             </div>
           </div>
@@ -563,14 +891,14 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
 
 
         {/* Separator: Impairment -> Group Details (conditional) */}
-        {!showOrganizationAlert && (isFieldVisible("groupSize", selectedRole) ||
+        {!showOrganizationAlert && shouldShowImpairmentFields && (isFieldVisible("groupSize", selectedRole) ||
           isFieldVisible("disabledStudents", selectedRole) ||
           isFieldVisible("senStudents", selectedRole)) && (
           <hr className="my-6 border-gray-200" />
         )}
 
-        {/* Conditional Fields for Teacher/Coordinator */}
-        {!showOrganizationAlert && (isFieldVisible("groupSize", selectedRole) ||
+        {/* Conditional Fields for Teacher/Coordinator - Only for Disability Groups and Family Groups */}
+        {!showOrganizationAlert && shouldShowImpairmentFields && (isFieldVisible("groupSize", selectedRole) ||
           isFieldVisible("disabledStudents", selectedRole) ||
           isFieldVisible("senStudents", selectedRole)) && (
           <>

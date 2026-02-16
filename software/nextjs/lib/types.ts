@@ -70,10 +70,15 @@ export interface Registration {
 /**
  * Organization Entity
  * Represents an organization that attendees/volunteers may be affiliated with
+ * V2: Added eventId to support event-specific organizations
+ * V3: Added imageUrl for organization logos
  */
 export interface Organization {
   id: string; // Local ID
+  eventId: string; // Event ID this organization is registered for
   name: string; // Organization name (REQUIRED, 2-200 chars)
+  isDisabilityGroup?: boolean; // Whether this is a disability-focused organization (optional, default: false)
+  imageUrl?: string; // URL to organization logo/image (optional)
   contactEmail?: string; // Primary contact email (optional)
   contactPhone?: string; // Primary contact phone (optional)
   notes?: string; // Additional information (optional)
@@ -85,8 +90,10 @@ export interface Organization {
 /**
  * Volunteer Entity
  * Represents a pre-registered volunteer with their details
+ * V2: Added eventId to support event-specific volunteers
  */
 export interface Volunteer {
+  eventId: string; // Event ID this volunteer is registered for
   email: string; // Volunteer email (unique identifier)
   firstName: string; // First name
   lastName: string; // Last name
