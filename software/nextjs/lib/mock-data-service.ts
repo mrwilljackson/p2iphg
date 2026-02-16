@@ -54,6 +54,7 @@ const MOCK_ORGANIZATIONS: Organization[] = [
     isDisabilityGroup: false,
     imageUrl: '/logos/family-group.png', // Placeholder - family icon
     airtableRecordId: 'recLEI_ORG000',
+    // Note: Family Group doesn't have pre-set contact details - personalized per family
   },
   {
     id: 'org_lei_001',
@@ -61,6 +62,9 @@ const MOCK_ORGANIZATIONS: Organization[] = [
     name: 'Next PLC',
     isDisabilityGroup: false,
     imageUrl: '/logos/next-plc.png', // Placeholder - will use actual logo
+    contactFirstName: 'Rachel',
+    contactLastName: 'Thompson',
+    contactEmail: 'rachel.thompson@next.co.uk',
     airtableRecordId: 'recLEI_ORG001',
   },
   {
@@ -69,6 +73,9 @@ const MOCK_ORGANIZATIONS: Organization[] = [
     name: 'Leicester Tigers',
     isDisabilityGroup: false,
     imageUrl: '/logos/leicester-tigers.png', // Placeholder - will use actual logo
+    contactFirstName: 'Tom',
+    contactLastName: 'Harrison',
+    contactEmail: 'tom.harrison@leicestertigers.com',
     airtableRecordId: 'recLEI_ORG002',
   },
   {
@@ -77,6 +84,9 @@ const MOCK_ORGANIZATIONS: Organization[] = [
     name: 'De Montfort University',
     isDisabilityGroup: false,
     imageUrl: '/logos/dmu.png', // Placeholder - will use actual logo
+    contactFirstName: 'Dr. Sarah',
+    contactLastName: 'Mitchell',
+    contactEmail: 'sarah.mitchell@dmu.ac.uk',
     airtableRecordId: 'recLEI_ORG003',
   },
   {
@@ -85,6 +95,9 @@ const MOCK_ORGANIZATIONS: Organization[] = [
     name: 'Glenfield SEN School',
     isDisabilityGroup: true, // SEN School - disability group
     imageUrl: '/logos/glenfield-sen.png', // Placeholder - will use actual logo
+    contactFirstName: 'Helen',
+    contactLastName: 'Davies',
+    contactEmail: 'helen.davies@glenfield-sen.sch.uk',
     airtableRecordId: 'recLEI_ORG004',
   },
 
@@ -96,6 +109,7 @@ const MOCK_ORGANIZATIONS: Organization[] = [
     isDisabilityGroup: false,
     imageUrl: '/logos/family-group.png', // Placeholder - family icon
     airtableRecordId: 'recMAN_ORG000',
+    // Note: Family Group doesn't have pre-set contact details - personalized per family
   },
   {
     id: 'org_man_001',
@@ -103,6 +117,9 @@ const MOCK_ORGANIZATIONS: Organization[] = [
     name: 'Deloitte',
     isDisabilityGroup: false,
     imageUrl: '/logos/deloitte.png', // Placeholder - will use actual logo
+    contactFirstName: 'Amanda',
+    contactLastName: 'Roberts',
+    contactEmail: 'amanda.roberts@deloitte.co.uk',
     airtableRecordId: 'recMAN_ORG001',
   },
   {
@@ -111,6 +128,9 @@ const MOCK_ORGANIZATIONS: Organization[] = [
     name: 'Siemens',
     isDisabilityGroup: false,
     imageUrl: '/logos/siemens.png', // Placeholder - will use actual logo
+    contactFirstName: 'Mark',
+    contactLastName: 'Anderson',
+    contactEmail: 'mark.anderson@siemens.com',
     airtableRecordId: 'recMAN_ORG002',
   },
   {
@@ -119,6 +139,9 @@ const MOCK_ORGANIZATIONS: Organization[] = [
     name: 'Sale Sharks',
     isDisabilityGroup: false,
     imageUrl: '/logos/sale-sharks.png', // Placeholder - will use actual logo
+    contactFirstName: 'Chris',
+    contactLastName: 'Murphy',
+    contactEmail: 'chris.murphy@salesharks.com',
     airtableRecordId: 'recMAN_ORG002',
   },
   {
@@ -127,6 +150,9 @@ const MOCK_ORGANIZATIONS: Organization[] = [
     name: 'University of Manchester',
     isDisabilityGroup: false,
     imageUrl: '/logos/uni-manchester.png', // Placeholder - will use actual logo
+    contactFirstName: 'Prof. Lisa',
+    contactLastName: 'Chen',
+    contactEmail: 'lisa.chen@manchester.ac.uk',
     airtableRecordId: 'recMAN_ORG003',
   },
   {
@@ -135,6 +161,9 @@ const MOCK_ORGANIZATIONS: Organization[] = [
     name: 'Hazel Grove Special School',
     isDisabilityGroup: true, // Special School - disability group
     imageUrl: '/logos/hazel-grove.png', // Placeholder - will use actual logo
+    contactFirstName: 'Karen',
+    contactLastName: 'Williams',
+    contactEmail: 'karen.williams@hazelgrove-sen.sch.uk',
     airtableRecordId: 'recMAN_ORG004',
   },
 ];

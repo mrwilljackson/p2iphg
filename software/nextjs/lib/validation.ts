@@ -116,6 +116,7 @@ export const registrationFormSchema = z.object({
     .min(0, "Cannot be negative")
     .max(999, "SEN students must be at most 999")
     .optional(),
+  groupLeaderParticipating: z.boolean().optional(), // Whether group leader is participating in games (Group role only)
 }).refine(
   (data) => {
     // If role is Group, groupSize, disabledStudents, and senStudents are required

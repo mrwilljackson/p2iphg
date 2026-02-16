@@ -62,6 +62,7 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
       groupSize: undefined,
       disabledStudents: undefined,
       senStudents: undefined,
+      groupLeaderParticipating: undefined,
     },
   });
 
@@ -273,7 +274,7 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
                 name="organizationId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Your Organisation or Group</FormLabel>
+                    <FormLabel>Your Organisation or Group Name:</FormLabel>
                     <FormControl>
                       <Select
                         onValueChange={(value) => {
@@ -283,12 +284,27 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
                           } else {
                             setShowOrganizationAlert(false);
                             field.onChange(value);
+
+                            // Pre-populate contact details for Group role
+                            const selectedOrg = allOrganizations.find(org => org.id === value);
+                            if (selectedOrg && selectedOrg.contactEmail) {
+                              // Only pre-populate if organization has contact details
+                              if (selectedOrg.contactFirstName) {
+                                form.setValue("attendeeName", selectedOrg.contactFirstName);
+                              }
+                              if (selectedOrg.contactLastName) {
+                                form.setValue("attendeeSurname", selectedOrg.contactLastName);
+                              }
+                              if (selectedOrg.contactEmail) {
+                                form.setValue("email", selectedOrg.contactEmail);
+                              }
+                            }
                           }
                         }}
                         value={field.value}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Select your organisation" />
+                          <SelectValue placeholder="Select your group" />
                         </SelectTrigger>
                         <SelectContent>
                           {organizations.map((org) => (
@@ -337,13 +353,13 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
                 name="organizationId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Your Organisation or Group</FormLabel>
+                    <FormLabel>Your Group Name</FormLabel>
                     <FormControl>
                       <Combobox
                         options={organizations}
                         value={field.value}
                         onValueChange={field.onChange}
-                        placeholder="Select or type organisation name..."
+                        placeholder="Select your group"
                         searchPlaceholder="- choose here -"
                         emptyText="No organization found."
                         allowCustom={true}
@@ -376,41 +392,80 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
 
         {/* First Name and Last Name - Side by Side */}
         {!showOrganizationAlert && (isFieldVisible("attendeeName", selectedRole) || isFieldVisible("attendeeSurname", selectedRole)) && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* First Name */}
-            {isFieldVisible("attendeeName", selectedRole) && (
-              <FormField
-                control={form.control}
-                name="attendeeName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Your first name: *</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter first name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* First Name */}
+              {isFieldVisible("attendeeName", selectedRole) && (
+                <FormField
+                  control={form.control}
+                  name="attendeeName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Your first name: *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter first name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              {/* Last Name */}
+              {isFieldVisible("attendeeSurname", selectedRole) && (
+                <FormField
+                  control={form.control}
+                  name="attendeeSurname"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Your last name: *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter last name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+            </div>
+
+            {/* Instructional note for Group role with disability organizations (excluding Family Group) */}
+            {selectedRole === "Group" && selectedOrg?.isDisabilityGroup === true && (
+              <p className="text-sm text-blue-600 mt-2">
+                ℹ️ <strong>Please check your details are correct - sometimes other staff attend on behalf of the original organiser!</strong>
+              </p>
             )}
 
-            {/* Last Name */}
-            {isFieldVisible("attendeeSurname", selectedRole) && (
+            {/* Group Leader Participation - For Group role only */}
+            {selectedRole === "Group" && (
               <FormField
                 control={form.control}
-                name="attendeeSurname"
+                name="groupLeaderParticipating"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Your last name: *</FormLabel>
+                  <FormItem className="mt-4">
+                    <FormLabel>Will you be participating in the games?</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter last name" {...field} />
+                      <RadioGroup
+                        onValueChange={(value) => field.onChange(value === "true")}
+                        value={field.value === undefined ? undefined : field.value ? "true" : "false"}
+                        className="space-y-2"
+                      >
+                        <label className="flex items-center space-x-2 border rounded-lg p-3 cursor-pointer hover:bg-gray-50">
+                          <RadioGroupItem value="true" id="participating-yes" />
+                          <div className="flex-1">I will be joining in the games as a participant</div>
+                        </label>
+                        <label className="flex items-center space-x-2 border rounded-lg p-3 cursor-pointer hover:bg-gray-50">
+                          <RadioGroupItem value="false" id="participating-no" />
+                          <div className="flex-1">I will not be taking part in the games</div>
+                        </label>
+                      </RadioGroup>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             )}
-          </div>
+          </>
         )}
 
         {/* Email - For Volunteer role only */}
@@ -468,33 +523,6 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
               </FormItem>
             )}
           />
-        )}
-
-        {/* Organization Alert - For Group role only */}
-        {selectedRole === "Group" && showOrganizationAlert && (
-          <div className="bg-orange-50 border border-orange-200 rounded-lg p-6">
-            <div className="flex items-start space-x-3">
-              <div className="text-3xl">⚠️</div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-orange-900 mb-2">
-                  Organisation Not Listed
-                </h3>
-                <p className="text-orange-800 mb-4">
-                  Please find a member of the Power2Inspire team to add your organisation to the system.
-                </p>
-                <Button
-                  type="button"
-                  onClick={() => {
-                    setShowOrganizationAlert(false);
-                    form.setValue("organizationId", "");
-                  }}
-                  className="bg-orange-600 hover:bg-orange-700"
-                >
-                  ← Back to Organisation Selection
-                </Button>
-              </div>
-            </div>
-          </div>
         )}
 
         {/* Volunteer Alert */}
@@ -557,183 +585,6 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
           </div>
         )}
 
-        {/* Impairment - Participant only */}
-        {!showOrganizationAlert && selectedRole === "Participant" && isFieldVisible("impairment", selectedRole) && (
-          <FormField
-            control={form.control}
-            name="impairment"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>
-                  Do you consider yourself to be a disabled person, or to have a long‑term physical or mental health condition or impairment? *
-                </FormLabel>
-                <FormControl>
-                  <RadioGroup
-                    onValueChange={field.onChange}
-                    value={field.value}
-                    className="space-y-2"
-                  >
-                    <label className="flex items-center space-x-2 border rounded-lg p-3 cursor-pointer hover:bg-gray-50">
-                      <RadioGroupItem value="yes" id="impairment-yes" />
-                      <div className="flex-1">Yes</div>
-                    </label>
-                    <label className="flex items-center space-x-2 border rounded-lg p-3 cursor-pointer hover:bg-gray-50">
-                      <RadioGroupItem value="no" id="impairment-no" />
-                      <div className="flex-1">No</div>
-                    </label>
-                    <label className="flex items-center space-x-2 border rounded-lg p-3 cursor-pointer hover:bg-gray-50">
-                      <RadioGroupItem value="prefer-not-to-say" id="impairment-prefer-not" />
-                      <div className="flex-1">Prefer not to say</div>
-                    </label>
-                  </RadioGroup>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
-
-        {/* Consent Checkboxes */}
-        {!showOrganizationAlert && (isFieldVisible("feedbackConsent", selectedRole) || isFieldVisible("nextEventConsent", selectedRole)) && (
-          <div className="space-y-4">
-            <FormLabel>Please can we contact you:</FormLabel>
-
-            {isFieldVisible("feedbackConsent", selectedRole) && (
-              <FormField
-                control={form.control}
-                name="feedbackConsent"
-                render={({ field }) => (
-                  <FormItem>
-                    <label className="flex items-start space-x-3 cursor-pointer">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                      <div className="flex-1 leading-tight">
-                        <div>To ask for your honest feedback after todays event?</div>
-                        <div className="text-sm text-gray-600">(4 minute online survey)</div>
-                      </div>
-                    </label>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-
-            {isFieldVisible("nextEventConsent", selectedRole) && (
-              <FormField
-                control={form.control}
-                name="nextEventConsent"
-                render={({ field }) => (
-                  <FormItem>
-                    <label className="flex items-start space-x-3 cursor-pointer">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                      <div className="flex-1 leading-tight">
-                        To share info about our next event?
-                      </div>
-                    </label>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-          </div>
-        )}
-
-        {/* Separator: Impairment -> Group Details (conditional) */}
-        {!showOrganizationAlert && shouldShowImpairmentFields && (isFieldVisible("groupSize", selectedRole) ||
-          isFieldVisible("disabledStudents", selectedRole) ||
-          isFieldVisible("senStudents", selectedRole)) && (
-          <hr className="my-6 border-gray-200" />
-        )}
-
-        {/* Conditional Fields for Teacher/Coordinator - Only for Disability Groups and Family Groups */}
-        {!showOrganizationAlert && shouldShowImpairmentFields && (isFieldVisible("groupSize", selectedRole) ||
-          isFieldVisible("disabledStudents", selectedRole) ||
-          isFieldVisible("senStudents", selectedRole)) && (
-          <>
-            {/* Group Size */}
-            {isFieldVisible("groupSize", selectedRole) && (
-              <FormField
-                control={form.control}
-                name="groupSize"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>How many participants are you responsible for in your group *</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        min="1"
-                        max="100"
-                        {...field}
-                        onChange={(e) => field.onChange(e.target.valueAsNumber)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-
-            {/* Disabled Students */}
-            {isFieldVisible("disabledStudents", selectedRole) && (
-              <FormField
-                control={form.control}
-                name="disabledStudents"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      How many of your participants are disabled people, or to have a long‑term physical or mental health condition or impairment? *
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        min="0"
-                        max="100"
-                        {...field}
-                        onChange={(e) => field.onChange(e.target.valueAsNumber)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-
-            {/* SEN Students */}
-            {isFieldVisible("senStudents", selectedRole) && (
-              <FormField
-                control={form.control}
-                name="senStudents"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      Do you have any special educational needs (SEN) or require additional learning support (for example dyslexia support, autism support, or similar)? *
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        min="0"
-                        max="100"
-                        {...field}
-                        onChange={(e) => field.onChange(e.target.valueAsNumber)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-          </>
-        )}
-
         {/* Volunteer Not Listed Alert */}
         {showVolunteerAlert && selectedRole === "Volunteer" && (
           <div className="bg-orange-50 border-2 border-orange-400 rounded-lg p-6 space-y-4">
@@ -784,12 +635,11 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
               <div className="text-3xl">🏢</div>
               <div className="flex-1">
                 <h3 className="font-semibold text-orange-900 text-lg mb-2">
-                  Organisation Not Listed
+                  Group Not Listed
                 </h3>
                 <p className="text-orange-800 mb-3">
-                  Your organisation isn&apos;t currently registered for this event.
-                  Please speak to a <strong>Power2Inspire team member</strong> so we can add your organisation
-                  and get your group registered.
+                  Your group isn&apos;t currently registered for this event.
+                  Please speak to a <strong>Power2Inspire team member</strong> and we can register your group right away!
                 </p>
                 <p className="text-orange-700 text-sm">
                   Look for someone wearing a P2I staff badge - they&apos;ll be happy to help you! 🎉
