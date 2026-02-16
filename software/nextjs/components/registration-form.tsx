@@ -525,65 +525,7 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
           />
         )}
 
-        {/* Volunteer Alert */}
-        {selectedRole === "Volunteer" && showVolunteerAlert && (
-          <div className="bg-orange-50 border border-orange-200 rounded-lg p-6">
-            <div className="flex items-start space-x-3">
-              <div className="text-3xl">⚠️</div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-orange-900 mb-4">
-                  Email Not Listed
-                </h3>
-                <p className="text-orange-800 mb-4">
-                  OK - first can we check if you are going to join in with the Games as a player?
-                </p>
 
-                {/* Option A: Blue box for participants */}
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-3">
-                  <p className="text-blue-900 font-medium mb-3">
-                    <strong>If you are playing in the Games</strong>
-                  </p>
-                  <Button
-                    type="button"
-                    onClick={() => {
-                      setShowVolunteerAlert(false);
-                      form.setValue("email", "");
-                      form.setValue("role", "Participant");
-                      router.push("?role=Participant");
-                    }}
-                    className="bg-blue-600 hover:bg-blue-700 w-full"
-                  >
-                    🎯 Switch to Participant Registration
-                  </Button>
-                </div>
-
-                {/* Option B: Lime green box for volunteers */}
-                <div className="bg-lime-50 border border-lime-200 rounded-lg p-4 mb-4">
-                  <p className="text-lime-900 font-medium mb-3">
-                    <strong>If you are not taking part</strong> but are setting up, cleaning afterwards, or helping move equipment
-                  </p>
-                  <p className="text-lime-800 mb-3">
-                    Welcome! 🙋 We&apos;re glad you&apos;re here to help.
-                  </p>
-                  <p className="text-lime-800">
-                    Please find a member of the Power2Inspire team to add you to the volunteer list.
-                  </p>
-                </div>
-
-                <Button
-                  type="button"
-                  onClick={() => {
-                    setShowVolunteerAlert(false);
-                    form.setValue("email", "");
-                  }}
-                  className="bg-orange-600 hover:bg-orange-700"
-                >
-                  ← Back to Email Selection
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Volunteer Not Listed Alert */}
         {showVolunteerAlert && selectedRole === "Volunteer" && (
