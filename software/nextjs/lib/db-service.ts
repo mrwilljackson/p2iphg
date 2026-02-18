@@ -1,0 +1,403 @@
+/**
+ * Database Service
+ * 
+ * Provides data access layer for the Neon PostgreSQL database.
+ * Mirrors the MockDataService API for easy migration.
+ * 
+ * This service handles:
+ * - Event queries (active event, all events)
+ * - Organization queries (by event, by ID, search)
+ * - Volunteer queries (by email, by event)
+ * - Registration creation
+ * 
+ * Version: 1.0
+ * Date: 2026-02-18
+ */
+
+import { db } from './db/client';
+import { events, organizations, volunteers, registrations } from './db/schema';
+import { eq, and, ilike, or } from 'drizzle-orm';
+import { Event, Organization, Volunteer, Registration } from './types';
+
+/**
+ * Database Service Class
+ * Provides async methods for querying and mutating data
+ */
+export class DatabaseService {
+  /**
+   * Get the current active event
+   * Returns the first event with status 'active'
+   */
+  static async getCurrentEvent(): Promise<Event | null> {
+    try {
+      const result = await db
+        .select()
+        .from(events)
+        .where(eq(events.status, 'active'))
+        .limit(1);
+      
+      return result[0] ? mapEventFromDb(result[0]) : null;
+    } catch (error) {
+      console.error('Error fetching current event:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get all events
+   */
+  static async getAllEvents(): Promise<Event[]> {
+    try {
+      const result = await db.select().from(events);
+      return result.map(mapEventFromDb);
+    } catch (error) {
+      console.error('Error fetching all events:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get all organizations for a specific event
+   * If no eventId provided, returns all organizations
+   */
+  static async getOrganizations(eventId?: string): Promise<Organization[]> {
+    try {
+      const query = eventId
+        ? db.select().from(organizations).where(eq(organizations.eventId, eventId))
+        : db.select().from(organizations);
+      
+      const result = await query;
+      return result.map(mapOrganizationFromDb);
+    } catch (error) {
+      console.error('Error fetching organizations:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get organization by ID
+   */
+  static async getOrganizationById(id: string): Promise<Organization | null> {
+    try {
+      const result = await db
+        .select()
+        .from(organizations)
+        .where(eq(organizations.id, id))
+        .limit(1);
+      
+      return result[0] ? mapOrganizationFromDb(result[0]) : null;
+    } catch (error) {
+      console.error('Error fetching organization by ID:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get event by ID
+   */
+  static async getEventById(id: string): Promise<Event | null> {
+    try {
+      const result = await db
+        .select()
+        .from(events)
+        .where(eq(events.id, id))
+        .limit(1);
+      
+      return result[0] ? mapEventFromDb(result[0]) : null;
+    } catch (error) {
+      console.error('Error fetching event by ID:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Search organizations by name for a specific event
+   * Case-insensitive search
+   */
+  static async searchOrganizations(query: string, eventId?: string): Promise<Organization[]> {
+    try {
+      const conditions = [];
+      
+      if (query) {
+        conditions.push(ilike(organizations.name, `%${query}%`));
+      }
+      
+      if (eventId) {
+        conditions.push(eq(organizations.eventId, eventId));
+      }
+
+      const dbQuery = conditions.length > 0
+        ? db.select().from(organizations).where(and(...conditions))
+        : db.select().from(organizations);
+      
+      const result = await dbQuery;
+      return result.map(mapOrganizationFromDb);
+    } catch (error) {
+      console.error('Error searching organizations:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Check if an email address belongs to a registered volunteer for a specific event
+   */
+  static async isRegisteredVolunteer(email: string, eventId?: string): Promise<boolean> {
+    try {
+      const conditions = [ilike(volunteers.email, email)];
+
+      if (eventId) {
+        conditions.push(eq(volunteers.eventId, eventId));
+      }
+
+      const result = await db
+        .select()
+        .from(volunteers)
+        .where(and(...conditions))
+        .limit(1);
+
+      return result.length > 0;
+    } catch (error) {
+      console.error('Error checking volunteer registration:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get all registered volunteer emails for a specific event
+   */
+  static async getVolunteerEmails(eventId?: string): Promise<string[]> {
+    try {
+      const query = eventId
+        ? db.select({ email: volunteers.email }).from(volunteers).where(eq(volunteers.eventId, eventId))
+        : db.select({ email: volunteers.email }).from(volunteers);
+
+      const result = await query;
+      return result.map(v => v.email);
+    } catch (error) {
+      console.error('Error fetching volunteer emails:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get volunteer details by email for a specific event
+   */
+  static async getVolunteerByEmail(email: string, eventId?: string): Promise<Volunteer | null> {
+    try {
+      const conditions = [ilike(volunteers.email, email)];
+
+      if (eventId) {
+        conditions.push(eq(volunteers.eventId, eventId));
+      }
+
+      const result = await db
+        .select()
+        .from(volunteers)
+        .where(and(...conditions))
+        .limit(1);
+
+      return result[0] ? mapVolunteerFromDb(result[0]) : null;
+    } catch (error) {
+      console.error('Error fetching volunteer by email:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get all registered volunteers for a specific event
+   */
+  static async getAllVolunteers(eventId?: string): Promise<Volunteer[]> {
+    try {
+      const query = eventId
+        ? db.select().from(volunteers).where(eq(volunteers.eventId, eventId))
+        : db.select().from(volunteers);
+
+      const result = await query;
+      return result.map(mapVolunteerFromDb);
+    } catch (error) {
+      console.error('Error fetching all volunteers:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create a new registration
+   * Sets syncStatus to 'pending' by default
+   */
+  static async createRegistration(data: Omit<Registration, 'id' | 'createdAt' | 'modifiedAt'>): Promise<Registration> {
+    try {
+      const result = await db.insert(registrations).values({
+        eventId: data.eventId,
+        attendeeName: data.attendeeName,
+        attendeeSurname: data.attendeeSurname,
+        email: data.email || null,
+        organizationId: data.organizationId || null,
+        impairment: data.impairment || null,
+        role: data.role,
+        photoConsent: data.photoConsent,
+        feedbackConsent: data.feedbackConsent || null,
+        nextEventConsent: data.nextEventConsent || null,
+        groupSize: data.groupSize || null,
+        disabledStudents: data.disabledStudents || null,
+        senStudents: data.senStudents || null,
+        groupLeaderParticipating: data.groupLeaderParticipating || null,
+        checkinTime: data.checkinTime || null,
+        checkoutTime: data.checkoutTime || null,
+        syncStatus: 'pending',
+        airtableRecordId: null,
+      }).returning();
+
+      return mapRegistrationFromDb(result[0]);
+    } catch (error) {
+      console.error('Error creating registration:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create a new organization (for admin use)
+   */
+  static async createOrganization(data: Omit<Organization, 'id' | 'createdAt' | 'modifiedAt'>): Promise<Organization> {
+    try {
+      const result = await db.insert(organizations).values({
+        eventId: data.eventId,
+        name: data.name,
+        isDisabilityGroup: data.isDisabilityGroup || false,
+        imageUrl: data.imageUrl || null,
+        contactFirstName: data.contactFirstName || null,
+        contactLastName: data.contactLastName || null,
+        contactEmail: data.contactEmail || null,
+        contactPhone: data.contactPhone || null,
+        notes: data.notes || null,
+        airtableRecordId: data.airtableRecordId || null,
+      }).returning();
+
+      return mapOrganizationFromDb(result[0]);
+    } catch (error) {
+      console.error('Error creating organization:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create a new volunteer (for admin use)
+   */
+  static async createVolunteer(data: Omit<Volunteer, 'id' | 'createdAt' | 'modifiedAt'>): Promise<Volunteer> {
+    try {
+      const result = await db.insert(volunteers).values({
+        eventId: data.eventId,
+        email: data.email,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        photoConsent: data.photoConsent,
+        feedbackConsent: data.feedbackConsent,
+        nextEventConsent: data.nextEventConsent,
+        airtableRecordId: data.airtableRecordId || null,
+      }).returning();
+
+      return mapVolunteerFromDb(result[0]);
+    } catch (error) {
+      console.error('Error creating volunteer:', error);
+      throw error;
+    }
+  }
+}
+
+/**
+ * Mapper Functions
+ * Convert database snake_case fields to TypeScript camelCase
+ */
+
+function mapEventFromDb(dbEvent: any): Event {
+  return {
+    id: dbEvent.id,
+    name: dbEvent.name,
+    date: dbEvent.date,
+    location: dbEvent.location,
+    description: dbEvent.description,
+    status: dbEvent.status,
+    airtableRecordId: dbEvent.airtableRecordId,
+    createdAt: dbEvent.createdAt?.toISOString(),
+    modifiedAt: dbEvent.modifiedAt?.toISOString(),
+  };
+}
+
+function mapOrganizationFromDb(dbOrg: any): Organization {
+  return {
+    id: dbOrg.id,
+    eventId: dbOrg.eventId,
+    name: dbOrg.name,
+    isDisabilityGroup: dbOrg.isDisabilityGroup,
+    imageUrl: dbOrg.imageUrl,
+    contactFirstName: dbOrg.contactFirstName,
+    contactLastName: dbOrg.contactLastName,
+    contactEmail: dbOrg.contactEmail,
+    contactPhone: dbOrg.contactPhone,
+    notes: dbOrg.notes,
+    airtableRecordId: dbOrg.airtableRecordId,
+    createdAt: dbOrg.createdAt?.toISOString(),
+    modifiedAt: dbOrg.modifiedAt?.toISOString(),
+  };
+}
+
+function mapVolunteerFromDb(dbVol: any): Volunteer {
+  return {
+    id: dbVol.id,
+    eventId: dbVol.eventId,
+    email: dbVol.email,
+    firstName: dbVol.firstName,
+    lastName: dbVol.lastName,
+    photoConsent: dbVol.photoConsent,
+    feedbackConsent: dbVol.feedbackConsent,
+    nextEventConsent: dbVol.nextEventConsent,
+    airtableRecordId: dbVol.airtableRecordId,
+    createdAt: dbVol.createdAt?.toISOString(),
+    modifiedAt: dbVol.modifiedAt?.toISOString(),
+  };
+}
+
+function mapRegistrationFromDb(dbReg: any): Registration {
+  return {
+    id: dbReg.id,
+    eventId: dbReg.eventId,
+    attendeeName: dbReg.attendeeName,
+    attendeeSurname: dbReg.attendeeSurname,
+    email: dbReg.email,
+    organizationId: dbReg.organizationId,
+    impairment: dbReg.impairment,
+    role: dbReg.role,
+    photoConsent: dbReg.photoConsent,
+    feedbackConsent: dbReg.feedbackConsent,
+    nextEventConsent: dbReg.nextEventConsent,
+    groupSize: dbReg.groupSize,
+    disabledStudents: dbReg.disabledStudents,
+    senStudents: dbReg.senStudents,
+    groupLeaderParticipating: dbReg.groupLeaderParticipating,
+    checkinTime: dbReg.checkinTime?.toISOString(),
+    checkoutTime: dbReg.checkoutTime?.toISOString(),
+    syncStatus: dbReg.syncStatus,
+    airtableRecordId: dbReg.airtableRecordId,
+    createdAt: dbReg.createdAt?.toISOString(),
+    modifiedAt: dbReg.modifiedAt?.toISOString(),
+  };
+}
+
+/**
+ * Helper Functions
+ * Re-export from mock-data-service for compatibility
+ */
+
+export function organizationsToOptions(organizations: Organization[]) {
+  return organizations.map(org => ({
+    value: org.id,
+    label: org.name,
+  }));
+}
+
+export function eventsToOptions(events: Event[]) {
+  return events.map(evt => ({
+    value: evt.id,
+    label: `${evt.name} - ${evt.date}`,
+  }));
+}
+
