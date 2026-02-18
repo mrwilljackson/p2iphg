@@ -166,18 +166,44 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
   const onSubmit = async (data: RegistrationFormData) => {
     setIsSubmitting(true);
     console.log("Form submitted:", data);
-    
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    
-    setIsSubmitting(false);
-    setSubmitSuccess(true);
-    
-    // Reset form after 2 seconds
-    setTimeout(() => {
-      form.reset();
-      setSubmitSuccess(false);
-    }, 2000);
+
+    try {
+      // Save registration to database
+      const registration = await DatabaseService.createRegistration({
+        eventId: data.eventId,
+        attendeeName: data.attendeeName,
+        attendeeSurname: data.attendeeSurname,
+        email: data.email,
+        organizationId: data.organizationId,
+        impairment: data.impairment,
+        role: data.role,
+        photoConsent: data.photoConsent,
+        feedbackConsent: data.feedbackConsent,
+        nextEventConsent: data.nextEventConsent,
+        groupSize: data.groupSize,
+        disabledStudents: data.disabledStudents,
+        senStudents: data.senStudents,
+        groupLeaderParticipating: data.groupLeaderParticipating,
+      });
+
+      console.log("Registration saved successfully:", registration);
+
+      setIsSubmitting(false);
+      setSubmitSuccess(true);
+
+      // Reset form after 3 seconds
+      setTimeout(() => {
+        form.reset();
+        setSubmitSuccess(false);
+        // Reload the page to get fresh data
+        window.location.reload();
+      }, 3000);
+    } catch (error) {
+      console.error("Error saving registration:", error);
+      setIsSubmitting(false);
+      // TODO: Show error message to user
+      alert("Failed to save registration. Please try again.");
+    }
   };
 
   // Show loading state while fetching data
