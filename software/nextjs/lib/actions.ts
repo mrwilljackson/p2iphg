@@ -66,3 +66,23 @@ export async function createVolunteer(data: Omit<Volunteer, 'id' | 'createdAt' |
   return await DatabaseService.createVolunteer(data);
 }
 
+/**
+ * Find or create a family group organization
+ * Used when a Group leader selects "Family Group" and enters their surname
+ */
+export async function findOrCreateFamilyGroup(
+  eventId: string,
+  surname: string,
+  contactEmail: string,
+  contactFirstName: string,
+  contactLastName: string
+): Promise<Organization> {
+  return await DatabaseService.findOrCreateFamilyGroup(
+    eventId,
+    surname,
+    contactEmail,
+    contactFirstName,
+    contactLastName
+  );
+}
+

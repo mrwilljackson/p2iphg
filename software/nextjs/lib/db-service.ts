@@ -280,6 +280,65 @@ export class DatabaseService {
   }
 
   /**
+   * Find or create a family group organization
+   * Family groups are unique by: name + eventId + contactEmail
+   *
+   * @param eventId - The event ID
+   * @param surname - The family surname (e.g., "Smith")
+   * @param contactEmail - The group leader's email
+   * @param contactFirstName - The group leader's first name
+   * @param contactLastName - The group leader's last name (should match surname)
+   * @returns The existing or newly created family group organization
+   */
+  static async findOrCreateFamilyGroup(
+    eventId: string,
+    surname: string,
+    contactEmail: string,
+    contactFirstName: string,
+    contactLastName: string
+  ): Promise<Organization> {
+    try {
+      const familyGroupName = `${surname} Family Group`;
+
+      // Check if this family group already exists for this event with this contact email
+      const existing = await db
+        .select()
+        .from(organizations)
+        .where(
+          and(
+            eq(organizations.eventId, eventId),
+            eq(organizations.name, familyGroupName),
+            eq(organizations.contactEmail, contactEmail)
+          )
+        )
+        .limit(1);
+
+      if (existing.length > 0) {
+        return mapOrganizationFromDb(existing[0]);
+      }
+
+      // Create new family group organization
+      const result = await db.insert(organizations).values({
+        eventId: eventId,
+        name: familyGroupName,
+        isDisabilityGroup: false, // Family groups are not disability groups
+        imageUrl: null,
+        contactFirstName: contactFirstName,
+        contactLastName: contactLastName,
+        contactEmail: contactEmail,
+        contactPhone: null,
+        notes: 'Auto-created family group',
+        airtableRecordId: null,
+      }).returning();
+
+      return mapOrganizationFromDb(result[0]);
+    } catch (error) {
+      console.error('Error finding or creating family group:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Create a new volunteer (for admin use)
    */
   static async createVolunteer(data: Omit<Volunteer, 'id' | 'createdAt' | 'modifiedAt'>): Promise<Volunteer> {

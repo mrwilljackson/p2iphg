@@ -26,7 +26,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
-import { getCurrentEvent, getOrganizations, getVolunteerEmails, getVolunteerByEmail, createRegistration } from "@/lib/actions";
+import { getCurrentEvent, getOrganizations, getVolunteerEmails, getVolunteerByEmail, createRegistration, findOrCreateFamilyGroup } from "@/lib/actions";
 import { organizationsToOptions } from "@/lib/helpers";
 import { isFieldVisible, type RegistrationType } from "@/lib/field-visibility-config";
 import type { RegistrationRole } from "@/lib/types";
@@ -169,13 +169,33 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
     console.log("Form submitted:", data);
 
     try {
+      let finalOrganizationId = data.organizationId;
+
+      // Check if "Family Group" was selected
+      const selectedOrg = allOrganizations.find(org => org.id === data.organizationId);
+      if (selectedOrg && selectedOrg.name === "Family Group") {
+        // Create or find the family group organization
+        console.log("Creating/finding family group for:", data.attendeeSurname);
+
+        const familyGroup = await findOrCreateFamilyGroup(
+          data.eventId,
+          data.attendeeSurname,
+          data.email || "",
+          data.attendeeName,
+          data.attendeeSurname
+        );
+
+        console.log("Family group created/found:", familyGroup);
+        finalOrganizationId = familyGroup.id!;
+      }
+
       // Save registration to database
       const registration = await createRegistration({
         eventId: data.eventId,
         attendeeName: data.attendeeName,
         attendeeSurname: data.attendeeSurname,
         email: data.email,
-        organizationId: data.organizationId,
+        organizationId: finalOrganizationId,
         impairment: data.impairment,
         role: data.role,
         photoConsent: data.photoConsent,
