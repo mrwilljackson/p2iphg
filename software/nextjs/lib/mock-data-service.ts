@@ -28,16 +28,22 @@ const MOCK_EVENTS: Event[] = [
     name: 'Leicester Tigers 2026',
     date: '2026-03-15',
     location: 'Leicester Sports Arena',
-    status: 'active', // Change to 'inactive' to switch to Manchester
+    description: 'PowerHouseGames event at Leicester Sports Arena',
+    status: 'completed', // Changed from 'inactive' to 'completed' (valid EventStatus)
     airtableRecordId: 'recLEICESTER2026',
+    createdAt: '2026-01-15T10:00:00Z',
+    modifiedAt: '2026-01-15T10:00:00Z',
   },
   {
     id: 'evt_002',
     name: 'Manchester 2026',
     date: '2026-06-20',
     location: 'Manchester Arena',
-    status: 'active', // Change to 'active' to use Manchester
+    description: 'PowerHouseGames event at Manchester Arena',
+    status: 'active', // Active event
     airtableRecordId: 'recMANCHESTER2026',
+    createdAt: '2026-01-20T10:00:00Z',
+    modifiedAt: '2026-01-20T10:00:00Z',
   },
 ];
 
@@ -51,10 +57,16 @@ const MOCK_ORGANIZATIONS: Organization[] = [
     id: 'org_lei_000',
     eventId: 'evt_001',
     name: 'Family Group',
-    isDisabilityGroup: false,
+    isDisabilityGroup: true, // Fixed: Family groups need group-specific fields
     imageUrl: '/logos/family-group.png', // Placeholder - family icon
+    contactFirstName: undefined,
+    contactLastName: undefined,
+    contactEmail: undefined,
+    contactPhone: undefined,
+    notes: 'For individual families attending together',
     airtableRecordId: 'recLEI_ORG000',
-    // Note: Family Group doesn't have pre-set contact details - personalized per family
+    createdAt: '2026-01-15T10:00:00Z',
+    modifiedAt: '2026-01-15T10:00:00Z',
   },
   {
     id: 'org_lei_001',
@@ -65,7 +77,11 @@ const MOCK_ORGANIZATIONS: Organization[] = [
     contactFirstName: 'Rachel',
     contactLastName: 'Thompson',
     contactEmail: 'rachel.thompson@next.co.uk',
+    contactPhone: '+44 116 284 5000',
+    notes: 'Corporate sponsor and participant',
     airtableRecordId: 'recLEI_ORG001',
+    createdAt: '2026-01-15T10:00:00Z',
+    modifiedAt: '2026-01-15T10:00:00Z',
   },
   {
     id: 'org_lei_002',
@@ -76,7 +92,11 @@ const MOCK_ORGANIZATIONS: Organization[] = [
     contactFirstName: 'Tom',
     contactLastName: 'Harrison',
     contactEmail: 'tom.harrison@leicestertigers.com',
+    contactPhone: '+44 116 217 1880',
+    notes: 'Rugby club community engagement',
     airtableRecordId: 'recLEI_ORG002',
+    createdAt: '2026-01-15T10:00:00Z',
+    modifiedAt: '2026-01-15T10:00:00Z',
   },
   {
     id: 'org_lei_003',
@@ -87,7 +107,11 @@ const MOCK_ORGANIZATIONS: Organization[] = [
     contactFirstName: 'Dr. Sarah',
     contactLastName: 'Mitchell',
     contactEmail: 'sarah.mitchell@dmu.ac.uk',
+    contactPhone: '+44 116 250 6070',
+    notes: 'University sports science department',
     airtableRecordId: 'recLEI_ORG003',
+    createdAt: '2026-01-15T10:00:00Z',
+    modifiedAt: '2026-01-15T10:00:00Z',
   },
   {
     id: 'org_lei_004',
@@ -98,7 +122,11 @@ const MOCK_ORGANIZATIONS: Organization[] = [
     contactFirstName: 'Helen',
     contactLastName: 'Davies',
     contactEmail: 'helen.davies@glenfield-sen.sch.uk',
+    contactPhone: '+44 116 287 6555',
+    notes: 'Special educational needs school',
     airtableRecordId: 'recLEI_ORG004',
+    createdAt: '2026-01-15T10:00:00Z',
+    modifiedAt: '2026-01-15T10:00:00Z',
   },
 
   // Manchester Event Organizations
@@ -106,10 +134,16 @@ const MOCK_ORGANIZATIONS: Organization[] = [
     id: 'org_man_000',
     eventId: 'evt_002',
     name: 'Family Group',
-    isDisabilityGroup: false,
+    isDisabilityGroup: true, // Fixed: Family groups need group-specific fields
     imageUrl: '/logos/family-group.png', // Placeholder - family icon
+    contactFirstName: undefined,
+    contactLastName: undefined,
+    contactEmail: undefined,
+    contactPhone: undefined,
+    notes: 'For individual families attending together',
     airtableRecordId: 'recMAN_ORG000',
-    // Note: Family Group doesn't have pre-set contact details - personalized per family
+    createdAt: '2026-01-20T10:00:00Z',
+    modifiedAt: '2026-01-20T10:00:00Z',
   },
   {
     id: 'org_man_001',
@@ -120,7 +154,11 @@ const MOCK_ORGANIZATIONS: Organization[] = [
     contactFirstName: 'Amanda',
     contactLastName: 'Roberts',
     contactEmail: 'amanda.roberts@deloitte.co.uk',
+    contactPhone: '+44 161 455 8787',
+    notes: 'Corporate sponsor and participant',
     airtableRecordId: 'recMAN_ORG001',
+    createdAt: '2026-01-20T10:00:00Z',
+    modifiedAt: '2026-01-20T10:00:00Z',
   },
   {
     id: 'org_man_002',
@@ -131,7 +169,11 @@ const MOCK_ORGANIZATIONS: Organization[] = [
     contactFirstName: 'Mark',
     contactLastName: 'Anderson',
     contactEmail: 'mark.anderson@siemens.com',
+    contactPhone: '+44 161 446 6400',
+    notes: 'Engineering company community program',
     airtableRecordId: 'recMAN_ORG002',
+    createdAt: '2026-01-20T10:00:00Z',
+    modifiedAt: '2026-01-20T10:00:00Z',
   },
   {
     id: 'org_man_003',
@@ -142,7 +184,11 @@ const MOCK_ORGANIZATIONS: Organization[] = [
     contactFirstName: 'Chris',
     contactLastName: 'Murphy',
     contactEmail: 'chris.murphy@salesharks.com',
-    airtableRecordId: 'recMAN_ORG002',
+    contactPhone: '+44 161 286 8888',
+    notes: 'Rugby club community engagement',
+    airtableRecordId: 'recMAN_ORG003',
+    createdAt: '2026-01-20T10:00:00Z',
+    modifiedAt: '2026-01-20T10:00:00Z',
   },
   {
     id: 'org_man_004',
@@ -153,7 +199,11 @@ const MOCK_ORGANIZATIONS: Organization[] = [
     contactFirstName: 'Prof. Lisa',
     contactLastName: 'Chen',
     contactEmail: 'lisa.chen@manchester.ac.uk',
-    airtableRecordId: 'recMAN_ORG003',
+    contactPhone: '+44 161 306 6000',
+    notes: 'University sports and health department',
+    airtableRecordId: 'recMAN_ORG004',
+    createdAt: '2026-01-20T10:00:00Z',
+    modifiedAt: '2026-01-20T10:00:00Z',
   },
   {
     id: 'org_man_005',
@@ -164,7 +214,11 @@ const MOCK_ORGANIZATIONS: Organization[] = [
     contactFirstName: 'Karen',
     contactLastName: 'Williams',
     contactEmail: 'karen.williams@hazelgrove-sen.sch.uk',
-    airtableRecordId: 'recMAN_ORG004',
+    contactPhone: '+44 161 483 3622',
+    notes: 'Special educational needs school',
+    airtableRecordId: 'recMAN_ORG005',
+    createdAt: '2026-01-20T10:00:00Z',
+    modifiedAt: '2026-01-20T10:00:00Z',
   },
 ];
 
@@ -175,6 +229,7 @@ const MOCK_ORGANIZATIONS: Organization[] = [
 const MOCK_VOLUNTEERS: Volunteer[] = [
   // Leicester Event Volunteers
   {
+    id: 'vol_lei_001',
     eventId: 'evt_001',
     email: 'sarah.jones@leicester.ac.uk',
     firstName: 'Sarah',
@@ -182,8 +237,12 @@ const MOCK_VOLUNTEERS: Volunteer[] = [
     photoConsent: true,
     feedbackConsent: true,
     nextEventConsent: true,
+    airtableRecordId: 'recLEI_VOL001',
+    createdAt: '2026-01-15T10:00:00Z',
+    modifiedAt: '2026-01-15T10:00:00Z',
   },
   {
+    id: 'vol_lei_002',
     eventId: 'evt_001',
     email: 'mike.patel@tigers.com',
     firstName: 'Mike',
@@ -191,8 +250,12 @@ const MOCK_VOLUNTEERS: Volunteer[] = [
     photoConsent: false,
     feedbackConsent: true,
     nextEventConsent: false,
+    airtableRecordId: 'recLEI_VOL002',
+    createdAt: '2026-01-15T10:00:00Z',
+    modifiedAt: '2026-01-15T10:00:00Z',
   },
   {
+    id: 'vol_lei_003',
     eventId: 'evt_001',
     email: 'emma.wilson@dmu.ac.uk',
     firstName: 'Emma',
@@ -200,10 +263,14 @@ const MOCK_VOLUNTEERS: Volunteer[] = [
     photoConsent: true,
     feedbackConsent: false,
     nextEventConsent: true,
+    airtableRecordId: 'recLEI_VOL003',
+    createdAt: '2026-01-15T10:00:00Z',
+    modifiedAt: '2026-01-15T10:00:00Z',
   },
 
   // Manchester Event Volunteers
   {
+    id: 'vol_man_001',
     eventId: 'evt_002',
     email: 'james.brown@manchester.ac.uk',
     firstName: 'James',
@@ -211,8 +278,12 @@ const MOCK_VOLUNTEERS: Volunteer[] = [
     photoConsent: true,
     feedbackConsent: true,
     nextEventConsent: true,
+    airtableRecordId: 'recMAN_VOL001',
+    createdAt: '2026-01-20T10:00:00Z',
+    modifiedAt: '2026-01-20T10:00:00Z',
   },
   {
+    id: 'vol_man_002',
     eventId: 'evt_002',
     email: 'lucy.taylor@mufc.com',
     firstName: 'Lucy',
@@ -220,8 +291,12 @@ const MOCK_VOLUNTEERS: Volunteer[] = [
     photoConsent: false,
     feedbackConsent: false,
     nextEventConsent: true,
+    airtableRecordId: 'recMAN_VOL002',
+    createdAt: '2026-01-20T10:00:00Z',
+    modifiedAt: '2026-01-20T10:00:00Z',
   },
   {
+    id: 'vol_man_003',
     eventId: 'evt_002',
     email: 'david.khan@mcfc.com',
     firstName: 'David',
@@ -229,6 +304,9 @@ const MOCK_VOLUNTEERS: Volunteer[] = [
     photoConsent: true,
     feedbackConsent: true,
     nextEventConsent: false,
+    airtableRecordId: 'recMAN_VOL003',
+    createdAt: '2026-01-20T10:00:00Z',
+    modifiedAt: '2026-01-20T10:00:00Z',
   },
 ];
 

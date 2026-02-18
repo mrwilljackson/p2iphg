@@ -41,16 +41,23 @@ export const eventSchema = z.object({
 /**
  * Organization Schema
  * Validates organization data from Airtable or API
+ * V2: Added event-specific fields and contact person details
  */
 export const organizationSchema = z.object({
   id: z.string().min(1, "Organization ID is required"),
+  eventId: z.string().min(1, "Event ID is required"),
   name: z
     .string()
     .min(2, "Organization name must be at least 2 characters")
     .max(200, "Organization name must be at most 200 characters"),
+  isDisabilityGroup: z.boolean().optional(),
+  imageUrl: z.string().optional().or(z.literal("")),
+  contactFirstName: z.string().optional().or(z.literal("")),
+  contactLastName: z.string().optional().or(z.literal("")),
   contactEmail: z.string().email("Invalid email format").optional().or(z.literal("")),
-  contactPhone: z.string().optional(),
-  notes: z.string().optional(),
+  contactPhone: z.string().optional().or(z.literal("")),
+  notes: z.string().optional().or(z.literal("")),
+  airtableRecordId: z.string().optional().or(z.literal("")),
   createdAt: z.string().datetime().optional(),
   modifiedAt: z.string().datetime().optional(),
 });
@@ -146,6 +153,24 @@ export const registrationSchema = registrationFormSchema.extend({
 });
 
 /**
+ * Volunteer Schema
+ * Validates volunteer data from Airtable or API
+ */
+export const volunteerSchema = z.object({
+  id: z.string().min(1, "Volunteer ID is required"),
+  eventId: z.string().min(1, "Event ID is required"),
+  email: z.string().email("Invalid email format"),
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  photoConsent: z.boolean(),
+  feedbackConsent: z.boolean(),
+  nextEventConsent: z.boolean(),
+  airtableRecordId: z.string().optional().or(z.literal("")),
+  createdAt: z.string().datetime().optional(),
+  modifiedAt: z.string().datetime().optional(),
+});
+
+/**
  * Attendance Update Schema
  * Validates check-in/check-out requests
  */
@@ -187,6 +212,7 @@ export const exportCSVRequestSchema = z.object({
 
 export type EventSchemaType = z.infer<typeof eventSchema>;
 export type OrganizationSchemaType = z.infer<typeof organizationSchema>;
+export type VolunteerSchemaType = z.infer<typeof volunteerSchema>;
 export type RegistrationFormSchemaType = z.infer<typeof registrationFormSchema>;
 export type RegistrationSchemaType = z.infer<typeof registrationSchema>;
 export type AttendanceUpdateSchemaType = z.infer<typeof attendanceUpdateSchema>;

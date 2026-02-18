@@ -1,7 +1,7 @@
 # Power2Inspire Event CRM App - Data Models
 
-**Document Version:** 2.0
-**Date:** 2026-02-16
+**Document Version:** 2.1
+**Date:** 2026-02-18
 **Status:** Current Implementation (NextJS Web App)
 
 ## 1. Domain Entities
@@ -274,6 +274,9 @@ Represents a pre-registered volunteer for an event. Volunteers are event-specifi
 - `firstName` (String, required): Volunteer first name
 - `lastName` (String, required): Volunteer last name
 - `email` (String, required): Volunteer email (unique per event)
+- `photoConsent` (bool, required): Photo consent preference (default: true)
+- `feedbackConsent` (bool, required): Feedback survey consent (default: false)
+- `nextEventConsent` (bool, required): Next event info consent (default: false)
 - `airtableRecordId` (String, optional): Airtable record ID after sync
 - `createdAt` (DateTime, optional): Record creation timestamp
 - `modifiedAt` (DateTime, optional): Last modification timestamp
@@ -282,8 +285,9 @@ Represents a pre-registered volunteer for an event. Volunteers are event-specifi
 - Volunteers are pre-registered before the event (loaded from Airtable or added by P2I Admin)
 - Email must be unique per event
 - Volunteers are linked to specific events via eventId
-- When a volunteer registers at the event, their name is auto-populated from this entity
+- When a volunteer registers at the event, their name and consent preferences are auto-populated from this entity
 - Volunteers can be added by P2I Admin during event if not pre-registered
+- Consent fields are pre-set during volunteer registration and auto-populate the registration form
 
 **Example:**
 ```typescript
@@ -293,6 +297,9 @@ Represents a pre-registered volunteer for an event. Volunteers are event-specifi
   firstName: 'Sarah',
   lastName: 'Johnson',
   email: 'sarah.johnson@volunteer.org',
+  photoConsent: true,
+  feedbackConsent: true,
+  nextEventConsent: true,
   airtableRecordId: 'rec_abc123',
   createdAt: '2026-01-20T14:00:00Z',
   modifiedAt: '2026-01-20T14:00:00Z',
@@ -570,6 +577,14 @@ Organization (1) ──────< (Many) Registration
 ---
 
 ## 8. Version History
+
+### V2.1 Changes (2026-02-18)
+
+**Minor Updates:**
+1. **Volunteer Entity**: Added consent fields (`photoConsent`, `feedbackConsent`, `nextEventConsent`)
+   - These fields are pre-set during volunteer registration
+   - Auto-populate the registration form when volunteer selects their email
+2. **Documentation Alignment**: Updated Volunteer entity documentation to match implementation
 
 ### V2.0 Changes (2026-02-16)
 

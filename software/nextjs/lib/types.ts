@@ -43,6 +43,8 @@ export interface Event {
  * - feedbackConsent: optional checkbox for post-event feedback
  * - nextEventConsent: optional checkbox for next event info
  * - Group role includes groupSize, disabledStudents, and senStudents
+ * V3 Changes:
+ * - Added groupLeaderParticipating field for Group role
  */
 export interface Registration {
   id?: string; // Local UUID (optional for new records)
@@ -59,6 +61,7 @@ export interface Registration {
   groupSize?: number; // Number of participants in group (REQUIRED for Group)
   disabledStudents?: number; // Number of disabled participants (REQUIRED for Group)
   senStudents?: number; // Number of SEN/additional learning support students (REQUIRED for Group)
+  groupLeaderParticipating?: boolean; // Whether group leader is participating in games (Group role only)
   checkinTime?: string; // ISO 8601 timestamp (optional)
   checkoutTime?: string; // ISO 8601 timestamp (optional)
   syncStatus?: SyncStatus; // pending | synced | failed (optional, for offline mode)
@@ -94,15 +97,20 @@ export interface Organization {
  * Volunteer Entity
  * Represents a pre-registered volunteer with their details
  * V2: Added eventId to support event-specific volunteers
+ * V3: Added id, airtableRecordId, and timestamp fields for database persistence
  */
 export interface Volunteer {
+  id: string; // Local UUID
   eventId: string; // Event ID this volunteer is registered for
-  email: string; // Volunteer email (unique identifier)
+  email: string; // Volunteer email (unique identifier per event)
   firstName: string; // First name
   lastName: string; // Last name
   photoConsent: boolean; // Photo consent preference
   feedbackConsent: boolean; // Feedback survey consent
   nextEventConsent: boolean; // Next event info consent
+  airtableRecordId?: string; // Airtable record ID (optional)
+  createdAt?: string; // ISO 8601 timestamp
+  modifiedAt?: string; // ISO 8601 timestamp
 }
 
 // ============================================================================
