@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { RegistrationForm } from "@/components/registration-form";
 import { EventHeader } from "@/components/event-header";
 import { AdminLoginModal } from "@/components/admin-login-modal";
-import { DatabaseService } from "@/lib/db-service";
+import { getCurrentEvent } from "@/lib/actions";
 import type { RegistrationRole, Event } from "@/lib/types";
 
 function TestFormContent() {
@@ -17,7 +17,7 @@ function TestFormContent() {
   // Load current event
   useEffect(() => {
     async function loadEvent() {
-      const event = await DatabaseService.getCurrentEvent();
+      const event = await getCurrentEvent();
       setCurrentEvent(event);
     }
     loadEvent();
