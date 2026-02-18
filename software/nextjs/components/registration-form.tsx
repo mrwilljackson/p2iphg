@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/form";
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
 import { getCurrentEvent, getOrganizations, getVolunteerEmails, getVolunteerByEmail, createRegistration } from "@/lib/actions";
-import { organizationsToOptions } from "@/lib/db-service";
+import { organizationsToOptions } from "@/lib/helpers";
 import { isFieldVisible, type RegistrationType } from "@/lib/field-visibility-config";
 import type { RegistrationRole } from "@/lib/types";
 

@@ -384,20 +384,8 @@ function mapRegistrationFromDb(dbReg: any): Registration {
 
 /**
  * Helper Functions
- * Re-export from mock-data-service for compatibility
+ * Re-export from helpers.ts for backward compatibility
  */
 
-export function organizationsToOptions(organizations: Organization[]) {
-  return organizations.map(org => ({
-    value: org.id,
-    label: org.name,
-  }));
-}
-
-export function eventsToOptions(events: Event[]) {
-  return events.map(evt => ({
-    value: evt.id,
-    label: `${evt.name} - ${evt.date}`,
-  }));
-}
+export { organizationsToOptions, eventsToOptions } from './helpers';
 
