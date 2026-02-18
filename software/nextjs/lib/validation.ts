@@ -66,12 +66,16 @@ export const organizationSchema = z.object({
  * Registration Form Schema
  * Validates registration form data from client
  *
- * V2 Requirements:
- * - eventId, email, organizationId, impairment are REQUIRED
+ * V3 Requirements (Updated for conditional Group fields):
+ * - eventId is REQUIRED
+ * - attendeeName, attendeeSurname are REQUIRED
+ * - email, organizationId, impairment are OPTIONAL (depends on role)
  * - Phone field REMOVED
  * - photoConsent is boolean (radio buttons)
  * - feedbackConsent and nextEventConsent are optional booleans (checkboxes)
- * - Group role requires groupSize, disabledStudents, and senStudents fields
+ * - Group fields (groupSize, disabledStudents, senStudents, groupLeaderParticipating) are OPTIONAL
+ *   They are only shown and required for disability groups and family groups
+ * - role includes "Participant", "Volunteer", "Group"
  */
 export const registrationFormSchema = z.object({
   eventId: z.string().min(1, "Event is required"),
@@ -104,7 +108,7 @@ export const registrationFormSchema = z.object({
   photoConsent: z.boolean(),
   feedbackConsent: z.boolean().optional(),
   nextEventConsent: z.boolean().optional(),
-  // Group specific fields
+  // Group specific fields (optional - only required when visible for disability groups/family groups)
   groupSize: z
     .number()
     .int("Must be a whole number")
@@ -124,19 +128,7 @@ export const registrationFormSchema = z.object({
     .max(999, "SEN students must be at most 999")
     .optional(),
   groupLeaderParticipating: z.boolean().optional(), // Whether group leader is participating in games (Group role only)
-}).refine(
-  (data) => {
-    // If role is Group, groupSize, disabledStudents, and senStudents are required
-    if (data.role === "Group") {
-      return data.groupSize !== undefined && data.disabledStudents !== undefined && data.senStudents !== undefined;
-    }
-    return true;
-  },
-  {
-    message: "Group size, disabled students, and SEN students are required for Group role",
-    path: ["groupSize"],
-  }
-);
+});
 
 /**
  * Registration Schema (Full)
