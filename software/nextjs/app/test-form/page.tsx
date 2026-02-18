@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { RegistrationForm } from "@/components/registration-form";
 import { EventHeader } from "@/components/event-header";
 import { AdminLoginModal } from "@/components/admin-login-modal";
-import { MockDataService } from "@/lib/mock-data-service";
+import { DatabaseService } from "@/lib/db-service";
 import type { RegistrationRole, Event } from "@/lib/types";
 
 function TestFormContent() {
@@ -17,7 +17,7 @@ function TestFormContent() {
   // Load current event
   useEffect(() => {
     async function loadEvent() {
-      const event = await MockDataService.getCurrentEvent();
+      const event = await DatabaseService.getCurrentEvent();
       setCurrentEvent(event);
     }
     loadEvent();

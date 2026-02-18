@@ -18,7 +18,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { AdminEventHeader } from "@/components/admin-event-header";
-import { MockDataService } from "@/lib/mock-data-service";
+import { DatabaseService } from "@/lib/db-service";
 import type { Event } from "@/lib/types";
 
 // Validation schema for organization registration
@@ -64,7 +64,7 @@ export default function RegisterOrganizationPage() {
   // Load current event
   useEffect(() => {
     async function loadEvent() {
-      const event = await MockDataService.getCurrentEvent();
+      const event = await DatabaseService.getCurrentEvent();
       setCurrentEvent(event);
     }
     loadEvent();

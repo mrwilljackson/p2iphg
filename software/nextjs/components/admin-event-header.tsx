@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { EventHeader } from "@/components/event-header";
-import { MockDataService } from "@/lib/mock-data-service";
+import { DatabaseService } from "@/lib/db-service";
 import type { Event } from "@/lib/types";
 
 /**
@@ -28,7 +28,7 @@ export function AdminEventHeader() {
 
   useEffect(() => {
     async function loadEvent() {
-      const event = await MockDataService.getCurrentEvent();
+      const event = await DatabaseService.getCurrentEvent();
       setCurrentEvent(event);
     }
     loadEvent();

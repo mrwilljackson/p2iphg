@@ -26,7 +26,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
-import { MockDataService, organizationsToOptions } from "@/lib/mock-data-service";
+import { DatabaseService, organizationsToOptions } from "@/lib/db-service";
 import { isFieldVisible, type RegistrationType } from "@/lib/field-visibility-config";
 import type { RegistrationRole } from "@/lib/types";
 
@@ -103,7 +103,7 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
   useEffect(() => {
     const updateOrganizations = async () => {
       const eventId = form.getValues("eventId");
-      const orgs = await MockDataService.getOrganizations(eventId);
+      const orgs = await DatabaseService.getOrganizations(eventId);
 
       // Store full organization objects for later reference
       setAllOrganizations(orgs);
@@ -134,7 +134,7 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
         setIsLoading(true);
 
         // Fetch current event first
-        const event = await MockDataService.getCurrentEvent();
+        const event = await DatabaseService.getCurrentEvent();
 
         if (event) {
           setCurrentEvent(event);
@@ -143,8 +143,8 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
 
           // Fetch event-specific organizations and volunteer emails
           const [orgs, emails] = await Promise.all([
-            MockDataService.getOrganizations(event.id),
-            MockDataService.getVolunteerEmails(event.id),
+            DatabaseService.getOrganizations(event.id),
+            DatabaseService.getVolunteerEmails(event.id),
           ]);
 
           // Convert organizations to combobox options
@@ -490,7 +490,7 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
 
                             // Pre-populate volunteer details
                             const eventId = form.getValues("eventId");
-                            const volunteer = await MockDataService.getVolunteerByEmail(value, eventId);
+                            const volunteer = await DatabaseService.getVolunteerByEmail(value, eventId);
                             if (volunteer) {
                               form.setValue("attendeeName", volunteer.firstName);
                               form.setValue("attendeeSurname", volunteer.lastName);
