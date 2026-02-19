@@ -417,25 +417,88 @@ export class DatabaseService {
 
   /**
    * Get registration counts by role for a specific event
-   * Returns counts for Participant, Group, and Volunteer roles
+   * Returns detailed counts including group breakdowns and participant totals
    */
   static async getRegistrationCountsByRole(eventId: string): Promise<{
-    participants: number;
-    groups: number;
+    individualParticipants: number;
+    groupParticipants: number;
+    totalParticipants: number;
+    groups: {
+      total: number;
+      familyGroups: number;
+      disabilityGroups: number;
+      otherGroups: number;
+    };
     volunteers: number;
-    total: number;
+    disabledStudents: number;
+    senStudents: number;
+    totalRegistrations: number;
   }> {
     try {
+      // Get all registrations with organization details
       const allRegistrations = await db
-        .select()
+        .select({
+          id: registrations.id,
+          role: registrations.role,
+          groupSize: registrations.groupSize,
+          disabledStudents: registrations.disabledStudents,
+          senStudents: registrations.senStudents,
+          organizationId: registrations.organizationId,
+          organizationName: organizations.name,
+          isDisabilityGroup: organizations.isDisabilityGroup,
+        })
         .from(registrations)
+        .leftJoin(organizations, eq(registrations.organizationId, organizations.id))
         .where(eq(registrations.eventId, eventId));
 
+      // Count individual participants (role = 'Participant')
+      const individualParticipants = allRegistrations.filter(r => r.role === 'Participant').length;
+
+      // Count volunteers (role = 'Volunteer')
+      const volunteersCount = allRegistrations.filter(r => r.role === 'Volunteer').length;
+
+      // Process group registrations
+      const groupRegistrations = allRegistrations.filter(r => r.role === 'Group');
+
+      let groupParticipants = 0;
+      let familyGroupsCount = 0;
+      let disabilityGroupsCount = 0;
+      let otherGroupsCount = 0;
+      let totalDisabledStudents = 0;
+      let totalSenStudents = 0;
+
+      for (const group of groupRegistrations) {
+        // Add group size to total participants
+        groupParticipants += group.groupSize || 0;
+
+        // Add disabled and SEN students to totals
+        totalDisabledStudents += group.disabledStudents || 0;
+        totalSenStudents += group.senStudents || 0;
+
+        // Categorize group type
+        if (group.organizationName?.toLowerCase().includes('family group')) {
+          familyGroupsCount++;
+        } else if (group.isDisabilityGroup) {
+          disabilityGroupsCount++;
+        } else {
+          otherGroupsCount++;
+        }
+      }
+
       const counts = {
-        participants: allRegistrations.filter(r => r.role === 'Participant').length,
-        groups: allRegistrations.filter(r => r.role === 'Group').length,
-        volunteers: allRegistrations.filter(r => r.role === 'Volunteer').length,
-        total: allRegistrations.length,
+        individualParticipants,
+        groupParticipants,
+        totalParticipants: individualParticipants + groupParticipants,
+        groups: {
+          total: groupRegistrations.length,
+          familyGroups: familyGroupsCount,
+          disabilityGroups: disabilityGroupsCount,
+          otherGroups: otherGroupsCount,
+        },
+        volunteers: volunteersCount,
+        disabledStudents: totalDisabledStudents,
+        senStudents: totalSenStudents,
+        totalRegistrations: allRegistrations.length,
       };
 
       return counts;

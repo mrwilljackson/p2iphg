@@ -12,10 +12,19 @@ export default function P2IAdminDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [currentEvent, setCurrentEvent] = useState<Event | null>(null);
   const [counts, setCounts] = useState({
-    participants: 0,
-    groups: 0,
+    individualParticipants: 0,
+    groupParticipants: 0,
+    totalParticipants: 0,
+    groups: {
+      total: 0,
+      familyGroups: 0,
+      disabilityGroups: 0,
+      otherGroups: 0,
+    },
     volunteers: 0,
-    total: 0,
+    disabledStudents: 0,
+    senStudents: 0,
+    totalRegistrations: 0,
   });
 
   // Load current event and registration counts
@@ -95,10 +104,26 @@ export default function P2IAdminDashboard() {
           <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Total Registrations</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">{counts.total}</p>
+                <p className="text-sm font-medium text-gray-600">Total Participants</p>
+                <p className="text-3xl font-bold text-gray-900 mt-2">{counts.totalParticipants}</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Individual: {counts.individualParticipants} | Group: {counts.groupParticipants}
+                </p>
               </div>
               <div className="text-4xl">👥</div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Groups</p>
+                <p className="text-3xl font-bold text-gray-900 mt-2">{counts.groups.total}</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Family: {counts.groups.familyGroups} | Disability: {counts.groups.disabilityGroups}
+                </p>
+              </div>
+              <div className="text-4xl">👨‍👩‍👧‍👦</div>
             </div>
           </div>
 
@@ -115,20 +140,13 @@ export default function P2IAdminDashboard() {
           <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Organizations</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">7</p>
+                <p className="text-sm font-medium text-gray-600">Accessibility</p>
+                <p className="text-3xl font-bold text-gray-900 mt-2">{counts.disabledStudents + counts.senStudents}</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Disabled: {counts.disabledStudents} | SEN: {counts.senStudents}
+                </p>
               </div>
-              <div className="text-4xl">🏢</div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Active Events</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">1</p>
-              </div>
-              <div className="text-4xl">📅</div>
+              <div className="text-4xl">♿</div>
             </div>
           </div>
         </div>

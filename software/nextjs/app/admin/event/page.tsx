@@ -13,10 +13,19 @@ export default function EventAdminDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [currentEvent, setCurrentEvent] = useState<Event | null>(null);
   const [counts, setCounts] = useState({
-    participants: 0,
-    groups: 0,
+    individualParticipants: 0,
+    groupParticipants: 0,
+    totalParticipants: 0,
+    groups: {
+      total: 0,
+      familyGroups: 0,
+      disabilityGroups: 0,
+      otherGroups: 0,
+    },
     volunteers: 0,
-    total: 0,
+    disabledStudents: 0,
+    senStudents: 0,
+    totalRegistrations: 0,
   });
 
   // Load current event and registration counts
@@ -98,7 +107,10 @@ export default function EventAdminDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Participants</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">{counts.participants}</p>
+                <p className="text-3xl font-bold text-gray-900 mt-2">{counts.totalParticipants}</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Individual: {counts.individualParticipants} | Group: {counts.groupParticipants}
+                </p>
               </div>
               <div className="text-4xl">🎯</div>
             </div>
@@ -108,7 +120,10 @@ export default function EventAdminDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Groups</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">{counts.groups}</p>
+                <p className="text-3xl font-bold text-gray-900 mt-2">{counts.groups.total}</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Family: {counts.groups.familyGroups} | Disability: {counts.groups.disabilityGroups} | Other: {counts.groups.otherGroups}
+                </p>
               </div>
               <div className="text-4xl">👨‍👩‍👧‍👦</div>
             </div>
