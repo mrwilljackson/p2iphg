@@ -18,7 +18,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { AdminEventHeader } from "@/components/admin-event-header";
-import { getCurrentEvent, createVolunteer } from "@/lib/actions";
+import { getCurrentEvent, createRegistration } from "@/lib/actions";
 import type { Event } from "@/lib/types";
 
 // Validation schema for volunteer registration
@@ -82,22 +82,23 @@ export default function RegisterVolunteerPage() {
     setIsSubmitting(true);
 
     try {
-      // Create volunteer record in database
-      const newVolunteer = await createVolunteer({
+      // Create volunteer registration in registrations table (role="Volunteer")
+      const newRegistration = await createRegistration({
         eventId: currentEvent.id,
+        attendeeName: data.firstName,
+        attendeeSurname: data.lastName,
         email: data.email,
-        firstName: data.firstName,
-        lastName: data.lastName,
+        role: "Volunteer",
         photoConsent: data.photoConsent,
         feedbackConsent: data.feedbackConsent,
         nextEventConsent: data.nextEventConsent,
       });
 
-      console.log("✅ Volunteer created:", newVolunteer);
+      console.log("✅ Volunteer registration created:", newRegistration);
       setSubmitSuccess(true);
     } catch (error) {
-      console.error("❌ Error saving volunteer:", error);
-      alert("Error saving volunteer. Please try again.");
+      console.error("❌ Error saving volunteer registration:", error);
+      alert("Error saving volunteer registration. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
