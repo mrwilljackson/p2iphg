@@ -131,6 +131,10 @@ export default function RegistrationDetailPage() {
                     </span>
                   }
                 />
+                {/* Show organization for Participant and Volunteer roles */}
+                {registration.organizationName && registration.role !== 'Group' && (
+                  <DetailField label="Organization" value={registration.organizationName} />
+                )}
               </div>
             </div>
 
