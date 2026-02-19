@@ -55,12 +55,12 @@ function TestFormContent() {
       {/* Main Content */}
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Test Page Notice */}
-        <div className="mb-6 bg-orange-50 border border-orange-200 rounded-lg p-4 text-center">
-          <p className="text-sm text-orange-800 font-medium">
-            ⚠️ Test Page - Form UI Only (No Database)
+        <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
+          <p className="text-sm text-blue-800 font-medium">
+            ✅ Registration form connected to online PHG database
           </p>
-          <p className="text-xs text-orange-600 mt-1">
-            Form data is logged to the browser console
+          <p className="text-xs text-blue-600 mt-1">
+            (No Airtable sync yet)
           </p>
         </div>
 
