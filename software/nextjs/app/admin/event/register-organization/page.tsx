@@ -18,21 +18,22 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { AdminEventHeader } from "@/components/admin-event-header";
-import { getCurrentEvent } from "@/lib/actions";
+import { getCurrentEvent, createOrganization, createRegistration } from "@/lib/actions";
 import type { Event } from "@/lib/types";
 
 // Validation schema for organization registration
 const organizationRegistrationSchema = z.object({
-  organizationName: z.string().min(1, "Organization name is required"),
+  organizationName: z.string().min(2, "Organization name must be at least 2 characters").max(200, "Organization name must be less than 200 characters"),
   email: z.string().email("Please enter a valid email address").optional().or(z.literal("")),
-  firstName: z.string().optional(),
-  lastName: z.string().optional(),
+  firstName: z.string().min(2, "First name must be at least 2 characters").max(100, "First name must be less than 100 characters").optional().or(z.literal("")),
+  lastName: z.string().min(2, "Last name must be at least 2 characters").max(100, "Last name must be less than 100 characters").optional().or(z.literal("")),
   photoConsent: z.boolean(),
   feedbackConsent: z.boolean(),
   nextEventConsent: z.boolean(),
   groupSize: z.number().min(1, "Group size must be at least 1").max(999, "Group size must be less than 1000").optional(),
   disabledStudents: z.number().min(0, "Cannot be negative").max(999, "Must be less than 1000").optional(),
   senStudents: z.number().min(0, "Cannot be negative").max(999, "Must be less than 1000").optional(),
+  groupLeaderParticipating: z.boolean().optional(),
 });
 
 type OrganizationRegistrationData = z.infer<typeof organizationRegistrationSchema>;
@@ -58,6 +59,7 @@ export default function RegisterOrganizationPage() {
       groupSize: undefined,
       disabledStudents: undefined,
       senStudents: undefined,
+      groupLeaderParticipating: false,
     },
   });
 
@@ -83,21 +85,68 @@ export default function RegisterOrganizationPage() {
   }, [router]);
 
   const onSubmit = async (data: OrganizationRegistrationData) => {
-    setIsSubmitting(true);
-
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    if (submitType === "quick") {
-      console.log("Quick Add - Organization Only:", {
-        organizationName: data.organizationName,
-      });
-    } else {
-      console.log("Full Registration - Organization & Group Leader:", data);
+    if (!currentEvent) {
+      alert("Error: No event selected. Please refresh the page.");
+      return;
     }
 
-    setIsSubmitting(false);
-    setSubmitSuccess(true);
+    setIsSubmitting(true);
+
+    try {
+      if (submitType === "quick") {
+        // Quick Add - Save organization only
+        const newOrganization = await createOrganization({
+          eventId: currentEvent.id,
+          name: data.organizationName,
+          isDisabilityGroup: false,
+        });
+
+        console.log("✅ Organization created:", newOrganization);
+        setSubmitSuccess(true);
+      } else {
+        // Full Registration - Save organization AND group leader registration
+
+        // First, create the organization
+        const newOrganization = await createOrganization({
+          eventId: currentEvent.id,
+          name: data.organizationName,
+          isDisabilityGroup: false,
+          contactFirstName: data.firstName || undefined,
+          contactLastName: data.lastName || undefined,
+          contactEmail: data.email || undefined,
+        });
+
+        console.log("✅ Organization created:", newOrganization);
+
+        // Then, create the group leader registration (if we have their details)
+        if (data.firstName && data.lastName) {
+          const newRegistration = await createRegistration({
+            eventId: currentEvent.id,
+            attendeeName: data.firstName,
+            attendeeSurname: data.lastName,
+            email: data.email || undefined,
+            organizationId: newOrganization.id,
+            role: "Group",
+            photoConsent: data.photoConsent,
+            feedbackConsent: data.feedbackConsent,
+            nextEventConsent: data.nextEventConsent,
+            groupSize: data.groupSize,
+            disabledStudents: data.disabledStudents,
+            senStudents: data.senStudents,
+            groupLeaderParticipating: data.groupLeaderParticipating ?? false,
+          });
+
+          console.log("✅ Group leader registration created:", newRegistration);
+        }
+
+        setSubmitSuccess(true);
+      }
+    } catch (error) {
+      console.error("❌ Error saving data:", error);
+      alert("Error saving data. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleQuickSubmit = () => {
@@ -364,6 +413,38 @@ export default function RegisterOrganizationPage() {
                         onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value, 10) : undefined)}
                         value={field.value ?? ""}
                       />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Group Leader Participating */}
+              <FormField
+                control={form.control}
+                name="groupLeaderParticipating"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-base font-semibold">Will the group leader be participating in the event?</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={(value) => field.onChange(value === "true")}
+                        value={field.value ? "true" : "false"}
+                        className="space-y-3"
+                      >
+                        <label className="flex items-center space-x-2 border rounded-lg p-4 cursor-pointer hover:bg-gray-50">
+                          <RadioGroupItem value="true" id="leader-yes" />
+                          <div className="flex-1">
+                            <div className="font-medium">Yes - I will be participating</div>
+                          </div>
+                        </label>
+                        <label className="flex items-center space-x-2 border rounded-lg p-4 cursor-pointer hover:bg-gray-50">
+                          <RadioGroupItem value="false" id="leader-no" />
+                          <div className="flex-1">
+                            <div className="font-medium">No - I will not be participating</div>
+                          </div>
+                        </label>
+                      </RadioGroup>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
