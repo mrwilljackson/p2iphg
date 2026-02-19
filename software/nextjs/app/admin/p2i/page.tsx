@@ -3,17 +3,40 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { getCurrentEvent, getRegistrationCountsByRole } from "@/lib/actions";
+import type { Event } from "@/lib/types";
 
 export default function P2IAdminDashboard() {
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentEvent, setCurrentEvent] = useState<Event | null>(null);
+  const [counts, setCounts] = useState({
+    participants: 0,
+    groups: 0,
+    volunteers: 0,
+    total: 0,
+  });
+
+  // Load current event and registration counts
+  useEffect(() => {
+    async function loadData() {
+      const event = await getCurrentEvent();
+      setCurrentEvent(event);
+
+      if (event) {
+        const registrationCounts = await getRegistrationCountsByRole(event.id);
+        setCounts(registrationCounts);
+      }
+    }
+    loadData();
+  }, []);
 
   useEffect(() => {
     // Check if user is authenticated as P2I Admin
     const adminAuth = sessionStorage.getItem("adminAuth");
     const adminLevel = sessionStorage.getItem("adminLevel");
-    
+
     if (adminAuth === "true" && adminLevel === "p2i") {
       setIsAuthenticated(true);
     } else {
@@ -73,7 +96,7 @@ export default function P2IAdminDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Registrations</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">0</p>
+                <p className="text-3xl font-bold text-gray-900 mt-2">{counts.total}</p>
               </div>
               <div className="text-4xl">👥</div>
             </div>
@@ -83,7 +106,7 @@ export default function P2IAdminDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Volunteers</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">5</p>
+                <p className="text-3xl font-bold text-gray-900 mt-2">{counts.volunteers}</p>
               </div>
               <div className="text-4xl">🙋</div>
             </div>

@@ -414,6 +414,36 @@ export class DatabaseService {
       throw error;
     }
   }
+
+  /**
+   * Get registration counts by role for a specific event
+   * Returns counts for Participant, Group, and Volunteer roles
+   */
+  static async getRegistrationCountsByRole(eventId: string): Promise<{
+    participants: number;
+    groups: number;
+    volunteers: number;
+    total: number;
+  }> {
+    try {
+      const allRegistrations = await db
+        .select()
+        .from(registrations)
+        .where(eq(registrations.eventId, eventId));
+
+      const counts = {
+        participants: allRegistrations.filter(r => r.role === 'Participant').length,
+        groups: allRegistrations.filter(r => r.role === 'Group').length,
+        volunteers: allRegistrations.filter(r => r.role === 'Volunteer').length,
+        total: allRegistrations.length,
+      };
+
+      return counts;
+    } catch (error) {
+      console.error('Error fetching registration counts:', error);
+      throw error;
+    }
+  }
 }
 
 /**
