@@ -5,23 +5,16 @@ import { useSearchParams } from "next/navigation";
 import { RegistrationForm } from "@/components/registration-form";
 import { EventHeader } from "@/components/event-header";
 import { AdminLoginModal } from "@/components/admin-login-modal";
-import { getCurrentEvent } from "@/lib/actions";
 import type { RegistrationRole, Event } from "@/lib/types";
 
-function TestFormContent() {
+interface TestFormContentProps {
+  currentEvent: Event | null;
+}
+
+function TestFormContent({ currentEvent }: TestFormContentProps) {
   const [showAdminModal, setShowAdminModal] = useState(false);
-  const [currentEvent, setCurrentEvent] = useState<Event | null>(null);
   const searchParams = useSearchParams();
   const [preselectedRole, setPreselectedRole] = useState<RegistrationRole | undefined>();
-
-  // Load current event
-  useEffect(() => {
-    async function loadEvent() {
-      const event = await getCurrentEvent();
-      setCurrentEvent(event);
-    }
-    loadEvent();
-  }, []);
 
   useEffect(() => {
     const roleParam = searchParams.get("role");
@@ -92,7 +85,11 @@ function TestFormContent() {
   );
 }
 
-export default function TestFormPage() {
+export default async function TestFormPage() {
+  // Fetch event data on the server
+  const { getCurrentEvent } = await import("@/lib/actions");
+  const currentEvent = await getCurrentEvent();
+
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 flex items-center justify-center">
@@ -102,7 +99,7 @@ export default function TestFormPage() {
         </div>
       </div>
     }>
-      <TestFormContent />
+      <TestFormContent currentEvent={currentEvent} />
     </Suspense>
   );
 }
