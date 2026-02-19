@@ -18,12 +18,14 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { AdminEventHeader } from "@/components/admin-event-header";
+import { getCurrentEvent, createVolunteer } from "@/lib/actions";
+import type { Event } from "@/lib/types";
 
 // Validation schema for volunteer registration
 const volunteerRegistrationSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
+  firstName: z.string().min(2, "First name must be at least 2 characters").max(100, "First name must be less than 100 characters"),
+  lastName: z.string().min(2, "Last name must be at least 2 characters").max(100, "Last name must be less than 100 characters"),
   photoConsent: z.boolean(),
   feedbackConsent: z.boolean(),
   nextEventConsent: z.boolean(),
@@ -36,6 +38,7 @@ export default function RegisterVolunteerPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [currentEvent, setCurrentEvent] = useState<Event | null>(null);
 
   const form = useForm<VolunteerRegistrationData>({
     resolver: zodResolver(volunteerRegistrationSchema),
@@ -48,6 +51,15 @@ export default function RegisterVolunteerPage() {
       nextEventConsent: false,
     },
   });
+
+  // Load current event
+  useEffect(() => {
+    async function loadEvent() {
+      const event = await getCurrentEvent();
+      setCurrentEvent(event);
+    }
+    loadEvent();
+  }, []);
 
   // Check authentication
   useEffect(() => {
@@ -62,14 +74,33 @@ export default function RegisterVolunteerPage() {
   }, [router]);
 
   const onSubmit = async (data: VolunteerRegistrationData) => {
+    if (!currentEvent) {
+      alert("Error: No event selected. Please refresh the page.");
+      return;
+    }
+
     setIsSubmitting(true);
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    try {
+      // Create volunteer record in database
+      const newVolunteer = await createVolunteer({
+        eventId: currentEvent.id,
+        email: data.email,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        photoConsent: data.photoConsent,
+        feedbackConsent: data.feedbackConsent,
+        nextEventConsent: data.nextEventConsent,
+      });
 
-    console.log("New Volunteer Registration:", data);
-    setIsSubmitting(false);
-    setSubmitSuccess(true);
+      console.log("✅ Volunteer created:", newVolunteer);
+      setSubmitSuccess(true);
+    } catch (error) {
+      console.error("❌ Error saving volunteer:", error);
+      alert("Error saving volunteer. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (!isAuthenticated) {
@@ -135,7 +166,7 @@ export default function RegisterVolunteerPage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">New Volunteer Registration</h1>
-              <p className="text-sm text-gray-600 mt-1">Event Admin - PowerHouseGames 2026</p>
+              <p className="text-sm text-gray-600 mt-1">Event Admin - {currentEvent?.name || "PowerHouseGames 2026"}</p>
             </div>
             <Button
               onClick={() => router.push("/admin/event")}
