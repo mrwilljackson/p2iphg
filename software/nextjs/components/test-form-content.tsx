@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { RegistrationForm } from "@/components/registration-form";
 import { EventHeader } from "@/components/event-header";
@@ -11,7 +11,7 @@ interface TestFormContentProps {
   currentEvent: Event | null;
 }
 
-export function TestFormContent({ currentEvent }: TestFormContentProps) {
+function TestFormContentInner({ currentEvent }: TestFormContentProps) {
   const [showAdminModal, setShowAdminModal] = useState(false);
   const searchParams = useSearchParams();
   const [preselectedRole, setPreselectedRole] = useState<RegistrationRole | undefined>();
@@ -82,6 +82,21 @@ export function TestFormContent({ currentEvent }: TestFormContentProps) {
         onOpenChange={setShowAdminModal}
       />
     </div>
+  );
+}
+
+export function TestFormContent({ currentEvent }: TestFormContentProps) {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-4xl mb-4">⏳</div>
+          <p className="text-gray-600">Loading registration form...</p>
+        </div>
+      </div>
+    }>
+      <TestFormContentInner currentEvent={currentEvent} />
+    </Suspense>
   );
 }
 
