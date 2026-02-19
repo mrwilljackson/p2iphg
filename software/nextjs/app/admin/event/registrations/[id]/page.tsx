@@ -119,8 +119,8 @@ export default function RegistrationDetailPage() {
                 <DetailField label="First Name" value={registration.attendeeName} />
                 <DetailField label="Last Name" value={registration.attendeeSurname} />
                 <DetailField label="Email" value={registration.email || '—'} />
-                <DetailField 
-                  label="Role" 
+                <DetailField
+                  label="Role"
                   value={
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                       registration.role === 'Participant' ? 'bg-blue-100 text-blue-800' :
@@ -129,8 +129,11 @@ export default function RegistrationDetailPage() {
                     }`}>
                       {registration.role}
                     </span>
-                  } 
+                  }
                 />
+                {registration.organizationName && (
+                  <DetailField label="Organization" value={registration.organizationName} />
+                )}
               </div>
             </div>
 

@@ -222,17 +222,24 @@ export class DatabaseService {
 
   /**
    * Get all registrations for a specific event
-   * Returns basic fields for list view
+   * Returns basic fields for list view including organization name
    */
   static async getAllRegistrations(eventId: string): Promise<Registration[]> {
     try {
       const result = await db
-        .select()
+        .select({
+          registration: registrations,
+          organizationName: organizations.name,
+        })
         .from(registrations)
+        .leftJoin(organizations, eq(registrations.organizationId, organizations.id))
         .where(eq(registrations.eventId, eventId))
         .orderBy(registrations.createdAt);
 
-      return result.map(mapRegistrationFromDb);
+      return result.map(row => ({
+        ...mapRegistrationFromDb(row.registration),
+        organizationName: row.organizationName || undefined,
+      }));
     } catch (error) {
       console.error('Error fetching all registrations:', error);
       throw error;
@@ -241,19 +248,26 @@ export class DatabaseService {
 
   /**
    * Get a single registration by ID
-   * Returns all fields for detail view
+   * Returns all fields for detail view including organization name
    */
   static async getRegistrationById(id: string): Promise<Registration | null> {
     try {
       const result = await db
-        .select()
+        .select({
+          registration: registrations,
+          organizationName: organizations.name,
+        })
         .from(registrations)
+        .leftJoin(organizations, eq(registrations.organizationId, organizations.id))
         .where(eq(registrations.id, id))
         .limit(1);
 
       if (result.length === 0) return null;
 
-      return mapRegistrationFromDb(result[0]);
+      return {
+        ...mapRegistrationFromDb(result[0].registration),
+        organizationName: result[0].organizationName || undefined,
+      };
     } catch (error) {
       console.error('Error fetching registration by ID:', error);
       throw error;
