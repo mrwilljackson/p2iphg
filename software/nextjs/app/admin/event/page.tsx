@@ -150,6 +150,7 @@ export default function EventAdminDashboard() {
               <Button
                 className="w-full justify-start text-lg h-16"
                 variant="outline"
+                onClick={() => router.push("/admin/event/registrations")}
               >
                 📋 View All Registrations
               </Button>

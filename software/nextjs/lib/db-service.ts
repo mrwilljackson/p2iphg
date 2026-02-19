@@ -221,6 +221,46 @@ export class DatabaseService {
   }
 
   /**
+   * Get all registrations for a specific event
+   * Returns basic fields for list view
+   */
+  static async getAllRegistrations(eventId: string): Promise<Registration[]> {
+    try {
+      const result = await db
+        .select()
+        .from(registrations)
+        .where(eq(registrations.eventId, eventId))
+        .orderBy(registrations.createdAt);
+
+      return result.map(mapRegistrationFromDb);
+    } catch (error) {
+      console.error('Error fetching all registrations:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get a single registration by ID
+   * Returns all fields for detail view
+   */
+  static async getRegistrationById(id: string): Promise<Registration | null> {
+    try {
+      const result = await db
+        .select()
+        .from(registrations)
+        .where(eq(registrations.id, id))
+        .limit(1);
+
+      if (result.length === 0) return null;
+
+      return mapRegistrationFromDb(result[0]);
+    } catch (error) {
+      console.error('Error fetching registration by ID:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Create a new registration
    * Sets syncStatus to 'pending' by default
    */

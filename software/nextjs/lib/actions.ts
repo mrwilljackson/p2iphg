@@ -86,3 +86,17 @@ export async function findOrCreateFamilyGroup(
   );
 }
 
+/**
+ * Get all registrations for a specific event
+ */
+export async function getAllRegistrations(eventId: string): Promise<Registration[]> {
+  return await DatabaseService.getAllRegistrations(eventId);
+}
+
+/**
+ * Get a single registration by ID
+ */
+export async function getRegistrationById(id: string): Promise<Registration | null> {
+  return await DatabaseService.getRegistrationById(id);
+}
+

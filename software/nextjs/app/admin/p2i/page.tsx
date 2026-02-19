@@ -123,14 +123,18 @@ export default function P2IAdminDashboard() {
               >
                 📝 Registration Form
               </Button>
-              <Button 
-                className="w-full justify-start" 
+              <Button
+                className="w-full justify-start"
                 variant="outline"
                 onClick={() => router.push("/admin/event")}
               >
                 🎯 Event Admin View
               </Button>
-              <Button className="w-full justify-start" variant="outline">
+              <Button
+                className="w-full justify-start"
+                variant="outline"
+                onClick={() => router.push("/admin/event/registrations")}
+              >
                 📋 All Registrations
               </Button>
               <Button className="w-full justify-start" variant="outline">
