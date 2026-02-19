@@ -131,9 +131,6 @@ export default function RegistrationDetailPage() {
                     </span>
                   }
                 />
-                {registration.organizationName && (
-                  <DetailField label="Organization" value={registration.organizationName} />
-                )}
               </div>
             </div>
 
@@ -149,15 +146,20 @@ export default function RegistrationDetailPage() {
             {registration.role === 'Group' && (
               <div className="mb-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">Group Information</h2>
+                {registration.organizationName && (
+                  <div className="mb-4">
+                    <DetailField label="Organization" value={registration.organizationName} />
+                  </div>
+                )}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <DetailField label="Group Size" value={registration.groupSize?.toString() || '—'} />
                   <DetailField label="Disabled Students" value={registration.disabledStudents?.toString() || '—'} />
                   <DetailField label="SEN Students" value={registration.senStudents?.toString() || '—'} />
                 </div>
                 <div className="mt-4">
-                  <DetailField 
-                    label="Group Leader Participating" 
-                    value={registration.groupLeaderParticipating ? 'Yes' : 'No'} 
+                  <DetailField
+                    label="Group Leader Participating"
+                    value={registration.groupLeaderParticipating ? 'Yes' : 'No'}
                   />
                 </div>
               </div>
