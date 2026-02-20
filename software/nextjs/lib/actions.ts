@@ -112,6 +112,7 @@ export async function getRegistrationCountsByRole(eventId: string): Promise<{
     total: number;
     familyGroups: number;
     disabilityGroups: number;
+    corporateGroups: number;
     otherGroups: number;
   };
   volunteers: number;

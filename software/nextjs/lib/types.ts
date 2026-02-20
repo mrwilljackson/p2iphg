@@ -83,6 +83,7 @@ export interface Organization {
   eventId: string; // Event ID this organization is registered for
   name: string; // Organization name (REQUIRED, 2-200 chars)
   isDisabilityGroup?: boolean; // Whether this is a disability-focused organization (optional, default: false)
+  isCorporateGroup?: boolean; // Whether this is a corporate group where individuals also register (optional, default: false)
   imageUrl?: string; // URL to organization logo/image (optional)
   contactFirstName?: string; // Contact person first name (optional)
   contactLastName?: string; // Contact person last name (optional)

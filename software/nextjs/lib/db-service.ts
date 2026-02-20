@@ -418,6 +418,10 @@ export class DatabaseService {
   /**
    * Get registration counts by role for a specific event
    * Returns detailed counts including group breakdowns and participant totals
+   *
+   * Business Logic:
+   * - Group Leader Participation: If groupLeaderParticipating=false, add 1 to group size (leader attends but doesn't participate)
+   * - Corporate Group Deduplication: Individual registrations from corporate groups are excluded to avoid double-counting
    */
   static async getRegistrationCountsByRole(eventId: string): Promise<{
     individualParticipants: number;
@@ -427,6 +431,7 @@ export class DatabaseService {
       total: number;
       familyGroups: number;
       disabilityGroups: number;
+      corporateGroups: number;
       otherGroups: number;
     };
     volunteers: number;
@@ -443,16 +448,30 @@ export class DatabaseService {
           groupSize: registrations.groupSize,
           disabledStudents: registrations.disabledStudents,
           senStudents: registrations.senStudents,
+          groupLeaderParticipating: registrations.groupLeaderParticipating,
           organizationId: registrations.organizationId,
           organizationName: organizations.name,
           isDisabilityGroup: organizations.isDisabilityGroup,
+          isCorporateGroup: organizations.isCorporateGroup,
         })
         .from(registrations)
         .leftJoin(organizations, eq(registrations.organizationId, organizations.id))
         .where(eq(registrations.eventId, eventId));
 
+      // Get list of corporate group organization IDs
+      const corporateGroupOrgIds = new Set(
+        allRegistrations
+          .filter(r => r.role === 'Group' && r.isCorporateGroup)
+          .map(r => r.organizationId)
+          .filter(id => id != null)
+      );
+
       // Count individual participants (role = 'Participant')
-      const individualParticipants = allRegistrations.filter(r => r.role === 'Participant').length;
+      // EXCLUDE individuals from corporate groups to avoid double-counting
+      const individualParticipants = allRegistrations.filter(r =>
+        r.role === 'Participant' &&
+        (!r.organizationId || !corporateGroupOrgIds.has(r.organizationId))
+      ).length;
 
       // Count volunteers (role = 'Volunteer')
       const volunteersCount = allRegistrations.filter(r => r.role === 'Volunteer').length;
@@ -463,13 +482,21 @@ export class DatabaseService {
       let groupParticipants = 0;
       let familyGroupsCount = 0;
       let disabilityGroupsCount = 0;
+      let corporateGroupsCount = 0;
       let otherGroupsCount = 0;
       let totalDisabledStudents = 0;
       let totalSenStudents = 0;
 
       for (const group of groupRegistrations) {
-        // Add group size to total participants
-        groupParticipants += group.groupSize || 0;
+        // Calculate participants for this group
+        let groupCount = group.groupSize || 0;
+
+        // If group leader is NOT participating, add 1 (leader attends but doesn't participate in games)
+        if (group.groupLeaderParticipating === false) {
+          groupCount += 1;
+        }
+
+        groupParticipants += groupCount;
 
         // Add disabled and SEN students to totals
         totalDisabledStudents += group.disabledStudents || 0;
@@ -478,6 +505,8 @@ export class DatabaseService {
         // Categorize group type
         if (group.organizationName?.toLowerCase().includes('family group')) {
           familyGroupsCount++;
+        } else if (group.isCorporateGroup) {
+          corporateGroupsCount++;
         } else if (group.isDisabilityGroup) {
           disabilityGroupsCount++;
         } else {
@@ -493,6 +522,7 @@ export class DatabaseService {
           total: groupRegistrations.length,
           familyGroups: familyGroupsCount,
           disabilityGroups: disabilityGroupsCount,
+          corporateGroups: corporateGroupsCount,
           otherGroups: otherGroupsCount,
         },
         volunteers: volunteersCount,
@@ -534,6 +564,7 @@ function mapOrganizationFromDb(dbOrg: any): Organization {
     eventId: dbOrg.eventId,
     name: dbOrg.name,
     isDisabilityGroup: dbOrg.isDisabilityGroup,
+    isCorporateGroup: dbOrg.isCorporateGroup,
     imageUrl: dbOrg.imageUrl,
     contactFirstName: dbOrg.contactFirstName,
     contactLastName: dbOrg.contactLastName,

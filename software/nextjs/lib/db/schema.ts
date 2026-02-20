@@ -40,6 +40,7 @@ export const organizations = pgTable('organizations', {
   eventId: uuid('event_id').notNull().references(() => events.id),
   name: text('name').notNull(),
   isDisabilityGroup: boolean('is_disability_group').default(false),
+  isCorporateGroup: boolean('is_corporate_group').default(false),
   imageUrl: text('image_url'),
   contactFirstName: text('contact_first_name'),
   contactLastName: text('contact_last_name'),

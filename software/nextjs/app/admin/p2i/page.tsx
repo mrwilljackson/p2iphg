@@ -19,6 +19,7 @@ export default function P2IAdminDashboard() {
       total: 0,
       familyGroups: 0,
       disabilityGroups: 0,
+      corporateGroups: 0,
       otherGroups: 0,
     },
     volunteers: 0,
@@ -120,7 +121,7 @@ export default function P2IAdminDashboard() {
                 <p className="text-sm font-medium text-gray-600">Groups</p>
                 <p className="text-3xl font-bold text-gray-900 mt-2">{counts.groups.total}</p>
                 <p className="text-xs text-gray-500 mt-1">
-                  Family: {counts.groups.familyGroups} | Disability: {counts.groups.disabilityGroups}
+                  Family: {counts.groups.familyGroups} | Disability: {counts.groups.disabilityGroups} | Corporate: {counts.groups.corporateGroups}
                 </p>
               </div>
               <div className="text-4xl">👨‍👩‍👧‍👦</div>
