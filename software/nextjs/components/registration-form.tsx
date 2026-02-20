@@ -87,6 +87,9 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
     selectedOrg?.groupType === 'Family' ||
     selectedOrg?.name === "Family Group";
 
+  // For Group role, always show groupSize field, but only show disability/SEN fields for Disability and Family groups
+  const shouldShowGroupSizeOnly = selectedRole === "Group" && !shouldShowImpairmentFields;
+
   // Reset volunteer alert when role changes away from Volunteer
   useEffect(() => {
     if (selectedRole !== "Volunteer") {
@@ -731,98 +734,89 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
 
 
         {/* Separator: Impairment -> Group Details (conditional) */}
-        {!showOrganizationAlert && shouldShowImpairmentFields && (isFieldVisible("groupSize", selectedRole) ||
-          isFieldVisible("disabledStudents", selectedRole) ||
-          isFieldVisible("senStudents", selectedRole)) && (
+        {!showOrganizationAlert && isFieldVisible("groupSize", selectedRole) && (
           <hr className="my-6 border-gray-200" />
         )}
 
-        {/* Conditional Fields for Teacher/Coordinator - Only for Disability Groups and Family Groups */}
-        {!showOrganizationAlert && shouldShowImpairmentFields && (isFieldVisible("groupSize", selectedRole) ||
-          isFieldVisible("disabledStudents", selectedRole) ||
-          isFieldVisible("senStudents", selectedRole)) && (
-          <>
-            {/* Group Size */}
-            {isFieldVisible("groupSize", selectedRole) && (
-              <FormField
-                control={form.control}
-                name="groupSize"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>How many participants are you responsible for in your group *</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        min="1"
-                        max="999"
-                        placeholder="e.g., 25"
-                        value={field.value ?? ""}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          field.onChange(value === "" ? undefined : parseInt(value, 10));
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+        {/* Group Size Field - Show for ALL Group registrations */}
+        {!showOrganizationAlert && isFieldVisible("groupSize", selectedRole) && (
+          <FormField
+            control={form.control}
+            name="groupSize"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>How many participants are you responsible for in your group *</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    min="1"
+                    max="999"
+                    placeholder="e.g., 25"
+                    value={field.value ?? ""}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      field.onChange(value === "" ? undefined : parseInt(value, 10));
+                    }}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
             )}
+          />
+        )}
 
-            {/* Disabled Students */}
-            {isFieldVisible("disabledStudents", selectedRole) && (
-              <FormField
-                control={form.control}
-                name="disabledStudents"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>How many of your participants are disabled people, or to have a long‑term physical or mental health condition or impairment? *</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        min="0"
-                        max="999"
-                        placeholder="e.g., 5"
-                        value={field.value ?? ""}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          field.onChange(value === "" ? undefined : parseInt(value, 10));
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+        {/* Disabled Students - Only for Disability Groups and Family Groups */}
+        {!showOrganizationAlert && shouldShowImpairmentFields && isFieldVisible("disabledStudents", selectedRole) && (
+          <FormField
+            control={form.control}
+            name="disabledStudents"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>How many of your participants are disabled people, or to have a long‑term physical or mental health condition or impairment? *</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    min="0"
+                    max="999"
+                    placeholder="e.g., 5"
+                    value={field.value ?? ""}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      field.onChange(value === "" ? undefined : parseInt(value, 10));
+                    }}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
             )}
+          />
+        )}
 
-            {/* SEN Students */}
-            {isFieldVisible("senStudents", selectedRole) && (
-              <FormField
-                control={form.control}
-                name="senStudents"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Do you have any special educational needs (SEN) or require additional learning support (for example dyslexia support, autism support, or similar)? *</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        min="0"
-                        max="999"
-                        placeholder="e.g., 3"
-                        value={field.value ?? ""}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          field.onChange(value === "" ? undefined : parseInt(value, 10));
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+        {/* SEN Students - Only for Disability Groups and Family Groups */}
+        {!showOrganizationAlert && shouldShowImpairmentFields && isFieldVisible("senStudents", selectedRole) && (
+          <FormField
+            control={form.control}
+            name="senStudents"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Do you have any special educational needs (SEN) or require additional learning support (for example dyslexia support, autism support, or similar)? *</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    min="0"
+                    max="999"
+                    placeholder="e.g., 3"
+                    value={field.value ?? ""}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      field.onChange(value === "" ? undefined : parseInt(value, 10));
+                    }}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
             )}
-          </>
+          />
         )}
 
         {/* Separator: Personal/Group Details -> Consent */}
