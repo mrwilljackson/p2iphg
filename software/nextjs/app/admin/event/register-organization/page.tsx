@@ -10,8 +10,16 @@ import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -19,11 +27,12 @@ import {
 } from "@/components/ui/form";
 import { AdminEventHeader } from "@/components/admin-event-header";
 import { getCurrentEvent, createOrganization, createRegistration } from "@/lib/actions";
-import type { Event } from "@/lib/types";
+import type { Event, GroupType } from "@/lib/types";
 
 // Validation schema for organization registration
 const organizationRegistrationSchema = z.object({
   organizationName: z.string().min(2, "Organization name must be at least 2 characters").max(200, "Organization name must be less than 200 characters"),
+  groupType: z.enum(['Family', 'Disability', 'Corporate', 'Sporting', 'Community', 'Educational', 'Other']),
   email: z.string().email("Please enter a valid email address").optional().or(z.literal("")),
   firstName: z.string().min(2, "First name must be at least 2 characters").max(100, "First name must be less than 100 characters").optional().or(z.literal("")),
   lastName: z.string().min(2, "Last name must be at least 2 characters").max(100, "Last name must be less than 100 characters").optional().or(z.literal("")),
@@ -50,6 +59,7 @@ export default function RegisterOrganizationPage() {
     resolver: zodResolver(organizationRegistrationSchema),
     defaultValues: {
       organizationName: "",
+      groupType: 'Other',
       email: "",
       firstName: "",
       lastName: "",
@@ -98,7 +108,7 @@ export default function RegisterOrganizationPage() {
         const newOrganization = await createOrganization({
           eventId: currentEvent.id,
           name: data.organizationName,
-          groupType: 'Other', // Default to 'Other' - can be changed by admin later
+          groupType: data.groupType,
         });
 
         console.log("✅ Organization created:", newOrganization);
@@ -110,7 +120,7 @@ export default function RegisterOrganizationPage() {
         const newOrganization = await createOrganization({
           eventId: currentEvent.id,
           name: data.organizationName,
-          groupType: 'Other', // Default to 'Other' - can be changed by admin later
+          groupType: data.groupType,
           contactFirstName: data.firstName || undefined,
           contactLastName: data.lastName || undefined,
           contactEmail: data.email || undefined,
@@ -261,6 +271,37 @@ export default function RegisterOrganizationPage() {
                         {...field}
                       />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Group Type */}
+              <FormField
+                control={form.control}
+                name="groupType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Group Type *</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select group type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Family">Family</SelectItem>
+                        <SelectItem value="Disability">Disability</SelectItem>
+                        <SelectItem value="Corporate">Corporate</SelectItem>
+                        <SelectItem value="Sporting">Sporting</SelectItem>
+                        <SelectItem value="Community">Community</SelectItem>
+                        <SelectItem value="Educational">Educational</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Classification for reporting purposes (not visible to registrants)
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}

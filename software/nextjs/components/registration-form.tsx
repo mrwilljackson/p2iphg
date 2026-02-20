@@ -296,7 +296,7 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
                   <label className="flex items-center space-x-2 border rounded-lg p-4 cursor-pointer hover:bg-gray-50">
                     <RadioGroupItem value="Volunteer" id="volunteer" />
                     <div className="flex-1">
-                      <div className="font-semibold">🙋 I&apos;m a Volunteer</div>
+                      <div className="font-semibold">🙋 I&apos;m a Helper</div>
                       <div className="text-sm text-gray-600">I&apos;m here to help run and support the event today <br />
                       ( I won't be taking part in any games)</div>
                     </div>
