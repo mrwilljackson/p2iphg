@@ -229,10 +229,6 @@ export default function EventAdminDashboard() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <p className="text-3xl font-bold text-gray-900">{volunteerRegistrations.length} Helpers </p>
-                <div className="mt-2">
-                  
-                  <span className=" text-gray-400 ml-2">({volunteers.length} expected)</span>
-                </div>
               </div>
               <div className="text-4xl">🙋</div>
             </div>
@@ -334,6 +330,13 @@ export default function EventAdminDashboard() {
           <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 sm:p-8">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Reports & Data</h2>
             <div className="space-y-3">
+              <Button
+                className="w-full justify-start text-lg h-16"
+                variant="outline"
+                onClick={() => router.push("/admin/event/report")}
+              >
+                📊 Event Summary Report
+              </Button>
               <Button
                 className="w-full justify-start text-lg h-16"
                 variant="outline"
