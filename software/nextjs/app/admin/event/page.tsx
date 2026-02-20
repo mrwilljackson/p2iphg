@@ -222,8 +222,11 @@ export default function EventAdminDashboard() {
           <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <p className="text-sm font-medium text-gray-600">Volunteers</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">{counts.volunteers}</p>
+                <p className="text-sm font-medium text-gray-600">Helpers / Volunteers</p>
+                <div className="mt-2">
+                  <span className="text-3xl font-bold text-gray-900">{counts.volunteers}</span>
+                  <span className="text-2xl text-gray-400 ml-2">({volunteers.length})</span>
+                </div>
               </div>
               <div className="text-4xl">🙋</div>
             </div>
