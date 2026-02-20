@@ -196,9 +196,6 @@ export default function P2IAdminDashboard() {
               >
                 📋 All Registrations
               </Button>
-              <Button className="w-full justify-start" variant="outline">
-                ⬇️ Export to CSV
-              </Button>
             </div>
           </div>
 
@@ -225,6 +222,9 @@ export default function P2IAdminDashboard() {
           <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">System Integration</h2>
             <div className="space-y-3">
+              <Button className="w-full justify-start" variant="outline">
+                ⬇️ Export to CSV
+              </Button>
               <Button className="w-full justify-start" variant="outline">
                 🔄 Sync with Airtable
               </Button>
