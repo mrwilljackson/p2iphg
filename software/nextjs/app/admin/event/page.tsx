@@ -224,7 +224,7 @@ export default function EventAdminDashboard() {
               <div>
                 <p className="text-sm font-medium text-gray-600">Helpers / Volunteers</p>
                 <div className="mt-2">
-                  <span className="text-3xl font-bold text-gray-900">{counts.volunteers}</span>
+                  <span className="text-3xl font-bold text-gray-900">{volunteerRegistrations.length}</span>
                   <span className="text-2xl text-gray-400 ml-2">({volunteers.length})</span>
                 </div>
               </div>
@@ -232,10 +232,11 @@ export default function EventAdminDashboard() {
             </div>
 
             {/* Volunteer List */}
-            {volunteers.length > 0 && (
+            {(volunteers.length > 0 || volunteerRegistrations.length > 0) && (
               <div className="mt-4 pt-4 border-t border-gray-200">
                 <p className="text-xs font-medium text-gray-500 mb-2">Volunteer List:</p>
                 <div className="space-y-1 max-h-48 overflow-y-auto">
+                  {/* Show volunteers from volunteers table */}
                   {volunteers.map((volunteer) => {
                     // Check if this volunteer has registered (has a registration with role='Volunteer')
                     const hasRegistered = volunteerRegistrations.some(
@@ -244,7 +245,7 @@ export default function EventAdminDashboard() {
 
                     return (
                       <div
-                        key={volunteer.id}
+                        key={`vol-${volunteer.id}`}
                         className={`text-sm flex items-center ${
                           hasRegistered
                             ? 'text-gray-900 font-medium'
@@ -256,6 +257,26 @@ export default function EventAdminDashboard() {
                       </div>
                     );
                   })}
+
+                  {/* Show volunteer registrations that don't match anyone in volunteers table */}
+                  {volunteerRegistrations
+                    .filter(reg => {
+                      // Only show if this registration doesn't match any volunteer in the table
+                      return !volunteers.some(
+                        vol => vol.email.toLowerCase() === reg.email?.toLowerCase()
+                      );
+                    })
+                    .map((reg) => (
+                      <div
+                        key={`reg-${reg.id}`}
+                        className="text-sm flex items-center text-gray-900 font-medium"
+                      >
+                        <span className="mr-2">✅</span>
+                        <span>{reg.attendeeName} {reg.attendeeSurname}</span>
+                        <span className="ml-2 text-xs text-gray-500">(walk-in)</span>
+                      </div>
+                    ))
+                  }
                 </div>
               </div>
             )}
