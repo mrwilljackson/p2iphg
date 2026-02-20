@@ -420,7 +420,7 @@ export class DatabaseService {
    * Returns detailed counts including group breakdowns and participant totals
    *
    * Business Logic:
-   * - Group Leader Participation: If groupLeaderParticipating=false, add 1 to group size (leader attends but doesn't participate)
+   * - Group Leader Participation: If groupLeaderParticipating=false, subtract 1 from group size (leader is in groupSize but doesn't participate)
    * - Corporate Group Deduplication: Individual registrations from corporate groups are excluded to avoid double-counting
    */
   static async getRegistrationCountsByRole(eventId: string): Promise<{
@@ -491,9 +491,9 @@ export class DatabaseService {
         // Calculate participants for this group
         let groupCount = group.groupSize || 0;
 
-        // If group leader is NOT participating, add 1 (leader attends but doesn't participate in games)
+        // If group leader is NOT participating, subtract 1 (leader is in groupSize but doesn't participate)
         if (group.groupLeaderParticipating === false) {
-          groupCount += 1;
+          groupCount -= 1;
         }
 
         groupParticipants += groupCount;
