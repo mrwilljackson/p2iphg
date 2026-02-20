@@ -171,9 +171,9 @@ export default function P2IAdminDashboard() {
 
         {/* Action Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Event Management */}
+          {/* Registration Management */}
           <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Event Management</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Registration Management</h2>
             <div className="space-y-3">
               <Button 
                 className="w-full justify-start" 
