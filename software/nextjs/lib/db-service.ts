@@ -432,6 +432,9 @@ export class DatabaseService {
       familyGroups: number;
       disabilityGroups: number;
       corporateGroups: number;
+      sportingGroups: number;
+      communityGroups: number;
+      educationalGroups: number;
       otherGroups: number;
     };
     volunteers: number;
