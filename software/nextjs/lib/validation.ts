@@ -42,6 +42,7 @@ export const eventSchema = z.object({
  * Organization Schema
  * Validates organization data from Airtable or API
  * V2: Added event-specific fields and contact person details
+ * V5: Replaced isDisabilityGroup with groupType enum for better classification
  */
 export const organizationSchema = z.object({
   id: z.string().min(1, "Organization ID is required"),
@@ -50,7 +51,7 @@ export const organizationSchema = z.object({
     .string()
     .min(2, "Organization name must be at least 2 characters")
     .max(200, "Organization name must be at most 200 characters"),
-  isDisabilityGroup: z.boolean().optional(),
+  groupType: z.enum(['Family', 'Disability', 'Corporate', 'Sporting', 'Community', 'Educational', 'Other']).optional(),
   imageUrl: z.string().optional().or(z.literal("")),
   contactFirstName: z.string().optional().or(z.literal("")),
   contactLastName: z.string().optional().or(z.literal("")),

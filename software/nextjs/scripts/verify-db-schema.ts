@@ -74,11 +74,11 @@ async function verifySchema() {
 
     // Check for critical columns
     console.log('\n🔑 Critical Columns Check:\n');
-    
+
     const criticalChecks = [
       { table: 'events', column: 'modified_at', description: 'Events modified timestamp' },
       { table: 'organizations', column: 'event_id', description: 'Organizations event foreign key' },
-      { table: 'organizations', column: 'is_disability_group', description: 'Organizations disability flag' },
+      { table: 'organizations', column: 'group_type', description: 'Organizations group type classification' },
       { table: 'volunteers', column: 'id', description: 'Volunteers table exists' },
       { table: 'registrations', column: 'group_leader_participating', description: 'Registrations group leader field' },
       { table: 'registrations', column: 'sync_status', description: 'Registrations sync status' },
