@@ -98,7 +98,7 @@ export default function RegisterOrganizationPage() {
         const newOrganization = await createOrganization({
           eventId: currentEvent.id,
           name: data.organizationName,
-          isDisabilityGroup: false,
+          groupType: 'Other', // Default to 'Other' - can be changed by admin later
         });
 
         console.log("✅ Organization created:", newOrganization);
@@ -110,7 +110,7 @@ export default function RegisterOrganizationPage() {
         const newOrganization = await createOrganization({
           eventId: currentEvent.id,
           name: data.organizationName,
-          isDisabilityGroup: false,
+          groupType: 'Other', // Default to 'Other' - can be changed by admin later
           contactFirstName: data.firstName || undefined,
           contactLastName: data.lastName || undefined,
           contactEmail: data.email || undefined,

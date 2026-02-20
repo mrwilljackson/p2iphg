@@ -316,7 +316,7 @@ export class DatabaseService {
       const result = await db.insert(organizations).values({
         eventId: data.eventId,
         name: data.name,
-        isDisabilityGroup: data.isDisabilityGroup || false,
+        groupType: data.groupType || 'Other',
         imageUrl: data.imageUrl || null,
         contactFirstName: data.contactFirstName || null,
         contactLastName: data.contactLastName || null,
@@ -375,7 +375,7 @@ export class DatabaseService {
       const result = await db.insert(organizations).values({
         eventId: eventId,
         name: familyGroupName,
-        isDisabilityGroup: false, // Family groups are not disability groups
+        groupType: 'Family',
         imageUrl: null,
         contactFirstName: contactFirstName,
         contactLastName: contactLastName,
@@ -451,8 +451,7 @@ export class DatabaseService {
           groupLeaderParticipating: registrations.groupLeaderParticipating,
           organizationId: registrations.organizationId,
           organizationName: organizations.name,
-          isDisabilityGroup: organizations.isDisabilityGroup,
-          isCorporateGroup: organizations.isCorporateGroup,
+          groupType: organizations.groupType,
         })
         .from(registrations)
         .leftJoin(organizations, eq(registrations.organizationId, organizations.id))
@@ -461,7 +460,7 @@ export class DatabaseService {
       // Get list of corporate group organization IDs
       const corporateGroupOrgIds = new Set(
         allRegistrations
-          .filter(r => r.role === 'Group' && r.isCorporateGroup)
+          .filter(r => r.role === 'Group' && r.groupType === 'Corporate')
           .map(r => r.organizationId)
           .filter(id => id != null)
       );
@@ -483,6 +482,9 @@ export class DatabaseService {
       let familyGroupsCount = 0;
       let disabilityGroupsCount = 0;
       let corporateGroupsCount = 0;
+      let sportingGroupsCount = 0;
+      let communityGroupsCount = 0;
+      let educationalGroupsCount = 0;
       let otherGroupsCount = 0;
       let totalDisabledStudents = 0;
       let totalSenStudents = 0;
@@ -502,15 +504,28 @@ export class DatabaseService {
         totalDisabledStudents += group.disabledStudents || 0;
         totalSenStudents += group.senStudents || 0;
 
-        // Categorize group type
-        if (group.organizationName?.toLowerCase().includes('family group')) {
-          familyGroupsCount++;
-        } else if (group.isCorporateGroup) {
-          corporateGroupsCount++;
-        } else if (group.isDisabilityGroup) {
-          disabilityGroupsCount++;
-        } else {
-          otherGroupsCount++;
+        // Categorize group type using groupType field
+        switch (group.groupType) {
+          case 'Family':
+            familyGroupsCount++;
+            break;
+          case 'Disability':
+            disabilityGroupsCount++;
+            break;
+          case 'Corporate':
+            corporateGroupsCount++;
+            break;
+          case 'Sporting':
+            sportingGroupsCount++;
+            break;
+          case 'Community':
+            communityGroupsCount++;
+            break;
+          case 'Educational':
+            educationalGroupsCount++;
+            break;
+          default:
+            otherGroupsCount++;
         }
       }
 
@@ -523,6 +538,9 @@ export class DatabaseService {
           familyGroups: familyGroupsCount,
           disabilityGroups: disabilityGroupsCount,
           corporateGroups: corporateGroupsCount,
+          sportingGroups: sportingGroupsCount,
+          communityGroups: communityGroupsCount,
+          educationalGroups: educationalGroupsCount,
           otherGroups: otherGroupsCount,
         },
         volunteers: volunteersCount,
@@ -563,8 +581,7 @@ function mapOrganizationFromDb(dbOrg: any): Organization {
     id: dbOrg.id,
     eventId: dbOrg.eventId,
     name: dbOrg.name,
-    isDisabilityGroup: dbOrg.isDisabilityGroup,
-    isCorporateGroup: dbOrg.isCorporateGroup,
+    groupType: dbOrg.groupType,
     imageUrl: dbOrg.imageUrl,
     contactFirstName: dbOrg.contactFirstName,
     contactLastName: dbOrg.contactLastName,

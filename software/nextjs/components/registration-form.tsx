@@ -83,7 +83,8 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
   // Check if selected organization is a disability group or Family Group
   const selectedOrg = allOrganizations.find(org => org.id === selectedOrgId);
   const shouldShowImpairmentFields =
-    selectedOrg?.isDisabilityGroup === true ||
+    selectedOrg?.groupType === 'Disability' ||
+    selectedOrg?.groupType === 'Family' ||
     selectedOrg?.name === "Family Group";
 
   // Reset volunteer alert when role changes away from Volunteer
@@ -477,7 +478,7 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
             </div>
 
             {/* Instructional note for Group role with disability organizations (excluding Family Group) */}
-            {selectedRole === "Group" && selectedOrg?.isDisabilityGroup === true && (
+            {selectedRole === "Group" && selectedOrg?.groupType === 'Disability' && (
               <p className="text-sm text-blue-600 mt-2">
                 ℹ️ <strong>Please check your details are correct - sometimes other staff attend on behalf of the original organiser!</strong>
               </p>

@@ -50,8 +50,7 @@ async function analyzeParticipantCounts() {
       groupLeaderParticipating: registrations.groupLeaderParticipating,
       organizationId: registrations.organizationId,
       organizationName: organizations.name,
-      isDisabilityGroup: organizations.isDisabilityGroup,
-      isCorporateGroup: organizations.isCorporateGroup,
+      groupType: organizations.groupType,
     })
     .from(registrations)
     .leftJoin(organizations, eq(registrations.organizationId, organizations.id))
@@ -63,10 +62,10 @@ async function analyzeParticipantCounts() {
   // STEP 1: Identify Corporate Groups
   console.log('\n📋 STEP 1: IDENTIFY CORPORATE GROUPS');
   console.log('-'.repeat(100));
-  
+
   const corporateGroupOrgIds = new Set(
     allRegistrations
-      .filter(r => r.role === 'Group' && r.isCorporateGroup)
+      .filter(r => r.role === 'Group' && r.groupType === 'Corporate')
       .map(r => r.organizationId)
       .filter(id => id != null)
   );
@@ -74,7 +73,7 @@ async function analyzeParticipantCounts() {
   if (corporateGroupOrgIds.size > 0) {
     console.log(`\n✅ Found ${corporateGroupOrgIds.size} corporate group(s):`);
     allRegistrations
-      .filter(r => r.role === 'Group' && r.isCorporateGroup)
+      .filter(r => r.role === 'Group' && r.groupType === 'Corporate')
       .forEach(r => {
         console.log(`   - ${r.organizationName} (ID: ${r.organizationId})`);
       });
@@ -148,20 +147,20 @@ async function analyzeParticipantCounts() {
     totalDisabledStudents += group.disabledStudents || 0;
     totalSenStudents += group.senStudents || 0;
 
-    // Categorize group type
-    let groupType = '';
-    if (group.organizationName?.toLowerCase().includes('family group')) {
-      familyGroupsCount++;
-      groupType = 'Family';
-    } else if (group.isCorporateGroup) {
-      corporateGroupsCount++;
-      groupType = 'Corporate';
-    } else if (group.isDisabilityGroup) {
-      disabilityGroupsCount++;
-      groupType = 'Disability';
-    } else {
-      otherGroupsCount++;
-      groupType = 'Other';
+    // Categorize group type using groupType field
+    const groupTypeValue = group.groupType || 'Other';
+    switch (groupTypeValue) {
+      case 'Family':
+        familyGroupsCount++;
+        break;
+      case 'Disability':
+        disabilityGroupsCount++;
+        break;
+      case 'Corporate':
+        corporateGroupsCount++;
+        break;
+      default:
+        otherGroupsCount++;
     }
 
     const orgName = (group.organizationName || 'Unknown').substring(0, 23).padEnd(23);
@@ -171,7 +170,7 @@ async function analyzeParticipantCounts() {
     const sen = String(group.senStudents || 0).padStart(3);
     const final = String(groupCount).padStart(11);
 
-    console.log(`   ${orgName} | ${groupType.padEnd(10)} | ${size} | ${leader}     | ${disabled} | ${sen} | ${final}`);
+    console.log(`   ${orgName} | ${groupTypeValue.padEnd(10)} | ${size} | ${leader}     | ${disabled} | ${sen} | ${final}`);
   }
 
   // STEP 4: Calculate Totals

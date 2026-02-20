@@ -72,18 +72,24 @@ export interface Registration {
 }
 
 /**
+ * Group Type Classification
+ * Used for reporting and analytics purposes
+ */
+export type GroupType = 'Family' | 'Disability' | 'Corporate' | 'Sporting' | 'Community' | 'Educational' | 'Other';
+
+/**
  * Organization Entity
  * Represents an organization that attendees/volunteers may be affiliated with
  * V2: Added eventId to support event-specific organizations
  * V3: Added imageUrl for organization logos
  * V4: Added contact person details (firstName, lastName, contactEmail) for Group role pre-population
+ * V5: Replaced isDisabilityGroup and isCorporateGroup with groupType enum for better classification
  */
 export interface Organization {
   id: string; // Local ID
   eventId: string; // Event ID this organization is registered for
   name: string; // Organization name (REQUIRED, 2-200 chars)
-  isDisabilityGroup?: boolean; // Whether this is a disability-focused organization (optional, default: false)
-  isCorporateGroup?: boolean; // Whether this is a corporate group where individuals also register (optional, default: false)
+  groupType?: GroupType; // Classification for reporting: Family, Disability, Corporate, Sporting, Community, Educational, Other (default: Other)
   imageUrl?: string; // URL to organization logo/image (optional)
   contactFirstName?: string; // Contact person first name (optional)
   contactLastName?: string; // Contact person last name (optional)
