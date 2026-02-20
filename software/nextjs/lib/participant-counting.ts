@@ -8,24 +8,27 @@
  * Date: 2026-02-20
  * 
  * BUSINESS RULES:
- * 
- * 1. FAMILY & DISABILITY GROUPS:
+ *
+ * 1. GROUP SIZE AND LEADER PARTICIPATION:
+ *    - Group Size = number of participants from the organization (NOT including the leader)
+ *    - Group Leader Participation:
+ *      - If groupLeaderParticipating = true: Expected = groupSize + 1 (add the leader)
+ *      - If groupLeaderParticipating = false: Expected = groupSize (leader not participating)
+ *
+ * 2. FAMILY & DISABILITY GROUPS:
  *    - Individual participants do NOT register separately
  *    - Count comes from group registration's groupSize field
  *    - Includes disabled and SEN students from group registration
- *    - Group leader participation is included in groupSize
- * 
- * 2. OTHER GROUP TYPES (Corporate, Sporting, Community, Educational, Other):
+ *    - Expected = Registered (same value)
+ *
+ * 3. OTHER GROUP TYPES (Corporate, Sporting, Community, Educational, Other):
  *    - Group leader provides EXPECTED participant count (groupSize)
  *    - Individual participants from the group register separately
  *    - We track BOTH:
- *      a) Expected participants (from group registration)
- *      b) Registered participants (actual individual registrations from group members)
- *    - Group leader participation logic:
- *      - If groupLeaderParticipating = false: Subtract 1 from groupSize (leader counted but not participating)
- *      - If groupLeaderParticipating = true: Use groupSize as-is
- * 
- * 3. INDIVIDUAL PARTICIPANTS (No Group):
+ *      a) Expected participants (groupSize + 1 if leader participating)
+ *      b) Registered participants (actual individual registrations + 1 if leader participating)
+ *
+ * 4. INDIVIDUAL PARTICIPANTS (No Group):
  *    - Participants who register without a group affiliation
  *    - Counted separately from group participants
  */
@@ -174,12 +177,13 @@ export function calculateParticipantCounts(
     const isExpectedOnly = isExpectedOnlyGroupType(group.groupType);
 
     // Calculate expected participants for this group
+    // Group Size = number of participants from the organization (NOT including leader)
+    // If leader is participating, add 1 to the count
     let expectedCount = groupSize;
 
-    // Apply group leader participation logic for non-expected-only groups
-    if (!isExpectedOnly && group.groupLeaderParticipating === false) {
-      // Leader is in groupSize but not participating
-      expectedCount = Math.max(0, expectedCount - 1);
+    // Add group leader to expected count if they are participating
+    if (group.groupLeaderParticipating === true) {
+      expectedCount += 1;
     }
 
     // Add to appropriate category
@@ -226,6 +230,12 @@ export function calculateParticipantCounts(
       registeredCount = participantRegistrations.filter(
         r => r.organizationId === group.organizationId
       ).length;
+
+      // If group leader is participating, add 1 to the registered count
+      // (group leader registers with role='Group', not counted in participantRegistrations)
+      if (group.groupLeaderParticipating === true) {
+        registeredCount += 1;
+      }
     }
 
     // Add to group details array
