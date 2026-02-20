@@ -98,6 +98,16 @@ export default function OrganizationRegistrationsPage() {
   const expectedCount = groupRegistration?.groupSize || 0;
   const registeredCount = participantRegistrations.length;
 
+  // Determine if group leader is participating
+  const groupLeaderParticipating = groupRegistration?.groupLeaderParticipating || false;
+
+  // Build list of people to display
+  // If leader is participating, include them in the participants list
+  // If leader is NOT participating, show them separately
+  const displayRegistrations = groupLeaderParticipating && groupRegistration
+    ? [groupRegistration, ...participantRegistrations]
+    : participantRegistrations;
+
   return (
     <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100">
       {/* Admin Event Header */}
@@ -178,15 +188,36 @@ export default function OrganizationRegistrationsPage() {
               </div>
             </div>
 
+            {/* Group Leader (if NOT participating) */}
+            {groupRegistration && !groupLeaderParticipating && (
+              <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6 mb-4">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">Group Leader (Not Participating)</h2>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">Name</p>
+                      <p className="text-sm font-medium text-gray-900">
+                        {groupRegistration.attendeeName} {groupRegistration.attendeeSurname}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">Email</p>
+                      <p className="text-sm text-gray-600">{groupRegistration.email}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Registrations Table */}
             <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
               <div className="p-6 border-b border-gray-200">
                 <h2 className="text-lg font-semibold text-gray-900">
-                  Registered Participants ({participantRegistrations.length})
+                  {groupLeaderParticipating ? 'Registered Participants (Including Leader)' : 'Registered Participants'} ({displayRegistrations.length})
                 </h2>
               </div>
 
-              {participantRegistrations.length === 0 ? (
+              {displayRegistrations.length === 0 ? (
                 <div className="p-8 text-center">
                   <div className="text-4xl mb-4">📋</div>
                   <p className="text-gray-500">No participants have registered yet.</p>
@@ -200,15 +231,27 @@ export default function OrganizationRegistrationsPage() {
                     <thead className="bg-gray-50">
                       <tr className="border-b border-gray-200">
                         <th className="text-left py-3 px-4 sm:px-6 font-semibold text-gray-700">Name</th>
+                        <th className="text-left py-3 px-4 sm:px-6 font-semibold text-gray-700">Role</th>
                         <th className="text-left py-3 px-4 sm:px-6 font-semibold text-gray-700">Email</th>
                         <th className="text-center py-3 px-4 sm:px-6 font-semibold text-gray-700">Check-in</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                      {participantRegistrations.map((reg) => (
+                      {displayRegistrations.map((reg) => (
                         <tr key={reg.id} className="hover:bg-gray-50 transition-colors">
                           <td className="py-3 px-4 sm:px-6 text-gray-900 font-medium">
                             {reg.attendeeName} {reg.attendeeSurname}
+                          </td>
+                          <td className="py-3 px-4 sm:px-6">
+                            {reg.role === 'Group' ? (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                Group Leader
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                Participant
+                              </span>
+                            )}
                           </td>
                           <td className="py-3 px-4 sm:px-6 text-gray-600">{reg.email}</td>
                           <td className="py-3 px-4 sm:px-6 text-center">
