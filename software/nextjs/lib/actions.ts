@@ -101,6 +101,14 @@ export async function getRegistrationById(id: string): Promise<Registration | nu
   return await DatabaseService.getRegistrationById(id);
 }
 
+export async function getRegistrationsByOrganization(eventId: string, organizationId: string): Promise<Registration[]> {
+  return await DatabaseService.getRegistrationsByOrganization(eventId, organizationId);
+}
+
+export async function getOrganizationById(id: string): Promise<Organization | null> {
+  return await DatabaseService.getOrganizationById(id);
+}
+
 /**
  * Get registration counts by role for a specific event
  * Returns detailed counts including group breakdowns and participant totals

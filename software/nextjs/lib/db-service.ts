@@ -248,6 +248,37 @@ export class DatabaseService {
   }
 
   /**
+   * Get all registrations for a specific organization at a specific event
+   * Returns all fields including organization name
+   */
+  static async getRegistrationsByOrganization(eventId: string, organizationId: string): Promise<Registration[]> {
+    try {
+      const result = await db
+        .select({
+          registration: registrations,
+          organizationName: organizations.name,
+        })
+        .from(registrations)
+        .leftJoin(organizations, eq(registrations.organizationId, organizations.id))
+        .where(
+          and(
+            eq(registrations.eventId, eventId),
+            eq(registrations.organizationId, organizationId)
+          )
+        )
+        .orderBy(registrations.attendeeName, registrations.attendeeSurname);
+
+      return result.map(row => ({
+        ...mapRegistrationFromDb(row.registration),
+        organizationName: row.organizationName || undefined,
+      }));
+    } catch (error) {
+      console.error('Error fetching registrations by organization:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Get a single registration by ID
    * Returns all fields for detail view including organization name
    */

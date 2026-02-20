@@ -155,7 +155,8 @@ export default function EventAdminDashboard() {
                           return (
                             <tr
                               key={group.organizationId}
-                              className={`border-b border-gray-100 ${hasLowRegistration ? 'bg-yellow-50' : ''}`}
+                              onClick={() => router.push(`/admin/event/organizations/${group.organizationId}`)}
+                              className={`border-b border-gray-100 cursor-pointer hover:bg-gray-100 transition-colors ${hasLowRegistration ? 'bg-yellow-50 hover:bg-yellow-100' : ''}`}
                             >
                               <td className={`py-2 px-3 font-bold text-gray-900 ${hasLowRegistration ? 'border-l-4 border-yellow-400' : ''}`}>
                                 {group.organizationName}
