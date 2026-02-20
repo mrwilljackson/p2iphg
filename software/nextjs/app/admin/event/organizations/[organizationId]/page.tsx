@@ -132,7 +132,7 @@ export default function OrganizationRegistrationsPage() {
                 {organization?.name || 'Organization Details'}
               </h1>
               <p className="text-sm text-gray-600 mt-1">
-                {currentEvent?.name} - {participantRegistrations.length} registered participant{participantRegistrations.length !== 1 ? 's' : ''}
+                {currentEvent?.name} - {displayRegistrations.length} registered participant{{displayRegistrations.length} !== 1 ? 's' : ''}
               </p>
             </div>
             <div className="flex gap-2">
@@ -179,28 +179,46 @@ export default function OrganizationRegistrationsPage() {
             {/* Summary Card */}
             <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6 mb-4">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Registration Summary</h2>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="text-center p-4 bg-gray-50 rounded-lg">
-                  <p className="text-xs font-medium text-gray-600 mb-2">Expected</p>
-                  <p className="text-2xl font-bold text-gray-900">{expectedCount}</p>
-                </div>
-                <div className="text-center p-4 bg-gray-50 rounded-lg">
-                  <p className="text-xs font-medium text-gray-600 mb-2">Registered</p>
-                  <p className="text-2xl font-bold text-gray-900">{registeredCount}</p>
-                </div>
-                <div className={`text-center p-4 rounded-lg ${expectedCount > registeredCount ? 'bg-yellow-50' : 'bg-green-50'}`}>
-                  <p className="text-xs font-medium text-gray-600 mb-2">Missing</p>
-                  <p className={`text-2xl font-bold ${expectedCount > registeredCount ? 'text-yellow-600' : 'text-green-600'}`}>
-                    {Math.max(0, expectedCount - registeredCount)}
+
+              {/* Family/Disability Groups - Show confirmation message */}
+              {(organization?.groupType === 'Family' || organization?.groupType === 'Disability') ? (
+                <div className="bg-blue-50 rounded-lg p-4">
+                  <p className="text-gray-900">
+                    The Group Leader has confirmed attendance of <span className="font-bold">{groupSize}</span> participant{groupSize !== 1 ? 's' : ''}.
                   </p>
                 </div>
-              </div>
+              ) : (
+                /* Other Groups - Show expected/registered/missing counts */
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="text-center p-4 bg-gray-50 rounded-lg">
+                    <p className="text-xs font-medium text-gray-600 mb-2">Expected</p>
+                    <p className="text-2xl font-bold text-gray-900">{expectedCount}</p>
+                  </div>
+                  <div className="text-center p-4 bg-gray-50 rounded-lg">
+                    <p className="text-xs font-medium text-gray-600 mb-2">Registered</p>
+                    <p className="text-2xl font-bold text-gray-900">{registeredCount}</p>
+                  </div>
+                  <div className={`text-center p-4 rounded-lg ${expectedCount > registeredCount ? 'bg-yellow-50' : 'bg-green-50'}`}>
+                    <p className="text-xs font-medium text-gray-600 mb-2">Missing</p>
+                    <p className={`text-2xl font-bold ${expectedCount > registeredCount ? 'text-yellow-600' : 'text-green-600'}`}>
+                      {Math.max(0, expectedCount - registeredCount)}
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Group Leader (if NOT participating) */}
-            {groupRegistration && !groupLeaderParticipating && (
+            {/* Group Leader Card */}
+            {/* Show for Family/Disability groups (always) OR for other groups (only if NOT participating) */}
+            {groupRegistration && (
+              (organization?.groupType === 'Family' || organization?.groupType === 'Disability') || !groupLeaderParticipating
+            ) && (
               <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6 mb-4">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Group Leader (Not Participating)</h2>
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                  {(organization?.groupType === 'Family' || organization?.groupType === 'Disability')
+                    ? 'Group Leader'
+                    : 'Group Leader (Not Participating)'}
+                </h2>
                 <div className="bg-gray-50 rounded-lg p-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
