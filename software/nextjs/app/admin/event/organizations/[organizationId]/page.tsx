@@ -95,11 +95,20 @@ export default function OrganizationRegistrationsPage() {
 
   const participantRegistrations = registrations.filter(r => r.role === 'Participant');
   const groupRegistration = registrations.find(r => r.role === 'Group');
-  const expectedCount = groupRegistration?.groupSize || 0;
-  const registeredCount = participantRegistrations.length;
 
   // Determine if group leader is participating
   const groupLeaderParticipating = groupRegistration?.groupLeaderParticipating || false;
+
+  // Calculate expected count
+  // Group Size = number of participants from organization (NOT including leader)
+  // If leader is participating, add 1 to the expected count
+  const groupSize = groupRegistration?.groupSize || 0;
+  const expectedCount = groupSize + (groupLeaderParticipating ? 1 : 0);
+
+  // Calculate registered count
+  // Count individual participant registrations
+  // If leader is participating, add 1 to the registered count
+  const registeredCount = participantRegistrations.length + (groupLeaderParticipating ? 1 : 0);
 
   // Build list of people to display
   // If leader is participating, include them in the participants list
