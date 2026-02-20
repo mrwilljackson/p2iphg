@@ -81,11 +81,12 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
   const selectedOrgId = form.watch("organizationId");
 
   // Check if selected organization is a disability group or Family Group
+  // Family Group placeholder has special ID "FAMILY_GROUP_PLACEHOLDER"
   const selectedOrg = allOrganizations.find(org => org.id === selectedOrgId);
   const shouldShowImpairmentFields =
+    selectedOrgId === "FAMILY_GROUP_PLACEHOLDER" ||
     selectedOrg?.groupType === 'Disability' ||
-    selectedOrg?.groupType === 'Family' ||
-    selectedOrg?.name === "Family Group";
+    selectedOrg?.groupType === 'Family';
 
   // Reset volunteer alert when role changes away from Volunteer
   useEffect(() => {
@@ -112,9 +113,10 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
 
       const orgOptions = organizationsToOptions(orgs);
 
-      // Find and update the "Family Group" option
+      // Find and update the "Family Group" option with personalized surname
+      // The organizationsToOptions helper always includes "Family Group" with value "FAMILY_GROUP_PLACEHOLDER"
       const updatedOptions = orgOptions.map(option => {
-        if (option.label === "Family Group" && attendeeSurname && attendeeSurname.trim()) {
+        if (option.value === "FAMILY_GROUP_PLACEHOLDER" && attendeeSurname && attendeeSurname.trim()) {
           return {
             ...option,
             label: `${attendeeSurname} Family Group`
@@ -172,9 +174,9 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
     try {
       let finalOrganizationId = data.organizationId;
 
-      // Check if "Family Group" was selected
-      const selectedOrg = allOrganizations.find(org => org.id === data.organizationId);
-      if (selectedOrg && selectedOrg.name === "Family Group") {
+      // Check if "Family Group" placeholder was selected
+      // The placeholder has a special ID "FAMILY_GROUP_PLACEHOLDER" that's always available
+      if (data.organizationId === "FAMILY_GROUP_PLACEHOLDER") {
         // Create or find the family group organization
         console.log("Creating/finding family group for:", data.attendeeSurname);
 

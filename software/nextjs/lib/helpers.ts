@@ -10,12 +10,27 @@ import type { ComboboxOption } from '@/components/ui/combobox';
 
 /**
  * Convert organizations to combobox options
+ * Always includes "Family Group" as a special option for on-the-day family registrations
  */
 export function organizationsToOptions(organizations: Organization[]): ComboboxOption[] {
-  return organizations.map((org) => ({
+  // Filter out any existing "Family Group" entries from the database
+  const filteredOrgs = organizations.filter(org => org.name !== 'Family Group');
+
+  // Convert organizations to options
+  const orgOptions = filteredOrgs.map((org) => ({
     value: org.id!,
     label: org.name,
   }));
+
+  // Always add "Family Group" as a special option with a special ID
+  // This allows families to register on the day without pre-existing database entry
+  const familyGroupOption: ComboboxOption = {
+    value: 'FAMILY_GROUP_PLACEHOLDER',
+    label: 'Family Group',
+  };
+
+  // Add Family Group at the beginning of the list for easy access
+  return [familyGroupOption, ...orgOptions];
 }
 
 /**
