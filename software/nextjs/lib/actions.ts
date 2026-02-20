@@ -110,6 +110,13 @@ export async function getOrganizationById(id: string): Promise<Organization | nu
 }
 
 /**
+ * Get all volunteers for a specific event
+ */
+export async function getAllVolunteers(eventId: string): Promise<Volunteer[]> {
+  return await DatabaseService.getAllVolunteers(eventId);
+}
+
+/**
  * Get registration counts by role for a specific event
  * Returns detailed counts including group breakdowns and participant totals
  *

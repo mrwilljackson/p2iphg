@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { AdminEventHeader } from "@/components/admin-event-header";
-import { getCurrentEvent, getRegistrationCountsByRole } from "@/lib/actions";
-import type { Event } from "@/lib/types";
+import { getCurrentEvent, getRegistrationCountsByRole, getAllVolunteers, getAllRegistrations } from "@/lib/actions";
+import type { Event, Volunteer, Registration } from "@/lib/types";
 import type { ParticipantCounts } from "@/lib/participant-counting";
 
 export default function EventAdminDashboard() {
@@ -13,6 +13,8 @@ export default function EventAdminDashboard() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [currentEvent, setCurrentEvent] = useState<Event | null>(null);
+  const [volunteers, setVolunteers] = useState<Volunteer[]>([]);
+  const [volunteerRegistrations, setVolunteerRegistrations] = useState<Registration[]>([]);
   const [counts, setCounts] = useState<ParticipantCounts>({
     individualParticipants: 0,
     groupParticipants: {
@@ -56,6 +58,15 @@ export default function EventAdminDashboard() {
       if (event) {
         const registrationCounts = await getRegistrationCountsByRole(event.id);
         setCounts(registrationCounts);
+
+        // Fetch all volunteers for this event
+        const allVolunteers = await getAllVolunteers(event.id);
+        setVolunteers(allVolunteers);
+
+        // Fetch all registrations and filter for volunteers
+        const allRegistrations = await getAllRegistrations(event.id);
+        const volRegistrations = allRegistrations.filter(r => r.role === 'Volunteer');
+        setVolunteerRegistrations(volRegistrations);
       }
     }
     loadData();
@@ -209,13 +220,42 @@ export default function EventAdminDashboard() {
           </div>
 
           <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between mb-4">
               <div>
                 <p className="text-sm font-medium text-gray-600">Volunteers</p>
                 <p className="text-3xl font-bold text-gray-900 mt-2">{counts.volunteers}</p>
               </div>
               <div className="text-4xl">🙋</div>
             </div>
+
+            {/* Volunteer List */}
+            {volunteers.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <p className="text-xs font-medium text-gray-500 mb-2">Volunteer List:</p>
+                <div className="space-y-1 max-h-48 overflow-y-auto">
+                  {volunteers.map((volunteer) => {
+                    // Check if this volunteer has registered (has a registration with role='Volunteer')
+                    const hasRegistered = volunteerRegistrations.some(
+                      reg => reg.email?.toLowerCase() === volunteer.email.toLowerCase()
+                    );
+
+                    return (
+                      <div
+                        key={volunteer.id}
+                        className={`text-sm flex items-center ${
+                          hasRegistered
+                            ? 'text-gray-900 font-medium'
+                            : 'text-gray-400'
+                        }`}
+                      >
+                        <span className="mr-2">{hasRegistered ? '✅' : '⏳'}</span>
+                        <span>{volunteer.firstName} {volunteer.lastName}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
