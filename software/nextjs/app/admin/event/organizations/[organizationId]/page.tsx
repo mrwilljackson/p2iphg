@@ -132,7 +132,7 @@ export default function OrganizationRegistrationsPage() {
                 {organization?.name || 'Organization Details'}
               </h1>
               <p className="text-sm text-gray-600 mt-1">
-                {currentEvent?.name} - {displayRegistrations.length} registered participant{{displayRegistrations.length} !== 1 ? 's' : ''}
+                {currentEvent?.name} - {displayRegistrations.length} registered participant{displayRegistrations.length !== 1 ? 's' : ''}
               </p>
             </div>
             <div className="flex gap-2">
@@ -236,67 +236,69 @@ export default function OrganizationRegistrationsPage() {
               </div>
             )}
 
-            {/* Registrations Table */}
-            <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
-              <div className="p-6 border-b border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-900">
-                  {groupLeaderParticipating ? 'Registered Participants (Including Leader)' : 'Registered Participants'} ({displayRegistrations.length})
-                </h2>
-              </div>
+            {/* Registrations Table - Only show for non-Family/Disability groups */}
+            {organization?.groupType !== 'Family' && organization?.groupType !== 'Disability' && (
+              <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
+                <div className="p-6 border-b border-gray-200">
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    {groupLeaderParticipating ? 'Registered Participants (Including Leader)' : 'Registered Participants'} ({displayRegistrations.length})
+                  </h2>
+                </div>
 
-              {displayRegistrations.length === 0 ? (
-                <div className="p-8 text-center">
-                  <div className="text-4xl mb-4">📋</div>
-                  <p className="text-gray-500">No participants have registered yet.</p>
-                  <p className="text-sm text-gray-400 mt-2">
-                    Expected {expectedCount} participant{expectedCount !== 1 ? 's' : ''} from this organization.
-                  </p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full">
-                    <thead className="bg-gray-50">
-                      <tr className="border-b border-gray-200">
-                        <th className="text-left py-3 px-4 sm:px-6 font-semibold text-gray-700">Name</th>
-                        <th className="text-left py-3 px-4 sm:px-6 font-semibold text-gray-700">Role</th>
-                        <th className="text-left py-3 px-4 sm:px-6 font-semibold text-gray-700">Email</th>
-                        <th className="text-center py-3 px-4 sm:px-6 font-semibold text-gray-700">Check-in</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                      {displayRegistrations.map((reg) => (
-                        <tr key={reg.id} className="hover:bg-gray-50 transition-colors">
-                          <td className="py-3 px-4 sm:px-6 text-gray-900 font-medium">
-                            {reg.attendeeName} {reg.attendeeSurname}
-                          </td>
-                          <td className="py-3 px-4 sm:px-6">
-                            {reg.role === 'Group' ? (
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                Group Leader
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                Participant
-                              </span>
-                            )}
-                          </td>
-                          <td className="py-3 px-4 sm:px-6 text-gray-600">{reg.email}</td>
-                          <td className="py-3 px-4 sm:px-6 text-center">
-                            {reg.checkinTime ? (
-                              <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-green-100 text-green-600 font-bold">
-                                ✓
-                              </span>
-                            ) : (
-                              <span className="text-gray-400">-</span>
-                            )}
-                          </td>
+                {displayRegistrations.length === 0 ? (
+                  <div className="p-8 text-center">
+                    <div className="text-4xl mb-4">📋</div>
+                    <p className="text-gray-500">No participants have registered yet.</p>
+                    <p className="text-sm text-gray-400 mt-2">
+                      Expected {expectedCount} participant{expectedCount !== 1 ? 's' : ''} from this organization.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full">
+                      <thead className="bg-gray-50">
+                        <tr className="border-b border-gray-200">
+                          <th className="text-left py-3 px-4 sm:px-6 font-semibold text-gray-700">Name</th>
+                          <th className="text-left py-3 px-4 sm:px-6 font-semibold text-gray-700">Role</th>
+                          <th className="text-left py-3 px-4 sm:px-6 font-semibold text-gray-700">Email</th>
+                          <th className="text-center py-3 px-4 sm:px-6 font-semibold text-gray-700">Check-in</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {displayRegistrations.map((reg) => (
+                          <tr key={reg.id} className="hover:bg-gray-50 transition-colors">
+                            <td className="py-3 px-4 sm:px-6 text-gray-900 font-medium">
+                              {reg.attendeeName} {reg.attendeeSurname}
+                            </td>
+                            <td className="py-3 px-4 sm:px-6">
+                              {reg.role === 'Group' ? (
+                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                  Group Leader
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                  Participant
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-3 px-4 sm:px-6 text-gray-600">{reg.email}</td>
+                            <td className="py-3 px-4 sm:px-6 text-center">
+                              {reg.checkinTime ? (
+                                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-green-100 text-green-600 font-bold">
+                                  ✓
+                                </span>
+                              ) : (
+                                <span className="text-gray-400">-</span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
           </>
         )}
       </main>
