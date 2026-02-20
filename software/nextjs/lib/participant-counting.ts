@@ -48,12 +48,23 @@ export interface RegistrationForCounting {
 }
 
 /**
+ * Individual group details for display
+ */
+export interface GroupDetail {
+  organizationId: string;
+  organizationName: string;
+  groupType: GroupType | null;
+  expected: number;
+  registered: number;
+}
+
+/**
  * Participant count results
  */
 export interface ParticipantCounts {
   // Individual participants (no group affiliation)
   individualParticipants: number;
-  
+
   // Group-based participants
   groupParticipants: {
     // Family & Disability groups (expected = actual)
@@ -61,30 +72,33 @@ export interface ParticipantCounts {
       expected: number;
       registered: number; // Same as expected for these groups
     };
-    
+
     // Other groups (expected vs registered may differ)
     otherGroups: {
       expected: number;
       registered: number; // Actual individual registrations from group members
     };
-    
+
     // Total across all groups
     total: {
       expected: number;
       registered: number;
     };
   };
-  
+
+  // Detailed list of all groups with their counts
+  groupDetails: GroupDetail[];
+
   // Total participants (individual + group registered)
   totalParticipants: number;
-  
+
   // Accessibility counts
   disabledStudents: number;
   senStudents: number;
-  
+
   // Volunteer count
   volunteers: number;
-  
+
   // Group breakdown by type
   groups: {
     total: number;
@@ -96,7 +110,7 @@ export interface ParticipantCounts {
     educationalGroups: number;
     otherGroups: number;
   };
-  
+
   // Total registrations
   totalRegistrations: number;
 }
@@ -139,10 +153,10 @@ export function calculateParticipantCounts(
   let familyDisabilityExpected = 0;
   let otherGroupsExpected = 0;
   let otherGroupsRegistered = 0;
-  
+
   let totalDisabledStudents = 0;
   let totalSenStudents = 0;
-  
+
   let familyGroupsCount = 0;
   let disabilityGroupsCount = 0;
   let corporateGroupsCount = 0;
@@ -150,6 +164,9 @@ export function calculateParticipantCounts(
   let communityGroupsCount = 0;
   let educationalGroupsCount = 0;
   let otherGroupsCount = 0;
+
+  // Array to store detailed group information
+  const groupDetails: GroupDetail[] = [];
 
   // Process each group registration
   for (const group of groupRegistrations) {
@@ -201,6 +218,26 @@ export function calculateParticipantCounts(
       default:
         otherGroupsCount++;
     }
+
+    // Calculate registered count for this group
+    let registeredCount = expectedCount; // Default for Family/Disability
+    if (!isExpectedOnly && group.organizationId) {
+      // For other groups, count actual individual registrations
+      registeredCount = participantRegistrations.filter(
+        r => r.organizationId === group.organizationId
+      ).length;
+    }
+
+    // Add to group details array
+    if (group.organizationId && group.organizationName) {
+      groupDetails.push({
+        organizationId: group.organizationId,
+        organizationName: group.organizationName,
+        groupType: group.groupType || null,
+        expected: expectedCount,
+        registered: registeredCount,
+      });
+    }
   }
 
   // Count registered participants from other groups
@@ -230,6 +267,8 @@ export function calculateParticipantCounts(
         registered: totalGroupRegistered,
       },
     },
+
+    groupDetails, // Detailed list of all groups
 
     totalParticipants,
 

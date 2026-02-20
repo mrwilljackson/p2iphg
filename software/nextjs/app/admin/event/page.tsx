@@ -29,6 +29,7 @@ export default function EventAdminDashboard() {
         registered: 0,
       },
     },
+    groupDetails: [],
     totalParticipants: 0,
     disabledStudents: 0,
     senStudents: 0,
@@ -120,24 +121,43 @@ export default function EventAdminDashboard() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        {/* Participants - Full width */}
+        <div className="mb-4">
           <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
-            <div className="flex items-center justify-between">
-              <div className="w-full">
+            <div className="flex items-center justify-between mb-4">
+              <div>
                 <p className="text-sm font-medium text-gray-600">Participants</p>
                 <p className="text-3xl font-bold text-gray-900 mt-2">{counts.totalParticipants}</p>
-                <div className="text-xs text-gray-500 mt-2 space-y-1">
-                  <div>Individual: {counts.individualParticipants}</div>
-                  <div>Group (Registered): {counts.groupParticipants.total.registered}</div>
-                  <div className="text-[10px] text-gray-400">
-                    Expected: {counts.groupParticipants.total.expected}
-                  </div>
-                </div>
               </div>
-              <div className="text-4xl ml-4">🎯</div>
+              <div className="text-4xl">🎯</div>
+            </div>
+
+            <div className="space-y-2 text-sm">
+              <div className="font-medium text-gray-700 border-b pb-1">Individual: {counts.individualParticipants}</div>
+
+              {counts.groupDetails.length > 0 && (
+                <div className="space-y-1">
+                  <div className="font-medium text-gray-700 border-b pb-1 mt-2">Groups:</div>
+                  {counts.groupDetails.map((group) => {
+                    const hasLowRegistration = group.expected > group.registered;
+                    return (
+                      <div
+                        key={group.organizationId}
+                        className={`pl-2 py-1 rounded ${hasLowRegistration ? 'bg-yellow-50 border-l-2 border-yellow-400' : ''}`}
+                      >
+                        <span className="font-bold text-gray-900">{group.organizationName}</span>
+                        <span className="text-gray-600"> - Expected: {group.expected} - Registered: {group.registered}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
+        </div>
 
+        {/* Groups and Volunteers - 50% width each */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
             <div className="flex items-center justify-between">
               <div className="w-full">

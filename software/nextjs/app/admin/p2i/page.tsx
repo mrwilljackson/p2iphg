@@ -28,6 +28,7 @@ export default function P2IAdminDashboard() {
         registered: 0,
       },
     },
+    groupDetails: [],
     totalParticipants: 0,
     disabledStudents: 0,
     senStudents: 0,
