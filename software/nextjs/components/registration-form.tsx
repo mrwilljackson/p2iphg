@@ -87,9 +87,6 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
     selectedOrg?.groupType === 'Family' ||
     selectedOrg?.name === "Family Group";
 
-  // For Group role, always show groupSize field, but only show disability/SEN fields for Disability and Family groups
-  const shouldShowGroupSizeOnly = selectedRole === "Group" && !shouldShowImpairmentFields;
-
   // Reset volunteer alert when role changes away from Volunteer
   useEffect(() => {
     if (selectedRole !== "Volunteer") {
@@ -516,6 +513,33 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
                 )}
               />
             )}
+
+            {/* Group Size Field - For NON-Disability/NON-Family Groups - Show after name fields */}
+            {selectedRole === "Group" && !shouldShowImpairmentFields && isFieldVisible("groupSize", selectedRole) && (
+              <FormField
+                control={form.control}
+                name="groupSize"
+                render={({ field }) => (
+                  <FormItem className="mt-4">
+                    <FormLabel>How many participants are in your group (not including yourself)? *</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min="1"
+                        max="999"
+                        placeholder="e.g., 25"
+                        value={field.value ?? ""}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          field.onChange(value === "" ? undefined : parseInt(value, 10));
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
           </>
         )}
 
@@ -734,12 +758,12 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
 
 
         {/* Separator: Impairment -> Group Details (conditional) */}
-        {!showOrganizationAlert && isFieldVisible("groupSize", selectedRole) && (
+        {!showOrganizationAlert && shouldShowImpairmentFields && isFieldVisible("groupSize", selectedRole) && (
           <hr className="my-6 border-gray-200" />
         )}
 
-        {/* Group Size Field - Show for ALL Group registrations */}
-        {!showOrganizationAlert && isFieldVisible("groupSize", selectedRole) && (
+        {/* Group Size Field - For Disability and Family Groups ONLY - Show after impairment field */}
+        {!showOrganizationAlert && shouldShowImpairmentFields && isFieldVisible("groupSize", selectedRole) && (
           <FormField
             control={form.control}
             name="groupSize"
