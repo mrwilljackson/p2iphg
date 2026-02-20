@@ -1,12 +1,12 @@
 /**
  * Participant Counting Business Logic
- * 
+ *
  * This module contains all business logic for calculating participant counts
  * across different group types and registration scenarios.
- * 
- * Version: 1.0
+ *
+ * Version: 2.0
  * Date: 2026-02-20
- * 
+ *
  * BUSINESS RULES:
  *
  * 1. GROUP SIZE AND LEADER PARTICIPATION:
@@ -19,18 +19,28 @@
  *    - Individual participants do NOT register separately
  *    - Count comes from group registration's groupSize field
  *    - Includes disabled and SEN students from group registration
- *    - Expected = Registered (same value)
+ *    - Expected = Registered (same value, set at group level)
+ *    - REPORTING: Use the group-level count (groupSize + leader if participating)
+ *    - These groups do not track individual registrations
  *
  * 3. OTHER GROUP TYPES (Corporate, Sporting, Community, Educational, Other):
- *    - Group leader provides EXPECTED participant count (groupSize)
- *    - Individual participants from the group register separately
- *    - We track BOTH:
- *      a) Expected participants (groupSize + 1 if leader participating)
- *      b) Registered participants (actual individual registrations + 1 if leader participating)
+ *    - Group leader provides EXPECTED participant count (groupSize) during group registration
+ *    - Individual participants from the group MUST register separately
+ *    - We track BOTH during the event:
+ *      a) Expected participants (groupSize + 1 if leader participating) - for planning
+ *      b) Registered participants (actual individual registrations + 1 if leader participating) - for reporting
+ *    - REPORTING: Use the REGISTERED count (actual individual registrations captured)
+ *    - The expected number is for planning only; actual registrations are what matter for post-event reporting
  *
  * 4. INDIVIDUAL PARTICIPANTS (No Group):
  *    - Participants who register without a group affiliation
  *    - Counted separately from group participants
+ *    - REPORTING: Use actual registration count
+ *
+ * REPORTING SUMMARY:
+ * - Family/Disability Groups: Report group-level count (no individual registrations)
+ * - All Other Groups: Report actual individual registrations captured (NOT expected count)
+ * - Individual Participants: Report actual registration count
  */
 
 import type { GroupType } from './types';
