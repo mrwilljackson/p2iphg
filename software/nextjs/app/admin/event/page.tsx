@@ -118,8 +118,8 @@ export default function EventAdminDashboard() {
         <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 sm:p-8 mb-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Event Admin Dashboard</h1>
-              <p className="text-sm text-gray-600 mt-1">PowerHouseGames Event Management</p>
+              <h1 className="text-2xl font-bold text-gray-900">Event Dashboard</h1>
+              <p className="text-sm text-gray-600 mt-1">Power House Games Event Management</p>
             </div>
             <Button
               onClick={handleLogout}
@@ -137,7 +137,7 @@ export default function EventAdminDashboard() {
           <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <p className="text-sm font-medium text-gray-600">Participants</p>
+                <p className="text-sm font-medium text-gray-600">Registered Participants <span className="text-gray-400">(expected)</span></p>
                 <div className="mt-2">
                   <span className="text-3xl font-bold text-gray-900">{counts.totalParticipants}</span>
                   <span className="text-2xl text-gray-400 ml-2">
@@ -163,6 +163,7 @@ export default function EventAdminDashboard() {
                           <th className="text-left py-2 px-3 font-semibold text-gray-700">Group Name</th>
                           <th className="text-center py-2 px-3 font-semibold text-gray-700">Expected</th>
                           <th className="text-center py-2 px-3 font-semibold text-gray-700">Registered</th>
+                          <th className="w-8"></th>
                         </tr>
                       </thead>
                       <tbody>
@@ -182,6 +183,9 @@ export default function EventAdminDashboard() {
                               </td>
                               <td className="py-2 px-3 text-center text-gray-600">
                                 {group.registered}
+                              </td>
+                              <td className="py-2 px-3 text-center text-gray-400">
+                                →
                               </td>
                             </tr>
                           );
@@ -227,7 +231,7 @@ export default function EventAdminDashboard() {
           <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <p className="text-sm font-medium text-gray-600">Helpers (expected)</p>
+                <p className="text-sm font-medium text-gray-600">Helpers <span className="text-gray-400">(expected)</span></p>
                 <div className="mt-2">
                   <span className="text-3xl font-bold text-gray-900">{volunteerRegistrations.length}</span>
                   <span className="text-2xl text-gray-400 ml-2">({volunteers.length})</span>
