@@ -132,24 +132,46 @@ export default function EventAdminDashboard() {
               <div className="text-4xl">🎯</div>
             </div>
 
-            <div className="space-y-2 text-sm">
-              <div className="font-medium text-gray-700 border-b pb-1">Individual: {counts.individualParticipants}</div>
+            <div className="space-y-3">
+              <div className="font-medium text-gray-700 border-b pb-2 text-sm">
+                Individual Participants: {counts.individualParticipants}
+              </div>
 
               {counts.groupDetails.length > 0 && (
-                <div className="space-y-1">
-                  <div className="font-medium text-gray-700 border-b pb-1 mt-2">Groups:</div>
-                  {counts.groupDetails.map((group) => {
-                    const hasLowRegistration = group.expected > group.registered;
-                    return (
-                      <div
-                        key={group.organizationId}
-                        className={`pl-2 py-1 rounded ${hasLowRegistration ? 'bg-yellow-50 border-l-2 border-yellow-400' : ''}`}
-                      >
-                        <span className="font-bold text-gray-900">{group.organizationName}</span>
-                        <span className="text-gray-600"> - Expected: {group.expected} - Registered: {group.registered}</span>
-                      </div>
-                    );
-                  })}
+                <div>
+                  <div className="font-medium text-gray-700 mb-2 text-sm">Groups:</div>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-gray-200">
+                          <th className="text-left py-2 px-3 font-semibold text-gray-700">Group Name</th>
+                          <th className="text-center py-2 px-3 font-semibold text-gray-700">Expected</th>
+                          <th className="text-center py-2 px-3 font-semibold text-gray-700">Registered</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {counts.groupDetails.map((group) => {
+                          const hasLowRegistration = group.expected > group.registered;
+                          return (
+                            <tr
+                              key={group.organizationId}
+                              className={`border-b border-gray-100 ${hasLowRegistration ? 'bg-yellow-50' : ''}`}
+                            >
+                              <td className={`py-2 px-3 font-bold text-gray-900 ${hasLowRegistration ? 'border-l-4 border-yellow-400' : ''}`}>
+                                {group.organizationName}
+                              </td>
+                              <td className="py-2 px-3 text-center text-gray-600">
+                                {group.expected}
+                              </td>
+                              <td className="py-2 px-3 text-center text-gray-600">
+                                {group.registered}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               )}
             </div>
