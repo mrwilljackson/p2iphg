@@ -18,6 +18,7 @@ import { db } from './db/client';
 import { events, organizations, volunteers, registrations } from './db/schema';
 import { eq, and, ilike, or } from 'drizzle-orm';
 import { Event, Organization, Volunteer, Registration } from './types';
+import { calculateParticipantCounts, type RegistrationForCounting, type ParticipantCounts } from './participant-counting';
 
 /**
  * Database Service Class
@@ -419,29 +420,10 @@ export class DatabaseService {
    * Get registration counts by role for a specific event
    * Returns detailed counts including group breakdowns and participant totals
    *
-   * Business Logic:
-   * - Group Leader Participation: If groupLeaderParticipating=false, subtract 1 from group size (leader is in groupSize but doesn't participate)
-   * - Corporate Group Deduplication: Individual registrations from corporate groups are excluded to avoid double-counting
+   * Business Logic is now handled by the participant-counting module.
+   * See lib/participant-counting.ts for detailed counting rules.
    */
-  static async getRegistrationCountsByRole(eventId: string): Promise<{
-    individualParticipants: number;
-    groupParticipants: number;
-    totalParticipants: number;
-    groups: {
-      total: number;
-      familyGroups: number;
-      disabilityGroups: number;
-      corporateGroups: number;
-      sportingGroups: number;
-      communityGroups: number;
-      educationalGroups: number;
-      otherGroups: number;
-    };
-    volunteers: number;
-    disabledStudents: number;
-    senStudents: number;
-    totalRegistrations: number;
-  }> {
+  static async getRegistrationCountsByRole(eventId: string): Promise<ParticipantCounts> {
     try {
       // Get all registrations with organization details
       const allRegistrations = await db
@@ -460,99 +442,21 @@ export class DatabaseService {
         .leftJoin(organizations, eq(registrations.organizationId, organizations.id))
         .where(eq(registrations.eventId, eventId));
 
-      // Get list of corporate group organization IDs
-      const corporateGroupOrgIds = new Set(
-        allRegistrations
-          .filter(r => r.role === 'Group' && r.groupType === 'Corporate')
-          .map(r => r.organizationId)
-          .filter(id => id != null)
-      );
+      // Convert to format expected by counting logic
+      const registrationsForCounting: RegistrationForCounting[] = allRegistrations.map(r => ({
+        id: r.id,
+        role: r.role as 'Participant' | 'Volunteer' | 'Group',
+        groupSize: r.groupSize,
+        disabledStudents: r.disabledStudents,
+        senStudents: r.senStudents,
+        groupLeaderParticipating: r.groupLeaderParticipating,
+        organizationId: r.organizationId,
+        organizationName: r.organizationName,
+        groupType: r.groupType as any,
+      }));
 
-      // Count individual participants (role = 'Participant')
-      // EXCLUDE individuals from corporate groups to avoid double-counting
-      const individualParticipants = allRegistrations.filter(r =>
-        r.role === 'Participant' &&
-        (!r.organizationId || !corporateGroupOrgIds.has(r.organizationId))
-      ).length;
-
-      // Count volunteers (role = 'Volunteer')
-      const volunteersCount = allRegistrations.filter(r => r.role === 'Volunteer').length;
-
-      // Process group registrations
-      const groupRegistrations = allRegistrations.filter(r => r.role === 'Group');
-
-      let groupParticipants = 0;
-      let familyGroupsCount = 0;
-      let disabilityGroupsCount = 0;
-      let corporateGroupsCount = 0;
-      let sportingGroupsCount = 0;
-      let communityGroupsCount = 0;
-      let educationalGroupsCount = 0;
-      let otherGroupsCount = 0;
-      let totalDisabledStudents = 0;
-      let totalSenStudents = 0;
-
-      for (const group of groupRegistrations) {
-        // Calculate participants for this group
-        let groupCount = group.groupSize || 0;
-
-        // If group leader is NOT participating, subtract 1 (leader is in groupSize but doesn't participate)
-        if (group.groupLeaderParticipating === false) {
-          groupCount -= 1;
-        }
-
-        groupParticipants += groupCount;
-
-        // Add disabled and SEN students to totals
-        totalDisabledStudents += group.disabledStudents || 0;
-        totalSenStudents += group.senStudents || 0;
-
-        // Categorize group type using groupType field
-        switch (group.groupType) {
-          case 'Family':
-            familyGroupsCount++;
-            break;
-          case 'Disability':
-            disabilityGroupsCount++;
-            break;
-          case 'Corporate':
-            corporateGroupsCount++;
-            break;
-          case 'Sporting':
-            sportingGroupsCount++;
-            break;
-          case 'Community':
-            communityGroupsCount++;
-            break;
-          case 'Educational':
-            educationalGroupsCount++;
-            break;
-          default:
-            otherGroupsCount++;
-        }
-      }
-
-      const counts = {
-        individualParticipants,
-        groupParticipants,
-        totalParticipants: individualParticipants + groupParticipants,
-        groups: {
-          total: groupRegistrations.length,
-          familyGroups: familyGroupsCount,
-          disabilityGroups: disabilityGroupsCount,
-          corporateGroups: corporateGroupsCount,
-          sportingGroups: sportingGroupsCount,
-          communityGroups: communityGroupsCount,
-          educationalGroups: educationalGroupsCount,
-          otherGroups: otherGroupsCount,
-        },
-        volunteers: volunteersCount,
-        disabledStudents: totalDisabledStudents,
-        senStudents: totalSenStudents,
-        totalRegistrations: allRegistrations.length,
-      };
-
-      return counts;
+      // Use the business logic module to calculate counts
+      return calculateParticipantCounts(registrationsForCounting);
     } catch (error) {
       console.error('Error fetching registration counts:', error);
       throw error;

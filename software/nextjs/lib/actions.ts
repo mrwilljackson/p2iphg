@@ -9,6 +9,7 @@
 
 import { DatabaseService } from './db-service';
 import type { Event, Organization, Volunteer, Registration } from './types';
+import type { ParticipantCounts } from './participant-counting';
 
 /**
  * Get the current active event
@@ -103,26 +104,11 @@ export async function getRegistrationById(id: string): Promise<Registration | nu
 /**
  * Get registration counts by role for a specific event
  * Returns detailed counts including group breakdowns and participant totals
+ *
+ * Business logic is handled by the participant-counting module.
+ * See lib/participant-counting.ts for detailed counting rules.
  */
-export async function getRegistrationCountsByRole(eventId: string): Promise<{
-  individualParticipants: number;
-  groupParticipants: number;
-  totalParticipants: number;
-  groups: {
-    total: number;
-    familyGroups: number;
-    disabilityGroups: number;
-    corporateGroups: number;
-    sportingGroups: number;
-    communityGroups: number;
-    educationalGroups: number;
-    otherGroups: number;
-  };
-  volunteers: number;
-  disabledStudents: number;
-  senStudents: number;
-  totalRegistrations: number;
-}> {
+export async function getRegistrationCountsByRole(eventId: string): Promise<ParticipantCounts> {
   return await DatabaseService.getRegistrationCountsByRole(eventId);
 }
 

@@ -6,16 +6,33 @@ import { Button } from "@/components/ui/button";
 import { AdminEventHeader } from "@/components/admin-event-header";
 import { getCurrentEvent, getRegistrationCountsByRole } from "@/lib/actions";
 import type { Event } from "@/lib/types";
+import type { ParticipantCounts } from "@/lib/participant-counting";
 
 export default function EventAdminDashboard() {
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [currentEvent, setCurrentEvent] = useState<Event | null>(null);
-  const [counts, setCounts] = useState({
+  const [counts, setCounts] = useState<ParticipantCounts>({
     individualParticipants: 0,
-    groupParticipants: 0,
+    groupParticipants: {
+      familyAndDisability: {
+        expected: 0,
+        registered: 0,
+      },
+      otherGroups: {
+        expected: 0,
+        registered: 0,
+      },
+      total: {
+        expected: 0,
+        registered: 0,
+      },
+    },
     totalParticipants: 0,
+    disabledStudents: 0,
+    senStudents: 0,
+    volunteers: 0,
     groups: {
       total: 0,
       familyGroups: 0,
@@ -26,9 +43,6 @@ export default function EventAdminDashboard() {
       educationalGroups: 0,
       otherGroups: 0,
     },
-    volunteers: 0,
-    disabledStudents: 0,
-    senStudents: 0,
     totalRegistrations: 0,
   });
 
@@ -109,14 +123,18 @@ export default function EventAdminDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
             <div className="flex items-center justify-between">
-              <div>
+              <div className="w-full">
                 <p className="text-sm font-medium text-gray-600">Participants</p>
                 <p className="text-3xl font-bold text-gray-900 mt-2">{counts.totalParticipants}</p>
-                <p className="text-xs text-gray-500 mt-1">
-                  Individual: {counts.individualParticipants} | Group: {counts.groupParticipants}
-                </p>
+                <div className="text-xs text-gray-500 mt-2 space-y-1">
+                  <div>Individual: {counts.individualParticipants}</div>
+                  <div>Group (Registered): {counts.groupParticipants.total.registered}</div>
+                  <div className="text-[10px] text-gray-400">
+                    Expected: {counts.groupParticipants.total.expected}
+                  </div>
+                </div>
               </div>
-              <div className="text-4xl">🎯</div>
+              <div className="text-4xl ml-4">🎯</div>
             </div>
           </div>
 
