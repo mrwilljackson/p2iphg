@@ -137,12 +137,9 @@ export default function EventAdminDashboard() {
           <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <p className="text-sm font-medium text-gray-600">Registered Participants <span className="text-gray-400">(expected)</span></p>
+                <p className="text-3xl font-bold text-gray-900">{counts.totalParticipants} Registered Participants</p>
                 <div className="mt-2">
-                  <span className="text-3xl font-bold text-gray-900">{counts.totalParticipants}</span>
-                  <span className="text-2xl text-gray-400 ml-2">
-                    ({counts.individualParticipants + counts.groupParticipants.total.expected})
-                  </span>
+                  <span className="text-2xl text-gray-400 ml-2">({counts.individualParticipants + counts.groupParticipants.total.expected} expected)</span>
                 </div>
               </div>
               <div className="text-4xl">🎯</div>
@@ -202,39 +199,39 @@ export default function EventAdminDashboard() {
         {/* Groups and Volunteers - 50% width each */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
-            <div className="flex items-center justify-between">
-              <div className="w-full">
-                <p className="text-sm font-medium text-gray-600">Groups</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">{counts.groups.total}</p>
-                <div className="text-xs text-gray-500 mt-2 space-y-1">
-                  <div className="flex justify-between">
-                    <span>Family: {counts.groups.familyGroups}</span>
-                    <span>Disability: {counts.groups.disabilityGroups}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Corporate: {counts.groups.corporateGroups}</span>
-                    <span>Sporting: {counts.groups.sportingGroups}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Community: {counts.groups.communityGroups}</span>
-                    <span>Educational: {counts.groups.educationalGroups}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Other: {counts.groups.otherGroups}</span>
-                  </div>
-                </div>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <p className="text-3xl font-bold text-gray-900">{counts.groups.total} Groups</p>
               </div>
-              <div className="text-4xl ml-4">👨‍👩‍👧‍👦</div>
+              <div className="text-4xl">👨‍👩‍👧‍👦</div>
+            </div>
+
+            <div className="text-xs text-gray-500 space-y-1 mt-4 pt-4 border-t border-gray-200">
+              <div className="flex justify-between">
+                <span>Family: {counts.groups.familyGroups}</span>
+                <span>Disability: {counts.groups.disabilityGroups}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Corporate: {counts.groups.corporateGroups}</span>
+                <span>Sporting: {counts.groups.sportingGroups}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Community: {counts.groups.communityGroups}</span>
+                <span>Educational: {counts.groups.educationalGroups}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Other: {counts.groups.otherGroups}</span>
+              </div>
             </div>
           </div>
 
           <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <p className="text-sm font-medium text-gray-600">Helpers <span className="text-gray-400">(expected)</span></p>
+                <p className="text-3xl font-bold text-gray-900">{volunteerRegistrations.length} Helpers </p>
                 <div className="mt-2">
-                  <span className="text-3xl font-bold text-gray-900">{volunteerRegistrations.length}</span>
-                  <span className="text-2xl text-gray-400 ml-2">({volunteers.length})</span>
+                  
+                  <span className=" text-gray-400 ml-2">({volunteers.length} expected)</span>
                 </div>
               </div>
               <div className="text-4xl">🙋</div>
