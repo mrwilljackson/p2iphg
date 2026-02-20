@@ -132,7 +132,11 @@ export default function OrganizationRegistrationsPage() {
                 {organization?.name || 'Organization Details'}
               </h1>
               <p className="text-sm text-gray-600 mt-1">
-                {currentEvent?.name} - {displayRegistrations.length} registered participant{displayRegistrations.length !== 1 ? 's' : ''}
+                {currentEvent?.name} - {
+                  (organization?.groupType === 'Family' || organization?.groupType === 'Disability')
+                    ? `${groupSize} confirmed participant${groupSize !== 1 ? 's' : ''}`
+                    : `${displayRegistrations.length} registered participant${displayRegistrations.length !== 1 ? 's' : ''}`
+                }
               </p>
             </div>
             <div className="flex gap-2">
