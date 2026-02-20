@@ -138,7 +138,12 @@ export default function EventAdminDashboard() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <p className="text-sm font-medium text-gray-600">Participants</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">{counts.totalParticipants}</p>
+                <div className="mt-2">
+                  <span className="text-3xl font-bold text-gray-900">{counts.totalParticipants}</span>
+                  <span className="text-2xl text-gray-400 ml-2">
+                    ({counts.individualParticipants + counts.groupParticipants.total.expected})
+                  </span>
+                </div>
               </div>
               <div className="text-4xl">🎯</div>
             </div>
@@ -222,7 +227,7 @@ export default function EventAdminDashboard() {
           <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <p className="text-sm font-medium text-gray-600">Helpers / Volunteers</p>
+                <p className="text-sm font-medium text-gray-600">Helpers (expected)</p>
                 <div className="mt-2">
                   <span className="text-3xl font-bold text-gray-900">{volunteerRegistrations.length}</span>
                   <span className="text-2xl text-gray-400 ml-2">({volunteers.length})</span>
