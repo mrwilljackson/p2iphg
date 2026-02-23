@@ -58,6 +58,7 @@ export interface RegistrationForCounting {
   organizationId?: string | null;
   organizationName?: string | null;
   groupType?: GroupType | null;
+  organizationAirtableRecordId?: string | null;
 }
 
 /**
@@ -115,6 +116,8 @@ export interface ParticipantCounts {
   // Group breakdown by type
   groups: {
     total: number;
+    registered: number; // Groups that have completed registration
+    walkIns: number; // Groups without airtable_record_id (on-the-day signups)
     familyGroups: number;
     disabilityGroups: number;
     corporateGroups: number;
@@ -143,6 +146,7 @@ export interface OrganizationForCounting {
   id: string;
   name: string;
   groupType: GroupType | null;
+  airtableRecordId?: string | null;
 }
 
 /**
@@ -191,6 +195,8 @@ export function calculateParticipantCounts(
   let educationalGroupsCount = 0;
   let otherGroupsCount = 0;
 
+  let walkInGroupsCount = 0; // Groups without airtable_record_id
+
   // Array to store detailed group information
   const groupDetails: GroupDetail[] = [];
 
@@ -221,6 +227,11 @@ export function calculateParticipantCounts(
     // Add disabled and SEN students to totals
     totalDisabledStudents += group.disabledStudents || 0;
     totalSenStudents += group.senStudents || 0;
+
+    // Check if this is a walk-in (no airtable_record_id)
+    if (!group.organizationAirtableRecordId) {
+      walkInGroupsCount++;
+    }
 
     // Categorize group type
     switch (group.groupType) {
@@ -352,6 +363,8 @@ export function calculateParticipantCounts(
 
     groups: {
       total: totalGroups,
+      registered: groupRegistrations.length,
+      walkIns: walkInGroupsCount,
       familyGroups: familyGroupsCount,
       disabilityGroups: disabilityGroupsCount,
       corporateGroups: corporateGroupsCount,

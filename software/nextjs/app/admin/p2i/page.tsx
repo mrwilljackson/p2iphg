@@ -63,6 +63,8 @@ export default function P2IAdminDashboard() {
     volunteers: 0,
     groups: {
       total: 0,
+      registered: 0,
+      walkIns: 0,
       familyGroups: 0,
       disabilityGroups: 0,
       corporateGroups: 0,
@@ -453,9 +455,12 @@ export default function P2IAdminDashboard() {
             <div className="flex items-center justify-between">
               <div className="w-full">
                 <p className="text-sm font-medium text-gray-600">Groups</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">{counts.groupDetails.length}</p>
-                <div className="mt-2">
-                  <span className="text-lg text-gray-400">({counts.groups.total} expected)</span>
+                <p className="text-3xl font-bold text-gray-900 mt-2">{counts.groups.registered}</p>
+                <div className="mt-2 space-y-1">
+                  <div className="text-lg text-gray-400">({counts.groups.total} expected)</div>
+                  {counts.groups.walkIns > 0 && (
+                    <div className="text-sm text-blue-600">+ {counts.groups.walkIns} walk-in{counts.groups.walkIns !== 1 ? 's' : ''}</div>
+                  )}
                 </div>
                 <div className="text-xs text-gray-500 mt-2 space-y-1 pt-2 border-t border-gray-200">
                   <div className="flex justify-between">

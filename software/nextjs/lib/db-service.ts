@@ -504,6 +504,7 @@ export class DatabaseService {
           organizationId: registrations.organizationId,
           organizationName: organizations.name,
           groupType: organizations.groupType,
+          organizationAirtableRecordId: organizations.airtableRecordId,
         })
         .from(registrations)
         .leftJoin(organizations, eq(registrations.organizationId, organizations.id))
@@ -538,6 +539,7 @@ export class DatabaseService {
         organizationId: r.organizationId,
         organizationName: r.organizationName,
         groupType: r.groupType as any,
+        organizationAirtableRecordId: r.organizationAirtableRecordId,
       }));
 
       const organizationsForCounting = allOrgs.map(org => ({
