@@ -47,6 +47,9 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
   const [showOrganizationAlert, setShowOrganizationAlert] = useState(false);
   const [allOrganizations, setAllOrganizations] = useState<Organization[]>([]);
 
+  // Multi-step form state
+  const [currentStep, setCurrentStep] = useState(1);
+
   const form = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationFormSchema),
     defaultValues: {
@@ -80,6 +83,19 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
   const volunteerEmail = form.watch("email");
   const selectedOrgId = form.watch("organizationId");
 
+  // Determine total steps based on role
+  const getTotalSteps = () => {
+    if (selectedRole === "Volunteer") return 1; // Single page for volunteers
+    if (selectedRole === "Participant") return 2; // Step 1: Details, Step 2: Consents
+    if (selectedRole === "Group") return 3; // Step 1: Org/Email/Name, Step 2: Participation/Group, Step 3: Consents
+    return 1;
+  };
+
+  // Reset to step 1 when role changes
+  useEffect(() => {
+    setCurrentStep(1);
+  }, [selectedRole]);
+
   // Check if selected organization is a disability group or Family Group
   // Family Group placeholder has special ID "FAMILY_GROUP_PLACEHOLDER"
   const selectedOrg = allOrganizations.find(org => org.id === selectedOrgId);
@@ -87,6 +103,73 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
     selectedOrgId === "FAMILY_GROUP_PLACEHOLDER" ||
     selectedOrg?.groupType === 'Disability' ||
     selectedOrg?.groupType === 'Family';
+
+  // Navigation handlers
+  const handleNext = async () => {
+    // Validate current step fields before proceeding
+    const isValid = await validateCurrentStep();
+    if (isValid) {
+      setCurrentStep(prev => Math.min(prev + 1, getTotalSteps()));
+    }
+  };
+
+  const handleBack = () => {
+    setCurrentStep(prev => Math.max(prev - 1, 1));
+  };
+
+  // Validate fields for current step
+  const validateCurrentStep = async (): Promise<boolean> => {
+    let fieldsToValidate: (keyof RegistrationFormData)[] = [];
+
+    if (selectedRole === "Participant") {
+      if (currentStep === 1) {
+        fieldsToValidate = ["organizationId", "attendeeName", "attendeeSurname", "email", "impairment"];
+      }
+    } else if (selectedRole === "Group") {
+      if (currentStep === 1) {
+        fieldsToValidate = ["organizationId", "email", "attendeeName", "attendeeSurname"];
+      } else if (currentStep === 2) {
+        fieldsToValidate = ["groupLeaderParticipating", "groupSize", "disabledStudents", "senStudents"];
+      }
+    }
+
+    // Trigger validation for the specified fields
+    const result = await form.trigger(fieldsToValidate);
+    return result;
+  };
+
+  // Helper function to determine if a section should be visible based on current step
+  const shouldShowSection = (section: string): boolean => {
+    // Volunteer role - single page, show everything
+    if (selectedRole === "Volunteer") {
+      return true;
+    }
+
+    // Participant role - 2 steps
+    if (selectedRole === "Participant") {
+      if (currentStep === 1) {
+        return section === "organizationEmail" || section === "personalDetails" || section === "impairment";
+      }
+      if (currentStep === 2) {
+        return section === "consents";
+      }
+    }
+
+    // Group role - 3 steps
+    if (selectedRole === "Group") {
+      if (currentStep === 1) {
+        return section === "organizationEmail" || section === "personalDetails";
+      }
+      if (currentStep === 2) {
+        return section === "groupLeaderParticipation" || section === "groupDetails";
+      }
+      if (currentStep === 3) {
+        return section === "consents";
+      }
+    }
+
+    return false;
+  };
 
   // Reset volunteer alert when role changes away from Volunteer
   useEffect(() => {
@@ -255,6 +338,22 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        {/* Title when role is preselected via QR code */}
+        {preselectedRole && (
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-bold text-gray-900">
+              {preselectedRole === "Volunteer" && "Helper Registration"}
+              {preselectedRole === "Participant" && "Participant Registration"}
+              {preselectedRole === "Group" && "Group Leader Registration"}
+            </h2>
+            <p className="text-gray-600 mt-2">
+              {preselectedRole === "Volunteer" && "Thank you for volunteering to help at today's event!"}
+              {preselectedRole === "Participant" && "Welcome! Let's get you registered for today's event."}
+              {preselectedRole === "Group" && "Welcome! Let's register your group for today's event."}
+            </p>
+          </div>
+        )}
+
         {/* Event ID - Hidden field, automatically set from header/context */}
         <FormField
           control={form.control}
@@ -268,54 +367,56 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
           )}
         />
 
-        {/* Registration Type */}
-        <FormField
-          control={form.control}
-          name="role"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Registration Type *</FormLabel>
-              <FormControl>
-                <RadioGroup
-                  onValueChange={field.onChange}
-                  value={field.value}
-                  className="flex flex-col space-y-2"
-                >
-                  <label className="flex items-center space-x-2 border rounded-lg p-4 cursor-pointer hover:bg-gray-50">
-                    <RadioGroupItem value="Participant" id="participant" />
-                    <div className="flex-1">
-                      <div className="font-semibold">👤 I&apos;m a Participant</div>
-                      <div className="text-sm text-gray-600">I&apos;m here to take part in the event today - Hooray!</div>
-                    </div>
-                  </label>
-                  <label className="flex items-center space-x-2 border rounded-lg p-4 cursor-pointer hover:bg-gray-50">
-                    <RadioGroupItem value="Group" id="group" />
-                    <div className="flex-1">
-                      <div className="font-semibold">👨‍🏫 I am a Teacher, Parent or a Community Group Leader</div>
-                      <div className="text-sm text-gray-600">I have brought one or more participants for todays event</div>
-                    </div>
-                  </label>
-                  <label className="flex items-center space-x-2 border rounded-lg p-4 cursor-pointer hover:bg-gray-50">
-                    <RadioGroupItem value="Volunteer" id="volunteer" />
-                    <div className="flex-1">
-                      <div className="font-semibold">🙋 I&apos;m a Helper</div>
-                      <div className="text-sm text-gray-600">I&apos;m here to help run and support the event today <br />
-                      ( I won't be taking part in any games)</div>
-                    </div>
-                  </label>
+        {/* Registration Type - Hidden if preselectedRole is provided */}
+        {!preselectedRole && (
+          <FormField
+            control={form.control}
+            name="role"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Registration Type *</FormLabel>
+                <FormControl>
+                  <RadioGroup
+                    onValueChange={field.onChange}
+                    value={field.value}
+                    className="flex flex-col space-y-2"
+                  >
+                    <label className="flex items-center space-x-2 border rounded-lg p-4 cursor-pointer hover:bg-gray-50">
+                      <RadioGroupItem value="Participant" id="participant" />
+                      <div className="flex-1">
+                        <div className="font-semibold">👤 I&apos;m a Participant</div>
+                        <div className="text-sm text-gray-600">I&apos;m here to take part in the event today - Hooray!</div>
+                      </div>
+                    </label>
+                    <label className="flex items-center space-x-2 border rounded-lg p-4 cursor-pointer hover:bg-gray-50">
+                      <RadioGroupItem value="Group" id="group" />
+                      <div className="flex-1">
+                        <div className="font-semibold">👨‍🏫 I am a Teacher, Parent or a Community Group Leader</div>
+                        <div className="text-sm text-gray-600">I have brought one or more participants for todays event</div>
+                      </div>
+                    </label>
+                    <label className="flex items-center space-x-2 border rounded-lg p-4 cursor-pointer hover:bg-gray-50">
+                      <RadioGroupItem value="Volunteer" id="volunteer" />
+                      <div className="flex-1">
+                        <div className="font-semibold">🙋 I&apos;m a Helper</div>
+                        <div className="text-sm text-gray-600">I&apos;m here to help run and support the event today <br />
+                        ( I won't be taking part in any games)</div>
+                      </div>
+                    </label>
 
-                </RadioGroup>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+                  </RadioGroup>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
 
         {/* Separator: Role -> Personal Details */}
-        {!showOrganizationAlert && <hr className="my-6 border-gray-200" />}
+        {!showOrganizationAlert && shouldShowSection("organizationEmail") && <hr className="my-6 border-gray-200" />}
 
         {/* GROUP ROLE: Organization and Email first (side by side) */}
-        {selectedRole === "Group" && !showOrganizationAlert && (isFieldVisible("organizationId", selectedRole) || isFieldVisible("email", selectedRole)) && (
+        {selectedRole === "Group" && !showOrganizationAlert && shouldShowSection("organizationEmail") && (isFieldVisible("organizationId", selectedRole) || isFieldVisible("email", selectedRole)) && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Organization - Left */}
             {isFieldVisible("organizationId", selectedRole) && (
@@ -394,7 +495,7 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
         )}
 
         {/* PARTICIPANT ROLE: Organization and Email first (side by side) */}
-        {selectedRole === "Participant" && !showOrganizationAlert && (isFieldVisible("organizationId", selectedRole) || isFieldVisible("email", selectedRole)) && (
+        {selectedRole === "Participant" && !showOrganizationAlert && shouldShowSection("organizationEmail") && (isFieldVisible("organizationId", selectedRole) || isFieldVisible("email", selectedRole)) && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Organization - Left (Combobox for Participant) */}
             {isFieldVisible("organizationId", selectedRole) && (
@@ -441,7 +542,7 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
         )}
 
         {/* First Name and Last Name - Side by Side */}
-        {!showOrganizationAlert && (isFieldVisible("attendeeName", selectedRole) || isFieldVisible("attendeeSurname", selectedRole)) && (
+        {!showOrganizationAlert && shouldShowSection("personalDetails") && (isFieldVisible("attendeeName", selectedRole) || isFieldVisible("attendeeSurname", selectedRole)) && (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* First Name */}
@@ -486,8 +587,8 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
               </p>
             )}
 
-            {/* Group Leader Participation - For Group role only */}
-            {selectedRole === "Group" && (
+            {/* Group Leader Participation - For Group role only - Step 2 */}
+            {selectedRole === "Group" && shouldShowSection("groupLeaderParticipation") && (
               <FormField
                 control={form.control}
                 name="groupLeaderParticipating"
@@ -516,8 +617,8 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
               />
             )}
 
-            {/* Group Size Field - For NON-Disability/NON-Family Groups - Show after name fields */}
-            {selectedRole === "Group" && !shouldShowImpairmentFields && isFieldVisible("groupSize", selectedRole) && (
+            {/* Group Size Field - For NON-Disability/NON-Family Groups - Show after name fields - Step 2 for Group */}
+            {selectedRole === "Group" && shouldShowSection("groupDetails") && !shouldShowImpairmentFields && isFieldVisible("groupSize", selectedRole) && (
               <FormField
                 control={form.control}
                 name="groupSize"
@@ -668,8 +769,8 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
           </div>
         )}
 
-        {/* Email Consent */}
-        {!showVolunteerAlert && !showOrganizationAlert && (isFieldVisible("feedbackConsent", selectedRole) || isFieldVisible("nextEventConsent", selectedRole)) && (
+        {/* Email Consent - Step 2 for Participant, Step 3 for Group, Step 1 for Volunteer */}
+        {!showVolunteerAlert && !showOrganizationAlert && shouldShowSection("consents") && (isFieldVisible("feedbackConsent", selectedRole) || isFieldVisible("nextEventConsent", selectedRole)) && (
           // For volunteers, only show if an email is selected (not empty and not NOT_LISTED)
           selectedRole !== "Volunteer" || (volunteerEmail && volunteerEmail !== "" && volunteerEmail !== "NOT_LISTED")
         ) && (
@@ -727,8 +828,8 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
             )}
           </div>
         )}
-        {/* Impairment - Label and Input Side by Side */}
-        {!showOrganizationAlert && isFieldVisible("impairment", selectedRole) && (
+        {/* Impairment - Label and Input Side by Side - Step 1 for Participant */}
+        {!showOrganizationAlert && shouldShowSection("impairment") && isFieldVisible("impairment", selectedRole) && (
           <FormField
             control={form.control}
             name="impairment"
@@ -760,12 +861,12 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
 
 
         {/* Separator: Impairment -> Group Details (conditional) */}
-        {!showOrganizationAlert && shouldShowImpairmentFields && isFieldVisible("groupSize", selectedRole) && (
+        {!showOrganizationAlert && shouldShowSection("groupDetails") && shouldShowImpairmentFields && isFieldVisible("groupSize", selectedRole) && (
           <hr className="my-6 border-gray-200" />
         )}
 
-        {/* Group Size Field - For Disability and Family Groups ONLY - Show after impairment field */}
-        {!showOrganizationAlert && shouldShowImpairmentFields && isFieldVisible("groupSize", selectedRole) && (
+        {/* Group Size Field - For Disability and Family Groups ONLY - Show after impairment field - Step 2 for Group */}
+        {!showOrganizationAlert && shouldShowSection("groupDetails") && shouldShowImpairmentFields && isFieldVisible("groupSize", selectedRole) && (
           <FormField
             control={form.control}
             name="groupSize"
@@ -791,8 +892,8 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
           />
         )}
 
-        {/* Disabled Students - Only for Disability Groups and Family Groups */}
-        {!showOrganizationAlert && shouldShowImpairmentFields && isFieldVisible("disabledStudents", selectedRole) && (
+        {/* Disabled Students - Only for Disability Groups and Family Groups - Step 2 for Group */}
+        {!showOrganizationAlert && shouldShowSection("groupDetails") && shouldShowImpairmentFields && isFieldVisible("disabledStudents", selectedRole) && (
           <FormField
             control={form.control}
             name="disabledStudents"
@@ -818,8 +919,8 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
           />
         )}
 
-        {/* SEN Students - Only for Disability Groups and Family Groups */}
-        {!showOrganizationAlert && shouldShowImpairmentFields && isFieldVisible("senStudents", selectedRole) && (
+        {/* SEN Students - Only for Disability Groups and Family Groups - Step 2 for Group */}
+        {!showOrganizationAlert && shouldShowSection("groupDetails") && shouldShowImpairmentFields && isFieldVisible("senStudents", selectedRole) && (
           <FormField
             control={form.control}
             name="senStudents"
@@ -846,10 +947,10 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
         )}
 
         {/* Separator: Personal/Group Details -> Consent */}
-        {!showOrganizationAlert && <hr className="my-6 border-gray-200" />}
+        {!showOrganizationAlert && shouldShowSection("consents") && <hr className="my-6 border-gray-200" />}
 
-        {/* Photo Consent */}
-        {!showVolunteerAlert && !showOrganizationAlert && isFieldVisible("photoConsent", selectedRole) && (
+        {/* Photo Consent - Step 2 for Participant, Step 3 for Group, Step 1 for Volunteer */}
+        {!showVolunteerAlert && !showOrganizationAlert && shouldShowSection("consents") && isFieldVisible("photoConsent", selectedRole) && (
           // For volunteers, only show if an email is selected (not empty and not NOT_LISTED)
           selectedRole !== "Volunteer" || (volunteerEmail && volunteerEmail !== "" && volunteerEmail !== "NOT_LISTED")
         ) && (
@@ -885,16 +986,64 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
           />
         )}
 
-        {/* Submit Button */}
+        {/* Step Progress Indicator - Only show for multi-step forms */}
+        {!showVolunteerAlert && !showOrganizationAlert && getTotalSteps() > 1 && (
+          <div className="flex items-center justify-center space-x-2 py-4">
+            {Array.from({ length: getTotalSteps() }, (_, i) => i + 1).map((step) => (
+              <div
+                key={step}
+                className={`h-2 rounded-full transition-all ${
+                  step === currentStep
+                    ? 'w-8 bg-lime-500'
+                    : step < currentStep
+                    ? 'w-2 bg-lime-300'
+                    : 'w-2 bg-gray-300'
+                }`}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Navigation Buttons */}
         {!showVolunteerAlert && !showOrganizationAlert && (
-          <Button
-            type="submit"
-            className="w-full bg-lime-500 hover:bg-lime-600 active:bg-purple-600 text-white font-semibold transition-colors"
-            size="lg"
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? "Submitting..." : "Click here to register!"}
-          </Button>
+          <div className="flex gap-4">
+            {/* Back Button - Only show if not on first step and multi-step form */}
+            {currentStep > 1 && getTotalSteps() > 1 && (
+              <Button
+                type="button"
+                onClick={handleBack}
+                variant="outline"
+                className="flex-1"
+                size="lg"
+              >
+                ← Back
+              </Button>
+            )}
+
+            {/* Next Button - Show if not on last step */}
+            {currentStep < getTotalSteps() && (
+              <Button
+                type="button"
+                onClick={handleNext}
+                className="flex-1 bg-lime-500 hover:bg-lime-600 text-white font-semibold"
+                size="lg"
+              >
+                Next →
+              </Button>
+            )}
+
+            {/* Submit Button - Only show on last step or single-step form */}
+            {(currentStep === getTotalSteps() || getTotalSteps() === 1) && (
+              <Button
+                type="submit"
+                className="flex-1 bg-lime-500 hover:bg-lime-600 active:bg-purple-600 text-white font-semibold transition-colors"
+                size="lg"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Submitting..." : "Click here to register!"}
+              </Button>
+            )}
+          </div>
         )}
       </form>
     </Form>
