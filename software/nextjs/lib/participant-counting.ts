@@ -181,7 +181,8 @@ export function calculateParticipantCounts(
   ).length;
   
   // Initialize counters
-  let familyDisabilityExpected = 0;
+  let familyDisabilityExpected = 0; // Expected from organizations with expectedGroupSize (not yet registered)
+  let familyDisabilityRegistered = 0; // Registered from actual group registrations
   let otherGroupsExpected = 0;
   let otherGroupsRegistered = 0;
 
@@ -218,8 +219,9 @@ export function calculateParticipantCounts(
 
     // Add to appropriate category
     if (isExpectedOnly) {
-      // Family & Disability: Expected = Registered
+      // Family & Disability: Expected = Registered (group-level count from actual registration)
       familyDisabilityExpected += expectedCount;
+      familyDisabilityRegistered += expectedCount; // Also add to registered since they registered
     } else {
       // Other groups: Track expected separately from registered
       otherGroupsExpected += expectedCount;
@@ -327,11 +329,13 @@ export function calculateParticipantCounts(
 
       // Add expected participants from this organization (if expectedGroupSize is set)
       // This is used for future events where organizations are pre-registered but haven't completed registration yet
+      // IMPORTANT: This only adds to EXPECTED count, NOT registered count (they haven't registered yet)
       if (org.expectedGroupSize && org.expectedGroupSize > 0) {
         const isExpectedOnly = isExpectedOnlyGroupType(org.groupType);
 
         if (isExpectedOnly) {
           // Family/Disability groups: expected participants come from expectedGroupSize
+          // NOTE: This does NOT add to familyDisabilityRegistered - only to expected
           familyDisabilityExpected += org.expectedGroupSize;
         } else {
           // Other groups: expected participants come from expectedGroupSize
@@ -343,7 +347,7 @@ export function calculateParticipantCounts(
 
   // Calculate totals
   const totalGroupExpected = familyDisabilityExpected + otherGroupsExpected;
-  const totalGroupRegistered = familyDisabilityExpected + otherGroupsRegistered;
+  const totalGroupRegistered = familyDisabilityRegistered + otherGroupsRegistered;
   const totalParticipants = individualParticipants + totalGroupRegistered;
 
   // Calculate total groups (registered + expected but not registered)
@@ -355,7 +359,7 @@ export function calculateParticipantCounts(
     groupParticipants: {
       familyAndDisability: {
         expected: familyDisabilityExpected,
-        registered: familyDisabilityExpected, // Same for these groups
+        registered: familyDisabilityRegistered, // Only from actual group registrations
       },
       otherGroups: {
         expected: otherGroupsExpected,
