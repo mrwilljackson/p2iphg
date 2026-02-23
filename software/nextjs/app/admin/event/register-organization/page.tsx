@@ -26,7 +26,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { AdminEventHeader } from "@/components/admin-event-header";
-import { getCurrentEvent, createOrganization, createRegistration } from "@/lib/actions";
+import { getCurrentEvent, getEventById, createOrganization, createRegistration } from "@/lib/actions";
 import type { Event, GroupType } from "@/lib/types";
 
 // Validation schema for organization registration
@@ -76,7 +76,19 @@ export default function RegisterOrganizationPage() {
   // Load current event
   useEffect(() => {
     async function loadEvent() {
-      const event = await getCurrentEvent();
+      // Check if P2I admin has selected a specific event to administer
+      const administeringEventId = sessionStorage.getItem('administeringEventId');
+
+      let event: Event | null = null;
+
+      if (administeringEventId) {
+        // P2I admin is administering a specific event
+        event = await getEventById(administeringEventId);
+      } else {
+        // Regular Event Admin - use current active event
+        event = await getCurrentEvent();
+      }
+
       setCurrentEvent(event);
     }
     loadEvent();

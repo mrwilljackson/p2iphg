@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getCurrentEvent } from "@/lib/actions";
+import { getCurrentEvent, getEventById } from "@/lib/actions";
 import { getRegistrationCountsByRole, getAllRegistrations } from "@/lib/actions";
 import type { Event, Registration } from "@/lib/types";
 import type { ParticipantCounts } from "@/lib/participant-counting";
@@ -25,7 +25,20 @@ export default function EventReportPage() {
   useEffect(() => {
     async function loadData() {
       setIsLoading(true);
-      const event = await getCurrentEvent();
+
+      // Check if P2I admin has selected a specific event to administer
+      const administeringEventId = sessionStorage.getItem('administeringEventId');
+
+      let event: Event | null = null;
+
+      if (administeringEventId) {
+        // P2I admin is administering a specific event
+        event = await getEventById(administeringEventId);
+      } else {
+        // Regular Event Admin - use current active event
+        event = await getCurrentEvent();
+      }
+
       setCurrentEvent(event);
 
       if (event) {
