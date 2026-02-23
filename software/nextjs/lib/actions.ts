@@ -26,6 +26,21 @@ export async function getAllEvents(): Promise<Event[]> {
 }
 
 /**
+ * Set an event as the current active event
+ * Sets the specified event to 'active' and all others to 'completed'
+ */
+export async function setCurrentEvent(eventId: string): Promise<Event> {
+  return await DatabaseService.setCurrentEvent(eventId);
+}
+
+/**
+ * Get event by ID
+ */
+export async function getEventById(id: string): Promise<Event | null> {
+  return await DatabaseService.getEventById(id);
+}
+
+/**
  * Get organizations for a specific event
  */
 export async function getOrganizations(eventId: string): Promise<Organization[]> {

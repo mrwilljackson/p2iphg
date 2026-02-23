@@ -3,17 +3,34 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { getCurrentEvent, getRegistrationCountsByRole, getAllRegistrations } from "@/lib/actions";
-import type { Event, Registration } from "@/lib/types";
+import { getCurrentEvent, getEventById, getRegistrationCountsByRole, getAllRegistrations, getOrganizations } from "@/lib/actions";
+import type { Event, Registration, Organization } from "@/lib/types";
 import type { ParticipantCounts } from "@/lib/participant-counting";
 
-interface GroupReportRow {
-  groupName: string;
-  groupType: string;
-  registeredParticipants: number;
-  expectedParticipants: number;
-  groupLeaderName: string;
-  groupLeaderEmail: string;
+interface RegistrationCSVRow {
+  id: string;
+  eventId: string;
+  eventDate: string;
+  venueName: string;
+  attendeeName: string;
+  attendeeSurname: string;
+  email: string;
+  organizationName: string;
+  impairment: string;
+  role: string;
+  photoConsent: string;
+  feedbackConsent: string;
+  nextEventConsent: string;
+  groupSize: string;
+  disabledStudents: string;
+  senStudents: string;
+  groupLeaderParticipating: string;
+  checkinTime: string;
+  checkoutTime: string;
+  syncStatus: string;
+  airtableRecordId: string;
+  createdAt: string;
+  modifiedAt: string;
 }
 
 export default function P2IAdminDashboard() {
@@ -58,7 +75,19 @@ export default function P2IAdminDashboard() {
   // Load current event and registration counts
   useEffect(() => {
     async function loadData() {
-      const event = await getCurrentEvent();
+      // Check if P2I admin has selected a specific event to administer
+      const administeringEventId = sessionStorage.getItem('administeringEventId');
+
+      let event: Event | null = null;
+
+      if (administeringEventId) {
+        // P2I admin is administering a specific event
+        event = await getEventById(administeringEventId);
+      } else {
+        // Default to current active event
+        event = await getCurrentEvent();
+      }
+
       setCurrentEvent(event);
 
       if (event) {
@@ -90,21 +119,39 @@ export default function P2IAdminDashboard() {
   };
 
   // CSV Export Functions
-  const convertToCSV = (data: GroupReportRow[]): string => {
+  const convertToCSV = (data: RegistrationCSVRow[]): string => {
     if (data.length === 0) return '';
 
-    // CSV Headers
+    // CSV Headers - all columns from registrations table
     const headers = [
-      'Group Name',
-      'Group Type',
-      'Registered Participants',
-      'Expected Participants',
-      'Group Leader Name',
-      'Group Leader Email'
+      'ID',
+      'Event ID',
+      'Event Date',
+      'Venue Name',
+      'Attendee Name',
+      'Attendee Surname',
+      'Email',
+      'Organization Name',
+      'Impairment',
+      'Role',
+      'Photo Consent',
+      'Feedback Consent',
+      'Next Event Consent',
+      'Group Size',
+      'Disabled Students',
+      'SEN Students',
+      'Group Leader Participating',
+      'Check-in Time',
+      'Check-out Time',
+      'Sync Status',
+      'Airtable Record ID',
+      'Created At',
+      'Modified At'
     ];
 
     // Escape CSV values (handle commas, quotes, newlines)
-    const escapeCSV = (value: string | number): string => {
+    const escapeCSV = (value: string | number | null | undefined): string => {
+      if (value === null || value === undefined) return '';
       const stringValue = String(value);
       if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
         return `"${stringValue.replace(/"/g, '""')}"`;
@@ -116,12 +163,29 @@ export default function P2IAdminDashboard() {
     const csvRows = [
       headers.join(','),
       ...data.map(row => [
-        escapeCSV(row.groupName),
-        escapeCSV(row.groupType),
-        escapeCSV(row.registeredParticipants),
-        escapeCSV(row.expectedParticipants),
-        escapeCSV(row.groupLeaderName),
-        escapeCSV(row.groupLeaderEmail)
+        escapeCSV(row.id),
+        escapeCSV(row.eventId),
+        escapeCSV(row.eventDate),
+        escapeCSV(row.venueName),
+        escapeCSV(row.attendeeName),
+        escapeCSV(row.attendeeSurname),
+        escapeCSV(row.email),
+        escapeCSV(row.organizationName),
+        escapeCSV(row.impairment),
+        escapeCSV(row.role),
+        escapeCSV(row.photoConsent),
+        escapeCSV(row.feedbackConsent),
+        escapeCSV(row.nextEventConsent),
+        escapeCSV(row.groupSize),
+        escapeCSV(row.disabledStudents),
+        escapeCSV(row.senStudents),
+        escapeCSV(row.groupLeaderParticipating),
+        escapeCSV(row.checkinTime),
+        escapeCSV(row.checkoutTime),
+        escapeCSV(row.syncStatus),
+        escapeCSV(row.airtableRecordId),
+        escapeCSV(row.createdAt),
+        escapeCSV(row.modifiedAt)
       ].join(','))
     ];
 
@@ -156,28 +220,78 @@ export default function P2IAdminDashboard() {
     }
 
     try {
-      // Get registration counts
-      const registrationCounts = await getRegistrationCountsByRole(currentEvent.id);
-
-      // Get all registrations to find group leaders
+      // Get all registrations
       const allRegistrations = await getAllRegistrations(currentEvent.id);
 
-      // Build report data (same logic as report page)
-      const rows: GroupReportRow[] = registrationCounts.groupDetails.map((group) => {
-        // Find the group leader registration (role='Group')
-        const groupLeaderReg = allRegistrations.find(
-          (reg) => reg.role === 'Group' && reg.organizationId === group.organizationId
-        );
+      // Get all organizations to map IDs to names
+      const allOrganizations = await getOrganizations(currentEvent.id);
+
+      // Create a map of organization ID to name
+      const orgMap = new Map<string, string>();
+      allOrganizations.forEach(org => {
+        orgMap.set(org.id, org.name);
+      });
+
+      // Format event date for display
+      const eventDate = currentEvent.date
+        ? new Date(currentEvent.date).toLocaleDateString('en-GB', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          })
+        : '';
+
+      // Get venue name
+      const venueName = currentEvent.location || '';
+
+      // Build CSV data with all registration fields
+      const rows: RegistrationCSVRow[] = allRegistrations.map((reg) => {
+        // Format dates
+        const formatDate = (date: Date | string | null | undefined): string => {
+          if (!date) return '';
+          try {
+            return new Date(date).toISOString();
+          } catch {
+            return '';
+          }
+        };
+
+        // Format boolean values
+        const formatBoolean = (value: boolean | null | undefined): string => {
+          if (value === null || value === undefined) return '';
+          return value ? 'Yes' : 'No';
+        };
+
+        // Get organization name from ID
+        const organizationName = reg.organizationId
+          ? (orgMap.get(reg.organizationId) || 'Unknown Organization')
+          : '';
 
         return {
-          groupName: group.organizationName,
-          groupType: group.groupType || 'Other',
-          registeredParticipants: group.registered,
-          expectedParticipants: group.expected,
-          groupLeaderName: groupLeaderReg
-            ? `${groupLeaderReg.attendeeName} ${groupLeaderReg.attendeeSurname}`
-            : 'N/A',
-          groupLeaderEmail: groupLeaderReg?.email || 'N/A',
+          id: reg.id || '',
+          eventId: reg.eventId || '',
+          eventDate: eventDate,
+          venueName: venueName,
+          attendeeName: reg.attendeeName,
+          attendeeSurname: reg.attendeeSurname,
+          email: reg.email || '',
+          organizationName: organizationName,
+          impairment: reg.impairment || '',
+          role: reg.role,
+          photoConsent: formatBoolean(reg.photoConsent),
+          feedbackConsent: formatBoolean(reg.feedbackConsent),
+          nextEventConsent: formatBoolean(reg.nextEventConsent),
+          groupSize: reg.groupSize?.toString() || '',
+          disabledStudents: reg.disabledStudents?.toString() || '',
+          senStudents: reg.senStudents?.toString() || '',
+          groupLeaderParticipating: formatBoolean(reg.groupLeaderParticipating),
+          checkinTime: formatDate(reg.checkinTime),
+          checkoutTime: formatDate(reg.checkoutTime),
+          syncStatus: reg.syncStatus || '',
+          airtableRecordId: reg.airtableRecordId || '',
+          createdAt: formatDate(reg.createdAt),
+          modifiedAt: formatDate(reg.modifiedAt),
         };
       });
 
@@ -192,12 +306,12 @@ export default function P2IAdminDashboard() {
       // Generate filename with event name and date
       const eventName = currentEvent.name.replace(/[^a-z0-9]/gi, '-').toLowerCase();
       const dateStr = new Date().toISOString().split('T')[0];
-      const filename = `${eventName}-registration-report-${dateStr}.csv`;
+      const filename = `${eventName}-registrations-${dateStr}.csv`;
 
       // Download
       downloadCSV(csv, filename);
 
-      alert('CSV file downloaded successfully!');
+      alert(`CSV file downloaded successfully! ${rows.length} registration(s) exported.`);
     } catch (error) {
       console.error('Error exporting CSV:', error);
       alert('Failed to export CSV. Please try again.');
@@ -245,9 +359,31 @@ export default function P2IAdminDashboard() {
         {/* Current Event Card */}
         <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6 mb-8">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-gray-900">Current Event</h2>
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-              Active
+            <div className="flex items-center gap-3">
+              <h2 className="text-xl font-semibold text-gray-900">
+                {sessionStorage.getItem('administeringEventId') ? 'Administering Event' : 'Current Event'}
+              </h2>
+              {sessionStorage.getItem('administeringEventId') && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    sessionStorage.removeItem('administeringEventId');
+                    window.location.reload();
+                  }}
+                >
+                  ← Return to Current Event
+                </Button>
+              )}
+            </div>
+            <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+              currentEvent?.status === 'active'
+                ? 'bg-green-100 text-green-800'
+                : currentEvent?.status === 'completed'
+                ? 'bg-gray-100 text-gray-800'
+                : 'bg-red-100 text-red-800'
+            }`}>
+              {currentEvent?.status ? currentEvent.status.charAt(0).toUpperCase() + currentEvent.status.slice(1) : 'Unknown'}
             </span>
           </div>
           {currentEvent ? (
@@ -387,13 +523,24 @@ export default function P2IAdminDashboard() {
           <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Data Management</h2>
             <div className="space-y-3">
+              <Button
+                className="w-full justify-start"
+                variant="outline"
+                onClick={handleExportCSV}
+              >
+                ⬇️ Export to CSV
+              </Button>
               <Button className="w-full justify-start" variant="outline">
                 👥 Manage Volunteers
               </Button>
               <Button className="w-full justify-start" variant="outline">
                 🏢 Manage Organizations
               </Button>
-              <Button className="w-full justify-start" variant="outline">
+              <Button
+                className="w-full justify-start"
+                variant="outline"
+                onClick={() => router.push("/admin/p2i/manage-events")}
+              >
                 📅 Manage Events
               </Button>
               <Button className="w-full justify-start text-red-600 hover:text-red-700" variant="outline">

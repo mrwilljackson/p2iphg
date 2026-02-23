@@ -94,6 +94,42 @@ export class DatabaseService {
   }
 
   /**
+   * Set an event as the current active event
+   * Sets the specified event to 'active' and all others to 'completed'
+   * Business rule: Only one event can be active at a time
+   */
+  static async setCurrentEvent(eventId: string): Promise<Event> {
+    try {
+      // First, set all events to 'completed'
+      await db
+        .update(events)
+        .set({
+          status: 'completed',
+          modifiedAt: new Date()
+        });
+
+      // Then set the specified event to 'active'
+      const result = await db
+        .update(events)
+        .set({
+          status: 'active',
+          modifiedAt: new Date()
+        })
+        .where(eq(events.id, eventId))
+        .returning();
+
+      if (!result[0]) {
+        throw new Error(`Event with ID ${eventId} not found`);
+      }
+
+      return mapEventFromDb(result[0]);
+    } catch (error) {
+      console.error('Error setting current event:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Get event by ID
    */
   static async getEventById(id: string): Promise<Event | null> {
