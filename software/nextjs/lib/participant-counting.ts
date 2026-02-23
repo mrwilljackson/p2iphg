@@ -341,6 +341,15 @@ export function calculateParticipantCounts(
           // Other groups: expected participants come from expectedGroupSize
           otherGroupsExpected += org.expectedGroupSize;
         }
+
+        // Add to group details array for display
+        groupDetails.push({
+          organizationId: org.id,
+          organizationName: org.name,
+          groupType: org.groupType,
+          expected: org.expectedGroupSize,
+          registered: 0, // Not registered yet
+        });
       }
     }
   }
