@@ -480,71 +480,24 @@ export default function P2IAdminDashboard() {
         </div>
 
         {/* Stats Cards */}
-        {/* Participants Card - Full Width */}
-        <div className="mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <p className="text-3xl font-bold text-gray-900">{counts.totalParticipants} Registered Participants</p>
+            <div className="flex items-center justify-between">
+              <div className="w-full">
+                <p className="text-sm font-medium text-gray-600">Participants</p>
+                <p className="text-3xl font-bold text-gray-900 mt-2">{counts.totalParticipants}</p>
                 <div className="mt-2">
-                  <span className="text-2xl text-gray-400 ml-2">({counts.individualParticipants + counts.groupParticipants.total.expected} expected)</span>
+                  <span className="text-lg text-gray-400">({counts.individualParticipants + counts.groupParticipants.total.expected} expected)</span>
+                </div>
+                <div className="text-xs text-gray-500 mt-2 space-y-1 pt-2 border-t border-gray-200">
+                  <div>Individual: {counts.individualParticipants}</div>
+                  <div>Group Participants: {counts.groupParticipants.total.registered} / {counts.groupParticipants.total.expected}</div>
                 </div>
               </div>
-              <div className="text-4xl">🎯</div>
-            </div>
-
-            <div className="space-y-3">
-              <div className="font-medium text-gray-700 border-b pb-2 text-sm">
-                Individual Participants: {counts.individualParticipants}
-              </div>
-
-              {counts.groupDetails.length > 0 && (
-                <div>
-                  <div className="font-medium text-gray-700 mb-2 text-sm">Groups:</div>
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full text-sm">
-                      <thead>
-                        <tr className="border-b border-gray-200">
-                          <th className="text-left py-2 px-3 font-semibold text-gray-700">Group Name</th>
-                          <th className="text-center py-2 px-3 font-semibold text-gray-700">Expected</th>
-                          <th className="text-center py-2 px-3 font-semibold text-gray-700">Registered</th>
-                          <th className="w-8"></th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {counts.groupDetails.map((group) => {
-                          const hasLowRegistration = group.expected > group.registered;
-                          return (
-                            <tr
-                              key={group.organizationId}
-                              onClick={() => router.push(`/admin/event/organizations/${group.organizationId}`)}
-                              className={`border-b border-gray-100 cursor-pointer hover:bg-gray-100 transition-colors ${hasLowRegistration ? 'bg-yellow-50 hover:bg-yellow-100' : ''}`}
-                            >
-                              <td className={`py-2 px-3 font-bold text-gray-900 ${hasLowRegistration ? 'border-l-4 border-yellow-400' : ''}`}>
-                                {group.organizationName}
-                              </td>
-                              <td className="py-2 px-3 text-center text-gray-600">
-                                {group.expected}
-                              </td>
-                              <td className="py-2 px-3 text-center text-gray-600">
-                                {group.registered}
-                              </td>
-                              <td className="py-2 px-3 text-center">
-                                <span className="text-gray-400">→</span>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
+              <div className="text-4xl ml-4">🎯</div>
             </div>
           </div>
-        </div>
 
-        {/* Other Stats Cards */}
           <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
             <div className="flex items-center justify-between">
               <div className="w-full">
