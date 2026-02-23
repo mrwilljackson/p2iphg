@@ -509,6 +509,16 @@ export class DatabaseService {
         .leftJoin(organizations, eq(registrations.organizationId, organizations.id))
         .where(eq(registrations.eventId, eventId));
 
+      // Get all organizations for this event (to count expected groups)
+      const allOrgs = await db
+        .select({
+          id: organizations.id,
+          name: organizations.name,
+          groupType: organizations.groupType,
+        })
+        .from(organizations)
+        .where(eq(organizations.eventId, eventId));
+
       // Convert to format expected by counting logic
       const registrationsForCounting: RegistrationForCounting[] = allRegistrations.map(r => ({
         id: r.id,
@@ -522,8 +532,14 @@ export class DatabaseService {
         groupType: r.groupType as any,
       }));
 
+      const organizationsForCounting = allOrgs.map(org => ({
+        id: org.id,
+        name: org.name,
+        groupType: org.groupType as any,
+      }));
+
       // Use the business logic module to calculate counts
-      return calculateParticipantCounts(registrationsForCounting);
+      return calculateParticipantCounts(registrationsForCounting, organizationsForCounting);
     } catch (error) {
       console.error('Error fetching registration counts:', error);
       throw error;

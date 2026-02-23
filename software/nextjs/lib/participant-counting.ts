@@ -137,12 +137,25 @@ function isExpectedOnlyGroupType(groupType?: GroupType | null): boolean {
 }
 
 /**
+ * Organization data for counting expected groups
+ */
+export interface OrganizationForCounting {
+  id: string;
+  name: string;
+  groupType: GroupType | null;
+}
+
+/**
  * Calculate participant counts from registration data
- * 
+ *
  * This is the main business logic function that implements all counting rules.
+ *
+ * @param registrations - All registrations for the event
+ * @param allOrganizations - All organizations for the event (to count expected groups)
  */
 export function calculateParticipantCounts(
-  registrations: RegistrationForCounting[]
+  registrations: RegistrationForCounting[],
+  allOrganizations?: OrganizationForCounting[]
 ): ParticipantCounts {
   // Separate registrations by role
   const groupRegistrations = registrations.filter(r => r.role === 'Group');
@@ -265,10 +278,50 @@ export function calculateParticipantCounts(
     r => r.organizationId && otherGroupOrgIds.has(r.organizationId)
   ).length;
 
+  // Add organizations that haven't registered yet (expected groups)
+  if (allOrganizations) {
+    const registeredOrgIds = new Set(groupRegistrations.map(r => r.organizationId).filter(id => id != null));
+
+    for (const org of allOrganizations) {
+      // Skip if this organization already has a group registration
+      if (registeredOrgIds.has(org.id)) {
+        continue;
+      }
+
+      // Count this as an expected group
+      switch (org.groupType) {
+        case 'Family':
+          familyGroupsCount++;
+          break;
+        case 'Disability':
+          disabilityGroupsCount++;
+          break;
+        case 'Corporate':
+          corporateGroupsCount++;
+          break;
+        case 'Sporting':
+          sportingGroupsCount++;
+          break;
+        case 'Community':
+          communityGroupsCount++;
+          break;
+        case 'Educational':
+          educationalGroupsCount++;
+          break;
+        case 'Other':
+          otherGroupsCount++;
+          break;
+      }
+    }
+  }
+
   // Calculate totals
   const totalGroupExpected = familyDisabilityExpected + otherGroupsExpected;
   const totalGroupRegistered = familyDisabilityExpected + otherGroupsRegistered;
   const totalParticipants = individualParticipants + totalGroupRegistered;
+
+  // Calculate total groups (registered + expected but not registered)
+  const totalGroups = allOrganizations ? allOrganizations.length : groupRegistrations.length;
 
   return {
     individualParticipants,
@@ -298,7 +351,7 @@ export function calculateParticipantCounts(
     volunteers: volunteerRegistrations.length,
 
     groups: {
-      total: groupRegistrations.length,
+      total: totalGroups,
       familyGroups: familyGroupsCount,
       disabilityGroups: disabilityGroupsCount,
       corporateGroups: corporateGroupsCount,
