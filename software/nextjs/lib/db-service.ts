@@ -16,7 +16,7 @@
 
 import { db } from './db/client';
 import { events, organizations, volunteers, registrations } from './db/schema';
-import { eq, and, ilike, or } from 'drizzle-orm';
+import { eq, and, ilike, or, isNotNull } from 'drizzle-orm';
 import { Event, Organization, Volunteer, Registration } from './types';
 import { calculateParticipantCounts, type RegistrationForCounting, type ParticipantCounts } from './participant-counting';
 
@@ -509,7 +509,9 @@ export class DatabaseService {
         .leftJoin(organizations, eq(registrations.organizationId, organizations.id))
         .where(eq(registrations.eventId, eventId));
 
-      // Get all organizations for this event (to count expected groups)
+      // Get all pre-registered organizations for this event (to count expected groups)
+      // Only organizations with airtable_record_id are pre-registered (expected)
+      // Organizations without airtable_record_id are walk-ins/on-the-day signups
       const allOrgs = await db
         .select({
           id: organizations.id,
@@ -517,12 +519,13 @@ export class DatabaseService {
           groupType: organizations.groupType,
         })
         .from(organizations)
-        .where(eq(organizations.eventId, eventId));
-
-      console.log('DEBUG - Event ID:', eventId);
-      console.log('DEBUG - All organizations for this event:', allOrgs.length);
-      console.log('DEBUG - Organizations:', allOrgs.map(o => ({ id: o.id, name: o.name, groupType: o.groupType })));
-      console.log('DEBUG - Group registrations:', allRegistrations.filter(r => r.role === 'Group').length);
+        .where(
+          and(
+            eq(organizations.eventId, eventId),
+            // Only count organizations with airtable_record_id (pre-registered)
+            isNotNull(organizations.airtableRecordId)
+          )
+        );
 
       // Convert to format expected by counting logic
       const registrationsForCounting: RegistrationForCounting[] = allRegistrations.map(r => ({
