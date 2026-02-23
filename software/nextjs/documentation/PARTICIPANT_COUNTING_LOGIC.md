@@ -1,12 +1,16 @@
 # Participant Counting and Reporting Logic
 
-**Version:** 2.0  
-**Date:** 2026-02-20  
+**Version:** 3.0
+**Date:** 2026-02-23
 **Status:** Active
 
 ## Overview
 
 This document defines the business logic for counting and reporting participants across different group types in the Power2Inspire Event CRM system.
+
+The system supports two scenarios:
+1. **Active Events:** Organizations register and participate, counts come from actual registrations
+2. **Future Events:** Organizations are pre-registered with expected participant counts for planning purposes
 
 ## Key Concepts
 
@@ -14,6 +18,13 @@ This document defines the business logic for counting and reporting participants
 - **Definition:** The number of participants from an organization (NOT including the group leader)
 - **Set by:** Group leader during group registration
 - **Example:** If a group leader enters "5" as group size, this means 5 members from their organization
+
+### Expected Group Size
+- **Definition:** The expected number of participants from a pre-registered organization (for planning purposes)
+- **Set by:** P2I Admin when pre-registering organizations for future events
+- **Database Field:** `expected_group_size` in the `organizations` table
+- **Usage:** Used to calculate expected participant counts for future events before actual registrations occur
+- **Example:** If Leicester Tigers event is in the future and Cambridge Uni Boat Club has `expected_group_size = 20`, the system will show 20 expected participants from that organization
 
 ### Group Leader Participation
 - **Question:** "Will you participate in the event?"
@@ -137,7 +148,86 @@ For Other groups: Expected vs Registered may differ (track progress)
 
 ---
 
+## Future Event Planning
+
+### Expected Participant Counts for Future Events
+
+For events that haven't started yet (future events), the system can calculate expected participant counts based on pre-registered organizations.
+
+**How it works:**
+
+1. **Pre-Registration:** P2I Admin adds organizations to a future event with `expected_group_size` values
+2. **Organization Classification:**
+   - Organizations with `airtable_record_id` = Pre-registered (expected to attend)
+   - Organizations without `airtable_record_id` = Walk-ins/on-the-day signups (not expected)
+3. **Expected Count Calculation:**
+   - System sums up `expected_group_size` from all pre-registered organizations that haven't registered yet
+   - Family/Disability groups: `expected_group_size` → `familyDisabilityExpected`
+   - Other groups: `expected_group_size` → `otherGroupsExpected`
+
+**Example:**
+```
+Leicester Tigers Event (Future Event - No Registrations Yet)
+
+Pre-registered Organizations:
+- Cambridge Uni Boat Club (Educational): expected_group_size = 20
+- Smith Family (Family): expected_group_size = 5
+- Manchester Rovers (Sporting): expected_group_size = 15
+
+P2I Admin Dashboard Shows:
+- Participants: 0 registered, (40 expected)
+- Groups: 0 registered, (3 expected)
+
+Breakdown:
+- Family/Disability Expected: 5
+- Other Groups Expected: 35 (20 + 15)
+- Total Expected: 40
+```
+
+**Important Notes:**
+- Once an organization completes registration, their actual `groupSize` is used instead of `expected_group_size`
+- `expected_group_size` is only used for organizations that haven't registered yet
+- This allows planning and capacity management before the event starts
+
+---
+
+## Group Counting Logic
+
+### Expected Groups vs Registered Groups vs Walk-in Groups
+
+The system tracks three types of group counts:
+
+1. **Expected Groups (Total):**
+   - All organizations with `airtable_record_id` for the event
+   - Includes both registered and not-yet-registered organizations
+   - Used for planning and capacity management
+
+2. **Registered Groups:**
+   - Organizations that have completed group registration (have a registration entry)
+   - Shown in bold on dashboards
+
+3. **Walk-in Groups:**
+   - Organizations without `airtable_record_id` (created on-the-day)
+   - Not counted in "expected" but counted in "registered" once they register
+   - Shown in blue text on dashboards
+
+**Dashboard Display:**
+```
+Groups Card:
+5 (bold - registered groups)
+(4 expected) (greyed out - pre-registered organizations)
++ 1 walk-in (blue - on-the-day signup)
+```
+
+---
+
 ## Version History
+
+**Version 3.0 (2026-02-23):**
+- Added `expected_group_size` field to organizations table
+- Implemented expected participant counting for future events
+- Added documentation for pre-registration and planning features
+- Added group counting logic (expected vs registered vs walk-in)
 
 **Version 2.0 (2026-02-20):**
 - Clarified reporting distinction between Family/Disability and Other groups
