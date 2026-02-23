@@ -542,6 +542,55 @@ export default function P2IAdminDashboard() {
               </div>
               <div className="text-4xl ml-4">🙋</div>
             </div>
+
+            {/* Volunteer List */}
+            {(volunteers.length > 0 || volunteerRegistrations.length > 0) && (
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <p className="text-xs font-medium text-gray-500 mb-2">Volunteer List:</p>
+                <div className="space-y-1 max-h-48 overflow-y-auto">
+                  {/* Show volunteers from volunteers table */}
+                  {volunteers.map((volunteer) => {
+                    // Check if this volunteer has registered (has a registration with role='Volunteer')
+                    const hasRegistered = volunteerRegistrations.some(
+                      reg => reg.email?.toLowerCase() === volunteer.email.toLowerCase()
+                    );
+
+                    return (
+                      <div
+                        key={`vol-${volunteer.id}`}
+                        className={`text-sm flex items-center ${
+                          hasRegistered
+                            ? 'text-gray-900 font-medium'
+                            : 'text-gray-400'
+                        }`}
+                      >
+                        <span className="mr-2">{hasRegistered ? '✅' : '⏳'}</span>
+                        <span>{volunteer.firstName} {volunteer.lastName}</span>
+                      </div>
+                    );
+                  })}
+
+                  {/* Show volunteer registrations that don't match anyone in volunteers table */}
+                  {volunteerRegistrations
+                    .filter(reg => {
+                      // Only show if this registration doesn't match any volunteer in the table
+                      return !volunteers.some(
+                        vol => vol.email.toLowerCase() === reg.email?.toLowerCase()
+                      );
+                    })
+                    .map((reg) => (
+                      <div
+                        key={`reg-${reg.id}`}
+                        className="text-sm flex items-center text-blue-600 font-medium"
+                      >
+                        <span className="mr-2">✅</span>
+                        <span>{reg.attendeeName} {reg.attendeeSurname}</span>
+                        <span className="ml-2 text-xs text-gray-500">(walk-in)</span>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
