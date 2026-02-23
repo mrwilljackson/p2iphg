@@ -11,7 +11,7 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:drop": "drizzle-kit drop",
-    "db:seed": "npx tsx scripts/seed-database.ts"
+    "db:seed": "npx tsx scripts/seed-database-v2.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
