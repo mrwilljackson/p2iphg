@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { getCurrentEvent, getEventById, getRegistrationCountsByRole, getAllRegistrations, getOrganizations } from "@/lib/actions";
-import type { Event, Registration, Organization } from "@/lib/types";
+import { getCurrentEvent, getEventById, getRegistrationCountsByRole, getAllRegistrations, getOrganizations, getAllVolunteers } from "@/lib/actions";
+import type { Event, Registration, Organization, Volunteer } from "@/lib/types";
 import type { ParticipantCounts } from "@/lib/participant-counting";
 
 interface RegistrationCSVRow {
@@ -38,6 +38,8 @@ export default function P2IAdminDashboard() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [currentEvent, setCurrentEvent] = useState<Event | null>(null);
+  const [volunteers, setVolunteers] = useState<Volunteer[]>([]);
+  const [volunteerRegistrations, setVolunteerRegistrations] = useState<Registration[]>([]);
   const [counts, setCounts] = useState<ParticipantCounts>({
     individualParticipants: 0,
     groupParticipants: {
@@ -93,6 +95,15 @@ export default function P2IAdminDashboard() {
       if (event) {
         const registrationCounts = await getRegistrationCountsByRole(event.id);
         setCounts(registrationCounts);
+
+        // Fetch all volunteers for this event
+        const allVolunteers = await getAllVolunteers(event.id);
+        setVolunteers(allVolunteers);
+
+        // Fetch all registrations and filter for volunteers
+        const allRegistrations = await getAllRegistrations(event.id);
+        const volRegistrations = allRegistrations.filter(r => r.role === 'Volunteer');
+        setVolunteerRegistrations(volRegistrations);
       }
     }
     loadData();
@@ -424,17 +435,17 @@ export default function P2IAdminDashboard() {
           <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
             <div className="flex items-center justify-between">
               <div className="w-full">
-                <p className="text-sm font-medium text-gray-600">Total Participants</p>
+                <p className="text-sm font-medium text-gray-600">Participants</p>
                 <p className="text-3xl font-bold text-gray-900 mt-2">{counts.totalParticipants}</p>
-                <div className="text-xs text-gray-500 mt-2 space-y-1">
+                <div className="mt-2">
+                  <span className="text-lg text-gray-400">({counts.individualParticipants + counts.groupParticipants.total.expected} expected)</span>
+                </div>
+                <div className="text-xs text-gray-500 mt-2 space-y-1 pt-2 border-t border-gray-200">
                   <div>Individual: {counts.individualParticipants}</div>
-                  <div>Group (Registered): {counts.groupParticipants.total.registered}</div>
-                  <div className="text-[10px] text-gray-400">
-                    Expected: {counts.groupParticipants.total.expected}
-                  </div>
+                  <div>Group Participants: {counts.groupParticipants.total.registered} / {counts.groupParticipants.total.expected}</div>
                 </div>
               </div>
-              <div className="text-4xl ml-4">👥</div>
+              <div className="text-4xl ml-4">🎯</div>
             </div>
           </div>
 
@@ -467,11 +478,14 @@ export default function P2IAdminDashboard() {
 
           <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Volunteers</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">{counts.volunteers}</p>
+              <div className="w-full">
+                <p className="text-sm font-medium text-gray-600">Helpers</p>
+                <p className="text-3xl font-bold text-gray-900 mt-2">{volunteerRegistrations.length}</p>
+                <div className="mt-2">
+                  <span className="text-lg text-gray-400">({volunteers.length} expected)</span>
+                </div>
               </div>
-              <div className="text-4xl">🙋</div>
+              <div className="text-4xl ml-4">🙋</div>
             </div>
           </div>
 
