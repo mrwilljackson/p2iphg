@@ -156,7 +156,7 @@ export default function P2IAdminDashboard() {
         date: newEventDate,
         location: newEventLocation || undefined,
         description: newEventDescription || undefined,
-        status: 'active', // New events default to active
+        status: 'completed', // New events are created as 'completed' (inactive) - use Manage Events to set as active
       });
 
       // Reset form

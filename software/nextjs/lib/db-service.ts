@@ -59,7 +59,8 @@ export class DatabaseService {
 
   /**
    * Create a new event
-   * Status defaults to 'active' if not provided
+   * Note: Caller should specify status. If not provided, defaults to 'active'.
+   * Recommended: Create new events with status 'completed' to avoid conflicts with existing active event.
    */
   static async createEvent(eventData: {
     name: string;
