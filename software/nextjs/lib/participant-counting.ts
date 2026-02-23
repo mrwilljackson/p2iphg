@@ -273,6 +273,9 @@ export function calculateParticipantCounts(
       if (group.groupLeaderParticipating === true) {
         registeredCount += 1;
       }
+
+      // Add this group's registered count to the total for other groups
+      otherGroupsRegistered += registeredCount;
     }
 
     // Add to group details array
@@ -286,11 +289,6 @@ export function calculateParticipantCounts(
       });
     }
   }
-
-  // Count registered participants from other groups
-  otherGroupsRegistered = participantRegistrations.filter(
-    r => r.organizationId && otherGroupOrgIds.has(r.organizationId)
-  ).length;
 
   // Add organizations that haven't registered yet (expected groups)
   if (allOrganizations) {
