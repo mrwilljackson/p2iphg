@@ -18,8 +18,12 @@ function TestFormContentInner({ currentEvent }: TestFormContentProps) {
 
   useEffect(() => {
     const roleParam = searchParams.get("role");
-    if (roleParam === "Participant" || roleParam === "Volunteer" || roleParam === "Group") {
-      setPreselectedRole(roleParam as RegistrationRole);
+    if (roleParam) {
+      // Normalize the role parameter to match our RegistrationRole type
+      const normalizedRole = roleParam.charAt(0).toUpperCase() + roleParam.slice(1).toLowerCase();
+      if (normalizedRole === "Participant" || normalizedRole === "Volunteer" || normalizedRole === "Group") {
+        setPreselectedRole(normalizedRole as RegistrationRole);
+      }
     }
   }, [searchParams]);
 
