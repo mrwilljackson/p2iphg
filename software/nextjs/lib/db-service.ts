@@ -58,6 +58,38 @@ export class DatabaseService {
   }
 
   /**
+   * Create a new event
+   * Status defaults to 'active' if not provided
+   */
+  static async createEvent(eventData: {
+    name: string;
+    date: string; // ISO 8601 date string
+    location?: string;
+    description?: string;
+    status?: 'active' | 'completed' | 'cancelled';
+    airtableRecordId?: string;
+  }): Promise<Event> {
+    try {
+      const result = await db
+        .insert(events)
+        .values({
+          name: eventData.name,
+          date: eventData.date,
+          location: eventData.location,
+          description: eventData.description,
+          status: eventData.status || 'active',
+          airtableRecordId: eventData.airtableRecordId,
+        })
+        .returning();
+
+      return mapEventFromDb(result[0]);
+    } catch (error) {
+      console.error('Error creating event:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Get all organizations for a specific event
    * If no eventId provided, returns all organizations
    */

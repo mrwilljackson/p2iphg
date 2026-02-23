@@ -26,6 +26,20 @@ export async function getAllEvents(): Promise<Event[]> {
 }
 
 /**
+ * Create a new event
+ */
+export async function createEvent(eventData: {
+  name: string;
+  date: string;
+  location?: string;
+  description?: string;
+  status?: 'active' | 'completed' | 'cancelled';
+  airtableRecordId?: string;
+}): Promise<Event> {
+  return await DatabaseService.createEvent(eventData);
+}
+
+/**
  * Set an event as the current active event
  * Sets the specified event to 'active' and all others to 'completed'
  */

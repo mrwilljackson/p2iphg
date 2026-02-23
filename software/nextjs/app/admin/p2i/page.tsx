@@ -3,7 +3,10 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { getCurrentEvent, getEventById, getRegistrationCountsByRole, getAllRegistrations, getOrganizations, getAllVolunteers } from "@/lib/actions";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { getCurrentEvent, getEventById, getRegistrationCountsByRole, getAllRegistrations, getOrganizations, getAllVolunteers, createEvent } from "@/lib/actions";
 import type { Event, Registration, Organization, Volunteer } from "@/lib/types";
 import type { ParticipantCounts } from "@/lib/participant-counting";
 
@@ -40,6 +43,14 @@ export default function P2IAdminDashboard() {
   const [currentEvent, setCurrentEvent] = useState<Event | null>(null);
   const [volunteers, setVolunteers] = useState<Volunteer[]>([]);
   const [volunteerRegistrations, setVolunteerRegistrations] = useState<Registration[]>([]);
+
+  // Create Event Dialog State
+  const [isCreateEventOpen, setIsCreateEventOpen] = useState(false);
+  const [newEventName, setNewEventName] = useState("");
+  const [newEventDate, setNewEventDate] = useState("");
+  const [newEventLocation, setNewEventLocation] = useState("");
+  const [newEventDescription, setNewEventDescription] = useState("");
+  const [isCreatingEvent, setIsCreatingEvent] = useState(false);
   const [counts, setCounts] = useState<ParticipantCounts>({
     individualParticipants: 0,
     groupParticipants: {
@@ -129,6 +140,40 @@ export default function P2IAdminDashboard() {
     sessionStorage.removeItem("adminAuth");
     sessionStorage.removeItem("adminLevel");
     router.push("/test-form");
+  };
+
+  // Create Event Handler
+  const handleCreateEvent = async () => {
+    if (!newEventName || !newEventDate) {
+      alert("Please fill in Event Name and Date");
+      return;
+    }
+
+    setIsCreatingEvent(true);
+    try {
+      const newEvent = await createEvent({
+        name: newEventName,
+        date: newEventDate,
+        location: newEventLocation || undefined,
+        description: newEventDescription || undefined,
+        status: 'active', // New events default to active
+      });
+
+      // Reset form
+      setNewEventName("");
+      setNewEventDate("");
+      setNewEventLocation("");
+      setNewEventDescription("");
+      setIsCreateEventOpen(false);
+
+      // Reload the page to show the new event
+      window.location.reload();
+    } catch (error) {
+      console.error("Error creating event:", error);
+      alert("Failed to create event. Please try again.");
+    } finally {
+      setIsCreatingEvent(false);
+    }
   };
 
   // CSV Export Functions
@@ -565,6 +610,74 @@ export default function P2IAdminDashboard() {
               >
                 📅 Manage Events
               </Button>
+
+              {/* Create New Event Dialog */}
+              <Dialog open={isCreateEventOpen} onOpenChange={setIsCreateEventOpen}>
+                <DialogTrigger asChild>
+                  <Button className="w-full justify-start" variant="outline">
+                    ➕ Create New Event
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[525px]">
+                  <DialogHeader>
+                    <DialogTitle>Create New Event</DialogTitle>
+                    <DialogDescription>
+                      Add a new future event to the system. Fill in the event details below.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="event-name">Event Name *</Label>
+                      <Input
+                        id="event-name"
+                        value={newEventName}
+                        onChange={(e) => setNewEventName(e.target.value)}
+                        placeholder="e.g., Manchester Arena 2026"
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="event-date">Event Date *</Label>
+                      <Input
+                        id="event-date"
+                        type="date"
+                        value={newEventDate}
+                        onChange={(e) => setNewEventDate(e.target.value)}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="event-location">Location</Label>
+                      <Input
+                        id="event-location"
+                        value={newEventLocation}
+                        onChange={(e) => setNewEventLocation(e.target.value)}
+                        placeholder="e.g., Manchester Arena"
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="event-description">Description</Label>
+                      <Input
+                        id="event-description"
+                        value={newEventDescription}
+                        onChange={(e) => setNewEventDescription(e.target.value)}
+                        placeholder="Event details..."
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsCreateEventOpen(false)}
+                      disabled={isCreatingEvent}
+                    >
+                      Cancel
+                    </Button>
+                    <Button onClick={handleCreateEvent} disabled={isCreatingEvent}>
+                      {isCreatingEvent ? "Creating..." : "Create Event"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
               <Button className="w-full justify-start text-red-600 hover:text-red-700" variant="outline">
                 🗑️ Clear Database
               </Button>
