@@ -55,16 +55,21 @@ export default function EventAdminDashboard() {
       // Check if P2I admin has selected a specific event to administer
       const administeringEventId = sessionStorage.getItem('administeringEventId');
 
+      console.log('Event Admin Dashboard - administeringEventId:', administeringEventId);
+
       let event: Event | null = null;
 
       if (administeringEventId) {
         // P2I admin is administering a specific event
+        console.log('Loading administering event:', administeringEventId);
         event = await getEventById(administeringEventId);
       } else {
         // Regular Event Admin - use current active event
+        console.log('Loading current active event');
         event = await getCurrentEvent();
       }
 
+      console.log('Loaded event:', event?.name, event?.id);
       setCurrentEvent(event);
 
       if (event) {

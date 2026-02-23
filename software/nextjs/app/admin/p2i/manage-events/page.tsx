@@ -55,7 +55,9 @@ export default function ManageEventsPage() {
 
   const handleAdminister = (eventId: string) => {
     // Store the selected event ID in session storage
+    console.log('Setting administeringEventId to:', eventId);
     sessionStorage.setItem('administeringEventId', eventId);
+    console.log('Stored value:', sessionStorage.getItem('administeringEventId'));
     // Navigate to P2I Admin Dashboard
     router.push('/admin/p2i');
   };
