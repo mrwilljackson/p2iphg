@@ -3,9 +3,18 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { getCurrentEvent, getRegistrationCountsByRole } from "@/lib/actions";
-import type { Event } from "@/lib/types";
+import { getCurrentEvent, getRegistrationCountsByRole, getAllRegistrations } from "@/lib/actions";
+import type { Event, Registration } from "@/lib/types";
 import type { ParticipantCounts } from "@/lib/participant-counting";
+
+interface GroupReportRow {
+  groupName: string;
+  groupType: string;
+  registeredParticipants: number;
+  expectedParticipants: number;
+  groupLeaderName: string;
+  groupLeaderEmail: string;
+}
 
 export default function P2IAdminDashboard() {
   const router = useRouter();
@@ -80,6 +89,121 @@ export default function P2IAdminDashboard() {
     router.push("/test-form");
   };
 
+  // CSV Export Functions
+  const convertToCSV = (data: GroupReportRow[]): string => {
+    if (data.length === 0) return '';
+
+    // CSV Headers
+    const headers = [
+      'Group Name',
+      'Group Type',
+      'Registered Participants',
+      'Expected Participants',
+      'Group Leader Name',
+      'Group Leader Email'
+    ];
+
+    // Escape CSV values (handle commas, quotes, newlines)
+    const escapeCSV = (value: string | number): string => {
+      const stringValue = String(value);
+      if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+        return `"${stringValue.replace(/"/g, '""')}"`;
+      }
+      return stringValue;
+    };
+
+    // Build CSV rows
+    const csvRows = [
+      headers.join(','),
+      ...data.map(row => [
+        escapeCSV(row.groupName),
+        escapeCSV(row.groupType),
+        escapeCSV(row.registeredParticipants),
+        escapeCSV(row.expectedParticipants),
+        escapeCSV(row.groupLeaderName),
+        escapeCSV(row.groupLeaderEmail)
+      ].join(','))
+    ];
+
+    return csvRows.join('\n');
+  };
+
+  const downloadCSV = (csvContent: string, filename: string) => {
+    // Create a Blob from the CSV string
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+
+    // Create a temporary download link
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+
+    // Append to body, click, and remove
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    // Clean up the URL object
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportCSV = async () => {
+    if (!currentEvent) {
+      alert('No event data available to export');
+      return;
+    }
+
+    try {
+      // Get registration counts
+      const registrationCounts = await getRegistrationCountsByRole(currentEvent.id);
+
+      // Get all registrations to find group leaders
+      const allRegistrations = await getAllRegistrations(currentEvent.id);
+
+      // Build report data (same logic as report page)
+      const rows: GroupReportRow[] = registrationCounts.groupDetails.map((group) => {
+        // Find the group leader registration (role='Group')
+        const groupLeaderReg = allRegistrations.find(
+          (reg) => reg.role === 'Group' && reg.organizationId === group.organizationId
+        );
+
+        return {
+          groupName: group.organizationName,
+          groupType: group.groupType || 'Other',
+          registeredParticipants: group.registered,
+          expectedParticipants: group.expected,
+          groupLeaderName: groupLeaderReg
+            ? `${groupLeaderReg.attendeeName} ${groupLeaderReg.attendeeSurname}`
+            : 'N/A',
+          groupLeaderEmail: groupLeaderReg?.email || 'N/A',
+        };
+      });
+
+      // Convert to CSV
+      const csv = convertToCSV(rows);
+
+      if (!csv) {
+        alert('No data to export');
+        return;
+      }
+
+      // Generate filename with event name and date
+      const eventName = currentEvent.name.replace(/[^a-z0-9]/gi, '-').toLowerCase();
+      const dateStr = new Date().toISOString().split('T')[0];
+      const filename = `${eventName}-registration-report-${dateStr}.csv`;
+
+      // Download
+      downloadCSV(csv, filename);
+
+      alert('CSV file downloaded successfully!');
+    } catch (error) {
+      console.error('Error exporting CSV:', error);
+      alert('Failed to export CSV. Please try again.');
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -118,6 +242,47 @@ export default function P2IAdminDashboard() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Current Event Card */}
+        <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6 mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-gray-900">Current Event</h2>
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+              Active
+            </span>
+          </div>
+          {currentEvent ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div>
+                <p className="text-xs font-medium text-gray-500 mb-1">Event Name</p>
+                <p className="text-base font-semibold text-gray-900">{currentEvent.name}</p>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-gray-500 mb-1">Date</p>
+                <p className="text-base font-semibold text-gray-900">
+                  {currentEvent.date ? new Date(currentEvent.date).toLocaleDateString('en-GB', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  }) : 'Not set'}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-gray-500 mb-1">Location</p>
+                <p className="text-base font-semibold text-gray-900">{currentEvent.location || 'Not set'}</p>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-gray-500 mb-1">Total Registrations</p>
+                <p className="text-base font-semibold text-gray-900">{counts.totalRegistrations}</p>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-4">
+              <p className="text-gray-500">No active event</p>
+            </div>
+          )}
+        </div>
+
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
@@ -241,7 +406,11 @@ export default function P2IAdminDashboard() {
           <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">System Integration</h2>
             <div className="space-y-3">
-              <Button className="w-full justify-start" variant="outline">
+              <Button
+                className="w-full justify-start"
+                variant="outline"
+                onClick={handleExportCSV}
+              >
                 ⬇️ Export to CSV
               </Button>
               <Button className="w-full justify-start" variant="outline">
