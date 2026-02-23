@@ -27,13 +27,14 @@ export async function getAllEvents(): Promise<Event[]> {
 
 /**
  * Create a new event
+ * Defaults to 'planned' status if not specified
  */
 export async function createEvent(eventData: {
   name: string;
   date: string;
   location?: string;
   description?: string;
-  status?: 'active' | 'completed' | 'cancelled';
+  status?: 'planned' | 'active' | 'completed';
   airtableRecordId?: string;
 }): Promise<Event> {
   return await DatabaseService.createEvent(eventData);

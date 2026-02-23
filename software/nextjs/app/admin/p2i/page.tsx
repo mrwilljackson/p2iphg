@@ -156,7 +156,7 @@ export default function P2IAdminDashboard() {
         date: newEventDate,
         location: newEventLocation || undefined,
         description: newEventDescription || undefined,
-        status: 'completed', // New events are created as 'completed' (inactive) - use Manage Events to set as active
+        status: 'planned', // New events are created as 'planned' - use Manage Events to set as active
       });
 
       // Reset form
@@ -437,6 +437,8 @@ export default function P2IAdminDashboard() {
             <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
               currentEvent?.status === 'active'
                 ? 'bg-green-100 text-green-800'
+                : currentEvent?.status === 'planned'
+                ? 'bg-blue-100 text-blue-800'
                 : currentEvent?.status === 'completed'
                 ? 'bg-gray-100 text-gray-800'
                 : 'bg-red-100 text-red-800'

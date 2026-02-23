@@ -8,7 +8,13 @@
 // Enums
 // ============================================================================
 
-export type EventStatus = "active" | "completed" | "cancelled";
+/**
+ * Event Status
+ * - 'planned': Future events that are not yet active
+ * - 'active': The current active event (only one at a time)
+ * - 'completed': Past events that have finished
+ */
+export type EventStatus = "planned" | "active" | "completed";
 export type RegistrationRole = "Participant" | "Volunteer" | "Group";
 export type SyncStatus = "pending" | "synced" | "failed";
 
@@ -26,7 +32,7 @@ export interface Event {
   date: string; // ISO 8601 date string (required)
   location?: string; // Event venue/address (optional)
   description?: string; // Event details (optional)
-  status: EventStatus; // active | completed | cancelled
+  status: EventStatus; // planned | active | completed
   airtableRecordId?: string; // Airtable record ID (optional)
   createdAt?: string; // ISO 8601 timestamp
   modifiedAt?: string; // ISO 8601 timestamp

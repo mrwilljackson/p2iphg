@@ -17,6 +17,11 @@ import { pgTable, text, boolean, timestamp, uuid, integer } from 'drizzle-orm/pg
 /**
  * Events Table
  * Stores event data fetched from Airtable before the event
+ *
+ * Status values:
+ * - 'planned': Future events that are not yet active
+ * - 'active': The current active event (only one at a time)
+ * - 'completed': Past events that have finished
  */
 export const events = pgTable('events', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -24,7 +29,7 @@ export const events = pgTable('events', {
   date: text('date').notNull(), // ISO 8601 date string
   location: text('location'),
   description: text('description'),
-  status: text('status').notNull(), // 'active' | 'completed' | 'cancelled'
+  status: text('status').notNull(), // 'planned' | 'active' | 'completed'
   airtableRecordId: text('airtable_record_id'),
   createdAt: timestamp('created_at').defaultNow(),
   modifiedAt: timestamp('modified_at').defaultNow(),

@@ -59,15 +59,18 @@ export class DatabaseService {
 
   /**
    * Create a new event
-   * Note: Caller should specify status. If not provided, defaults to 'active'.
-   * Recommended: Create new events with status 'completed' to avoid conflicts with existing active event.
+   * Note: Caller should specify status. If not provided, defaults to 'planned'.
+   * Status values:
+   * - 'planned': Future events that are not yet active (default for new events)
+   * - 'active': The current active event (only one at a time)
+   * - 'completed': Past events that have finished
    */
   static async createEvent(eventData: {
     name: string;
     date: string; // ISO 8601 date string
     location?: string;
     description?: string;
-    status?: 'active' | 'completed' | 'cancelled';
+    status?: 'planned' | 'active' | 'completed';
     airtableRecordId?: string;
   }): Promise<Event> {
     try {
@@ -78,7 +81,7 @@ export class DatabaseService {
           date: eventData.date,
           location: eventData.location,
           description: eventData.description,
-          status: eventData.status || 'active',
+          status: eventData.status || 'planned',
           airtableRecordId: eventData.airtableRecordId,
         })
         .returning();
