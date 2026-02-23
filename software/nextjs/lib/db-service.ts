@@ -582,6 +582,7 @@ function mapOrganizationFromDb(dbOrg: any): Organization {
     eventId: dbOrg.eventId,
     name: dbOrg.name,
     groupType: dbOrg.groupType,
+    expectedGroupSize: dbOrg.expectedGroupSize,
     imageUrl: dbOrg.imageUrl,
     contactFirstName: dbOrg.contactFirstName,
     contactLastName: dbOrg.contactLastName,

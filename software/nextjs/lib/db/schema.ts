@@ -42,6 +42,7 @@ export const organizations = pgTable('organizations', {
   groupType: text('group_type', {
     enum: ['Family', 'Disability', 'Corporate', 'Sporting', 'Community', 'Educational', 'Other']
   }).default('Other'),
+  expectedGroupSize: integer('expected_group_size'), // Expected number of participants (for planning)
   imageUrl: text('image_url'),
   contactFirstName: text('contact_first_name'),
   contactLastName: text('contact_last_name'),

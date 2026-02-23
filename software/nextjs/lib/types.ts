@@ -90,6 +90,7 @@ export interface Organization {
   eventId: string; // Event ID this organization is registered for
   name: string; // Organization name (REQUIRED, 2-200 chars)
   groupType?: GroupType; // Classification for reporting: Family, Disability, Corporate, Sporting, Community, Educational, Other (default: Other)
+  expectedGroupSize?: number; // Expected number of participants (for planning before actual registration)
   imageUrl?: string; // URL to organization logo/image (optional)
   contactFirstName?: string; // Contact person first name (optional)
   contactLastName?: string; // Contact person last name (optional)
