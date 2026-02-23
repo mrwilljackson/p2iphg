@@ -147,6 +147,7 @@ export interface OrganizationForCounting {
   name: string;
   groupType: GroupType | null;
   airtableRecordId?: string | null;
+  expectedGroupSize?: number | null; // Expected participant count for planning (before registration)
 }
 
 /**
@@ -322,6 +323,20 @@ export function calculateParticipantCounts(
         case 'Other':
           otherGroupsCount++;
           break;
+      }
+
+      // Add expected participants from this organization (if expectedGroupSize is set)
+      // This is used for future events where organizations are pre-registered but haven't completed registration yet
+      if (org.expectedGroupSize && org.expectedGroupSize > 0) {
+        const isExpectedOnly = isExpectedOnlyGroupType(org.groupType);
+
+        if (isExpectedOnly) {
+          // Family/Disability groups: expected participants come from expectedGroupSize
+          familyDisabilityExpected += org.expectedGroupSize;
+        } else {
+          // Other groups: expected participants come from expectedGroupSize
+          otherGroupsExpected += org.expectedGroupSize;
+        }
       }
     }
   }

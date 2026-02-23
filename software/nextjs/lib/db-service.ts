@@ -518,6 +518,7 @@ export class DatabaseService {
           id: organizations.id,
           name: organizations.name,
           groupType: organizations.groupType,
+          expectedGroupSize: organizations.expectedGroupSize,
         })
         .from(organizations)
         .where(
@@ -546,6 +547,7 @@ export class DatabaseService {
         id: org.id,
         name: org.name,
         groupType: org.groupType as any,
+        expectedGroupSize: org.expectedGroupSize,
       }));
 
       // Use the business logic module to calculate counts
