@@ -519,6 +519,11 @@ export class DatabaseService {
         .from(organizations)
         .where(eq(organizations.eventId, eventId));
 
+      console.log('DEBUG - Event ID:', eventId);
+      console.log('DEBUG - All organizations for this event:', allOrgs.length);
+      console.log('DEBUG - Organizations:', allOrgs.map(o => ({ id: o.id, name: o.name, groupType: o.groupType })));
+      console.log('DEBUG - Group registrations:', allRegistrations.filter(r => r.role === 'Group').length);
+
       // Convert to format expected by counting logic
       const registrationsForCounting: RegistrationForCounting[] = allRegistrations.map(r => ({
         id: r.id,
