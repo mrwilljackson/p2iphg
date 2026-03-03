@@ -1,0 +1,6 @@
+Event,First Name,Last Name,Email,Organization,Impairment,Role,Photo Consent,Feedback Consent,Next Event Consent,Group Size,Disabled Students,SEN Students,Leader Participating,Sync Status
+PowerHouseGames Cambridge 2025,John,Doe,john.doe@example.com,Cambridge University Boat Club,No,Participant,TRUE,TRUE,TRUE,,,,FALSE,synced
+PowerHouseGames Cambridge 2025,Jane,Smith,jane.smith@example.com,St Mary's Primary School,Rather not say,Group,TRUE,FALSE,TRUE,30,5,8,TRUE,synced
+PowerHouseGames Cambridge 2025,Bob,Johnson,bob.johnson@example.com,,Yes,Participant,FALSE,TRUE,FALSE,,,,FALSE,synced
+PowerHouseGames Cambridge 2025,Alice,Anderson,alice.volunteer@example.com,,No,Volunteer,TRUE,TRUE,TRUE,,,,FALSE,synced
+

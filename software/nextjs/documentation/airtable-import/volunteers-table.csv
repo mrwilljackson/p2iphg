@@ -1,0 +1,7 @@
+Event,Email,First Name,Last Name,Photo Consent,Feedback Consent,Next Event Consent
+PowerHouseGames Cambridge 2025,alice.volunteer@example.com,Alice,Anderson,TRUE,TRUE,TRUE
+PowerHouseGames Cambridge 2025,bob.helper@example.com,Bob,Baker,TRUE,FALSE,TRUE
+PowerHouseGames Cambridge 2025,carol.support@example.com,Carol,Carter,TRUE,TRUE,FALSE
+PowerHouseGames London 2025,david.volunteer@example.com,David,Davis,TRUE,TRUE,TRUE
+PowerHouseGames London 2025,emma.helper@example.com,Emma,Evans,TRUE,FALSE,FALSE
+
