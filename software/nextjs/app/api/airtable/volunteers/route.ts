@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { importMultipleVolunteersToNeon } from '@/app/actions/airtable-import';
+import { db } from '@/lib/db/client';
+import { events } from '@/lib/db/schema';
+import { eq } from 'drizzle-orm';
 
 const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
 const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
@@ -52,18 +55,31 @@ export async function GET(request: NextRequest) {
 
     const data: AirtableResponse = await response.json();
 
+    // Get all events from Neon to map Airtable IDs to names
+    const allEvents = await db.select().from(events);
+    const eventMap = new Map(
+      allEvents.map(event => [event.airtableRecordId, event.name])
+    );
+
     // Transform Airtable records to our format
-    const volunteers = data.records.map(record => ({
-      airtableRecordId: record.id,
-      eventAirtableId: record.fields['Event Name']?.[0] || null,  // First linked event ID from Event Name field
-      eventName: record.fields['Event Name']?.[0] || 'Unknown Event',  // Use the ID as name for now
-      email: record.fields['Email'],
-      firstName: record.fields['First Name'],
-      lastName: record.fields['Last Name'],
-      photoConsent: record.fields['Photo Consent'] || false,
-      feedbackConsent: record.fields['Feedback Consent'] || false,
-      nextEventConsent: record.fields['Next Event Consent'] || false,
-    }));
+    const volunteers = data.records.map(record => {
+      const eventAirtableId = record.fields['Event Name']?.[0] || null;
+      const eventName = eventAirtableId
+        ? (eventMap.get(eventAirtableId) || `Unknown Event (${eventAirtableId})`)
+        : 'No Event Assigned';
+
+      return {
+        airtableRecordId: record.id,
+        eventAirtableId,
+        eventName,
+        email: record.fields['Email'],
+        firstName: record.fields['First Name'],
+        lastName: record.fields['Last Name'],
+        photoConsent: record.fields['Photo Consent'] || false,
+        feedbackConsent: record.fields['Feedback Consent'] || false,
+        nextEventConsent: record.fields['Next Event Consent'] || false,
+      };
+    });
 
     return NextResponse.json({
       success: true,
@@ -99,6 +115,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Get all events from Neon to map Airtable IDs to names
+    const allEvents = await db.select().from(events);
+    const eventMap = new Map(
+      allEvents.map(event => [event.airtableRecordId, event.name])
+    );
+
     // Fetch the specific volunteers from Airtable
     const volunteersToImport = [];
     const fetchErrors = [];
@@ -122,9 +144,14 @@ export async function POST(request: NextRequest) {
         const record: AirtableVolunteer = await response.json();
 
         // Prepare volunteer data for import
+        const eventAirtableId = record.fields['Event Name']?.[0] || null;
+        const eventName = eventAirtableId
+          ? (eventMap.get(eventAirtableId) || `Unknown Event (${eventAirtableId})`)
+          : 'No Event Assigned';
+
         const volunteerData = {
-          eventAirtableId: record.fields['Event Name']?.[0] || null,  // First linked event ID from Event Name field
-          eventName: record.fields['Event Name']?.[0] || 'Unknown Event',  // Use the ID as name for now
+          eventAirtableId,
+          eventName,
           email: record.fields['Email'],
           firstName: record.fields['First Name'],
           lastName: record.fields['Last Name'],
