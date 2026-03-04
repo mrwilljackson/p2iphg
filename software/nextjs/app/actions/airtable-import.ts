@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db/client";
-import { events, volunteers } from "@/lib/db/schema";
+import { events, volunteers, organizations } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 
 interface ImportEventData {
@@ -255,6 +255,171 @@ export async function importMultipleVolunteersToNeon(volunteersData: ImportVolun
       results.failed++;
       results.errors.push({
         volunteerName: `${volunteerData.firstName} ${volunteerData.lastName}`,
+        error: result.error || 'Unknown error',
+      });
+    }
+  }
+
+  return results;
+}
+
+// ============================================================================
+// ORGANIZATIONS IMPORT
+// ============================================================================
+
+interface ImportOrganizationData {
+  eventAirtableId: string | null;
+  eventName: string;
+  name: string;
+  groupType: string;
+  expectedGroupSize: number | null;
+  contactFirstName: string | null;
+  contactLastName: string | null;
+  contactEmail: string | null;
+  contactPhone: string | null;
+  notes: string | null;
+  airtableRecordId: string;
+}
+
+export async function importOrganizationToNeon(organizationData: ImportOrganizationData) {
+  try {
+    console.log('Importing organization with data:', JSON.stringify(organizationData, null, 2));
+
+    // First, find the event by Airtable Record ID (preferred) or name (fallback)
+    let eventRecords;
+
+    if (organizationData.eventAirtableId) {
+      // Try to find event by Airtable Record ID (most reliable)
+      console.log(`Looking for event by Airtable ID: "${organizationData.eventAirtableId}"`);
+      eventRecords = await db
+        .select()
+        .from(events)
+        .where(eq(events.airtableRecordId, organizationData.eventAirtableId))
+        .limit(1);
+
+      console.log(`Found ${eventRecords.length} event(s) by Airtable ID`);
+      if (eventRecords.length > 0) {
+        console.log('Matched event:', JSON.stringify(eventRecords[0], null, 2));
+      }
+    }
+
+    // Fallback to name matching if no Airtable ID or not found
+    if (!eventRecords || eventRecords.length === 0) {
+      console.log(`Looking for event by name: "${organizationData.eventName}"`);
+      eventRecords = await db
+        .select()
+        .from(events)
+        .where(eq(events.name, organizationData.eventName))
+        .limit(1);
+
+      console.log(`Found ${eventRecords.length} event(s) by name`);
+      if (eventRecords.length > 0) {
+        console.log('Matched event:', JSON.stringify(eventRecords[0], null, 2));
+      }
+    }
+
+    if (eventRecords.length === 0) {
+      // Get all events to help debug
+      const allEvents = await db
+        .select({ name: events.name, airtableRecordId: events.airtableRecordId })
+        .from(events);
+      const availableEvents = allEvents
+        .map(e => `"${e.name}" (${e.airtableRecordId || 'no ID'})`)
+        .join(', ');
+
+      return {
+        success: false,
+        error: `Event not found: "${organizationData.eventName}" (Airtable ID: ${organizationData.eventAirtableId || 'none'}). Available events: ${availableEvents || 'none'}`,
+      };
+    }
+
+    const eventId = eventRecords[0].id;
+
+    // Check if organization already exists by airtableRecordId
+    const existingOrganization = await db
+      .select()
+      .from(organizations)
+      .where(eq(organizations.airtableRecordId, organizationData.airtableRecordId))
+      .limit(1);
+
+    if (existingOrganization.length > 0) {
+      // Organization already exists - update it
+      const [updatedOrganization] = await db
+        .update(organizations)
+        .set({
+          eventId,
+          name: organizationData.name,
+          groupType: organizationData.groupType,
+          expectedGroupSize: organizationData.expectedGroupSize,
+          contactFirstName: organizationData.contactFirstName,
+          contactLastName: organizationData.contactLastName,
+          contactEmail: organizationData.contactEmail,
+          contactPhone: organizationData.contactPhone,
+          notes: organizationData.notes,
+          modifiedAt: new Date(),
+        })
+        .where(eq(organizations.airtableRecordId, organizationData.airtableRecordId))
+        .returning();
+
+      return {
+        success: true,
+        action: 'updated',
+        organization: updatedOrganization,
+      };
+    } else {
+      // Organization doesn't exist - create it
+      const [newOrganization] = await db
+        .insert(organizations)
+        .values({
+          eventId,
+          name: organizationData.name,
+          groupType: organizationData.groupType,
+          expectedGroupSize: organizationData.expectedGroupSize,
+          contactFirstName: organizationData.contactFirstName,
+          contactLastName: organizationData.contactLastName,
+          contactEmail: organizationData.contactEmail,
+          contactPhone: organizationData.contactPhone,
+          notes: organizationData.notes,
+          airtableRecordId: organizationData.airtableRecordId,
+        })
+        .returning();
+
+      return {
+        success: true,
+        action: 'created',
+        organization: newOrganization,
+      };
+    }
+  } catch (error) {
+    console.error('Error importing organization to Neon:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
+}
+
+export async function importMultipleOrganizationsToNeon(organizationsData: ImportOrganizationData[]) {
+  const results = {
+    created: 0,
+    updated: 0,
+    failed: 0,
+    errors: [] as Array<{ organizationName: string; error: string }>,
+  };
+
+  for (const organizationData of organizationsData) {
+    const result = await importOrganizationToNeon(organizationData);
+
+    if (result.success) {
+      if (result.action === 'created') {
+        results.created++;
+      } else if (result.action === 'updated') {
+        results.updated++;
+      }
+    } else {
+      results.failed++;
+      results.errors.push({
+        organizationName: organizationData.name,
         error: result.error || 'Unknown error',
       });
     }

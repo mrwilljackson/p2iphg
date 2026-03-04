@@ -26,6 +26,20 @@ interface AirtableVolunteer {
   nextEventConsent: boolean;
 }
 
+interface AirtableOrganization {
+  airtableRecordId: string;
+  eventAirtableId: string | null;
+  eventName: string;
+  name: string;
+  groupType: string;
+  expectedGroupSize: number | null;
+  contactFirstName: string | null;
+  contactLastName: string | null;
+  contactEmail: string | null;
+  contactPhone: string | null;
+  notes: string | null;
+}
+
 export default function AirtableImportPage() {
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -46,6 +60,14 @@ export default function AirtableImportPage() {
   const [isImportingVolunteers, setIsImportingVolunteers] = useState(false);
   const [volunteersError, setVolunteersError] = useState<string | null>(null);
   const [volunteersSuccess, setVolunteersSuccess] = useState<string | null>(null);
+
+  // Organizations state
+  const [availableOrganizations, setAvailableOrganizations] = useState<AirtableOrganization[]>([]);
+  const [selectedOrganizationIds, setSelectedOrganizationIds] = useState<string[]>([]);
+  const [isFetchingOrganizations, setIsFetchingOrganizations] = useState(false);
+  const [isImportingOrganizations, setIsImportingOrganizations] = useState(false);
+  const [organizationsError, setOrganizationsError] = useState<string | null>(null);
+  const [organizationsSuccess, setOrganizationsSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     // Check if user is authenticated as P2I Admin
@@ -235,6 +257,91 @@ export default function AirtableImportPage() {
     }
   };
 
+  // Fetch available organizations from Airtable
+  const handleFetchOrganizations = async () => {
+    setIsFetchingOrganizations(true);
+    setOrganizationsError(null);
+    setOrganizationsSuccess(null);
+    setAvailableOrganizations([]);
+    setSelectedOrganizationIds([]);
+
+    try {
+      const response = await fetch('/api/airtable/organizations');
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch organizations');
+      }
+
+      setAvailableOrganizations(data.organizations);
+      setOrganizationsSuccess(`Found ${data.count} organization(s) in Airtable`);
+    } catch (error) {
+      setOrganizationsError(error instanceof Error ? error.message : 'Failed to fetch organizations');
+    } finally {
+      setIsFetchingOrganizations(false);
+    }
+  };
+
+  // Toggle organization selection
+  const handleToggleOrganization = (organizationId: string) => {
+    setSelectedOrganizationIds(prev =>
+      prev.includes(organizationId)
+        ? prev.filter(id => id !== organizationId)
+        : [...prev, organizationId]
+    );
+  };
+
+  // Import selected organizations
+  const handleImportOrganizations = async () => {
+    if (selectedOrganizationIds.length === 0) {
+      setOrganizationsError('Please select at least one organization to import');
+      return;
+    }
+
+    setIsImportingOrganizations(true);
+    setOrganizationsError(null);
+    setOrganizationsSuccess(null);
+
+    try {
+      const response = await fetch('/api/airtable/organizations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ organizationIds: selectedOrganizationIds }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to import organizations');
+      }
+
+      // Build success message
+      const messages = [];
+      if (data.created > 0) messages.push(`${data.created} created`);
+      if (data.updated > 0) messages.push(`${data.updated} updated`);
+      if (data.failed > 0) messages.push(`${data.failed} failed`);
+
+      const successMsg = `✅ Import complete: ${messages.join(', ')}`;
+      setOrganizationsSuccess(successMsg);
+
+      // Show errors if any
+      if (data.importErrors && data.importErrors.length > 0) {
+        const errorMsg = data.importErrors
+          .map((e: any) => `${e.organizationName}: ${e.error}`)
+          .join('; ');
+        setOrganizationsError(`Some imports failed: ${errorMsg}`);
+      }
+
+      setSelectedOrganizationIds([]);
+    } catch (error) {
+      setOrganizationsError(error instanceof Error ? error.message : 'Failed to import organizations');
+    } finally {
+      setIsImportingOrganizations(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -398,17 +505,85 @@ export default function AirtableImportPage() {
               </p>
             </div>
             <div className="space-y-4">
-              <div className="text-sm text-gray-600">
-                <p className="mb-2">This will:</p>
-                <ul className="list-disc list-inside space-y-1">
-                  <li>Fetch all organizations from Airtable</li>
-                  <li>Link to events via Airtable Record IDs</li>
-                  <li>Create organizations in Neon database</li>
-                </ul>
-              </div>
-              <Button className="w-full">
-                Import Organizations
+              {/* Step 1: Fetch Organizations */}
+              <Button
+                onClick={handleFetchOrganizations}
+                disabled={isFetchingOrganizations}
+                className="w-full"
+              >
+                {isFetchingOrganizations ? '⏳ Fetching...' : '1. Fetch Organizations from Airtable'}
               </Button>
+
+              {/* Success/Error Messages */}
+              {organizationsSuccess && (
+                <div className="p-3 bg-green-50 border border-green-200 rounded-md text-sm text-green-800">
+                  {organizationsSuccess}
+                </div>
+              )}
+              {organizationsError && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-800">
+                  {organizationsError}
+                </div>
+              )}
+
+              {/* Step 2: Select Organizations */}
+              {availableOrganizations.length > 0 && (
+                <div className="border border-gray-200 rounded-md p-4 max-h-96 overflow-y-auto">
+                  <h3 className="font-semibold text-gray-900 mb-3">
+                    2. Select Organizations to Import ({selectedOrganizationIds.length} selected)
+                  </h3>
+                  <div className="space-y-2">
+                    {availableOrganizations.map((organization) => (
+                      <div
+                        key={organization.airtableRecordId}
+                        className="flex items-start space-x-3 p-3 hover:bg-gray-50 rounded-md border border-gray-100"
+                      >
+                        <Checkbox
+                          checked={selectedOrganizationIds.includes(organization.airtableRecordId)}
+                          onCheckedChange={() => handleToggleOrganization(organization.airtableRecordId)}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-gray-900">
+                            {organization.name}
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            {organization.groupType} • {organization.expectedGroupSize || 'N/A'} participants
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            Event: {organization.eventName}
+                            {organization.eventAirtableId && (
+                              <span className="text-xs text-gray-400"> ({organization.eventAirtableId})</span>
+                            )}
+                          </div>
+                          {organization.contactEmail && (
+                            <div className="text-sm text-gray-500">
+                              Contact: {organization.contactFirstName} {organization.contactLastName} ({organization.contactEmail})
+                            </div>
+                          )}
+                          <div className="text-xs text-gray-400 mt-1">
+                            Organization ID: {organization.airtableRecordId}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Step 3: Import Button */}
+              {availableOrganizations.length > 0 && (
+                <Button
+                  onClick={handleImportOrganizations}
+                  disabled={selectedOrganizationIds.length === 0 || isImportingOrganizations}
+                  className="w-full"
+                  variant={selectedOrganizationIds.length > 0 ? "default" : "secondary"}
+                >
+                  {isImportingOrganizations
+                    ? '⏳ Importing...'
+                    : `3. Import ${selectedOrganizationIds.length} Selected Organization(s) to Neon`
+                  }
+                </Button>
+              )}
             </div>
           </div>
 
