@@ -64,11 +64,11 @@ export default function ManageEventsPage() {
 
   const formatDate = (dateString: string) => {
     try {
+      // Format as dd/mm/yyyy
       return new Date(dateString).toLocaleDateString('en-GB', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
       });
     } catch {
       return dateString;
@@ -151,8 +151,8 @@ export default function ManageEventsPage() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">{formatDate(event.date)}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{event.location || '-'}</div>
+                    <td className="px-6 py-4 max-w-xs">
+                      <div className="text-sm text-gray-900 truncate">{event.location || '-'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
