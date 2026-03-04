@@ -14,6 +14,17 @@ interface AirtableEvent {
   status: string;
 }
 
+interface AirtableVolunteer {
+  airtableRecordId: string;
+  eventName: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  photoConsent: boolean;
+  feedbackConsent: boolean;
+  nextEventConsent: boolean;
+}
+
 export default function AirtableImportPage() {
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -26,6 +37,14 @@ export default function AirtableImportPage() {
   const [isImportingEvents, setIsImportingEvents] = useState(false);
   const [eventsError, setEventsError] = useState<string | null>(null);
   const [eventsSuccess, setEventsSuccess] = useState<string | null>(null);
+
+  // Volunteers state
+  const [availableVolunteers, setAvailableVolunteers] = useState<AirtableVolunteer[]>([]);
+  const [selectedVolunteerIds, setSelectedVolunteerIds] = useState<string[]>([]);
+  const [isFetchingVolunteers, setIsFetchingVolunteers] = useState(false);
+  const [isImportingVolunteers, setIsImportingVolunteers] = useState(false);
+  const [volunteersError, setVolunteersError] = useState<string | null>(null);
+  const [volunteersSuccess, setVolunteersSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     // Check if user is authenticated as P2I Admin
@@ -127,6 +146,91 @@ export default function AirtableImportPage() {
       setEventsError(error instanceof Error ? error.message : 'Failed to import events');
     } finally {
       setIsImportingEvents(false);
+    }
+  };
+
+  // Fetch available volunteers from Airtable
+  const handleFetchVolunteers = async () => {
+    setIsFetchingVolunteers(true);
+    setVolunteersError(null);
+    setVolunteersSuccess(null);
+    setAvailableVolunteers([]);
+    setSelectedVolunteerIds([]);
+
+    try {
+      const response = await fetch('/api/airtable/volunteers');
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch volunteers');
+      }
+
+      setAvailableVolunteers(data.volunteers);
+      setVolunteersSuccess(`Found ${data.count} volunteer(s) in Airtable`);
+    } catch (error) {
+      setVolunteersError(error instanceof Error ? error.message : 'Failed to fetch volunteers');
+    } finally {
+      setIsFetchingVolunteers(false);
+    }
+  };
+
+  // Toggle volunteer selection
+  const handleToggleVolunteer = (volunteerId: string) => {
+    setSelectedVolunteerIds(prev =>
+      prev.includes(volunteerId)
+        ? prev.filter(id => id !== volunteerId)
+        : [...prev, volunteerId]
+    );
+  };
+
+  // Import selected volunteers
+  const handleImportVolunteers = async () => {
+    if (selectedVolunteerIds.length === 0) {
+      setVolunteersError('Please select at least one volunteer to import');
+      return;
+    }
+
+    setIsImportingVolunteers(true);
+    setVolunteersError(null);
+    setVolunteersSuccess(null);
+
+    try {
+      const response = await fetch('/api/airtable/volunteers', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ volunteerIds: selectedVolunteerIds }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to import volunteers');
+      }
+
+      // Build success message
+      const messages = [];
+      if (data.created > 0) messages.push(`${data.created} created`);
+      if (data.updated > 0) messages.push(`${data.updated} updated`);
+      if (data.failed > 0) messages.push(`${data.failed} failed`);
+
+      const successMsg = `✅ Import complete: ${messages.join(', ')}`;
+      setVolunteersSuccess(successMsg);
+
+      // Show errors if any
+      if (data.importErrors && data.importErrors.length > 0) {
+        const errorMsg = data.importErrors
+          .map((e: any) => `${e.volunteerName}: ${e.error}`)
+          .join('; ');
+        setVolunteersError(`Some imports failed: ${errorMsg}`);
+      }
+
+      setSelectedVolunteerIds([]);
+    } catch (error) {
+      setVolunteersError(error instanceof Error ? error.message : 'Failed to import volunteers');
+    } finally {
+      setIsImportingVolunteers(false);
     }
   };
 
@@ -316,17 +420,73 @@ export default function AirtableImportPage() {
               </p>
             </div>
             <div className="space-y-4">
-              <div className="text-sm text-gray-600">
-                <p className="mb-2">This will:</p>
-                <ul className="list-disc list-inside space-y-1">
-                  <li>Fetch all volunteers from Airtable</li>
-                  <li>Link to events via Airtable Record IDs</li>
-                  <li>Create volunteers in Neon database</li>
-                </ul>
-              </div>
-              <Button className="w-full">
-                Import Volunteers
+              {/* Step 1: Fetch Volunteers */}
+              <Button
+                onClick={handleFetchVolunteers}
+                disabled={isFetchingVolunteers}
+                className="w-full"
+              >
+                {isFetchingVolunteers ? '⏳ Fetching...' : '1. Fetch Volunteers from Airtable'}
               </Button>
+
+              {/* Success/Error Messages */}
+              {volunteersSuccess && (
+                <div className="p-3 bg-green-50 border border-green-200 rounded-md text-sm text-green-800">
+                  {volunteersSuccess}
+                </div>
+              )}
+              {volunteersError && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-800">
+                  {volunteersError}
+                </div>
+              )}
+
+              {/* Step 2: Select Volunteers */}
+              {availableVolunteers.length > 0 && (
+                <div className="border border-gray-200 rounded-md p-4 max-h-96 overflow-y-auto">
+                  <h3 className="font-semibold text-gray-900 mb-3">
+                    2. Select Volunteers to Import ({selectedVolunteerIds.length} selected)
+                  </h3>
+                  <div className="space-y-2">
+                    {availableVolunteers.map((volunteer) => (
+                      <div
+                        key={volunteer.airtableRecordId}
+                        className="flex items-start space-x-3 p-3 hover:bg-gray-50 rounded-md border border-gray-100"
+                      >
+                        <Checkbox
+                          checked={selectedVolunteerIds.includes(volunteer.airtableRecordId)}
+                          onCheckedChange={() => handleToggleVolunteer(volunteer.airtableRecordId)}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-gray-900">
+                            {volunteer.firstName} {volunteer.lastName}
+                          </div>
+                          <div className="text-sm text-gray-600">{volunteer.email}</div>
+                          <div className="text-sm text-gray-500">Event: {volunteer.eventName}</div>
+                          <div className="text-xs text-gray-400 mt-1">
+                            ID: {volunteer.airtableRecordId}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Step 3: Import Button */}
+              {availableVolunteers.length > 0 && (
+                <Button
+                  onClick={handleImportVolunteers}
+                  disabled={selectedVolunteerIds.length === 0 || isImportingVolunteers}
+                  className="w-full"
+                  variant={selectedVolunteerIds.length > 0 ? "default" : "secondary"}
+                >
+                  {isImportingVolunteers
+                    ? '⏳ Importing...'
+                    : `3. Import ${selectedVolunteerIds.length} Selected Volunteer(s) to Neon`
+                  }
+                </Button>
+              )}
             </div>
           </div>
 
