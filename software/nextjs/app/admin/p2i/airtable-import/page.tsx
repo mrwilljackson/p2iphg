@@ -670,29 +670,6 @@ export default function AirtableImportPage() {
               )}
             </div>
           </div>
-
-          {/* Import Registrations */}
-          <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
-            <div className="mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">📋 Import Registrations</h2>
-              <p className="text-sm text-gray-600 mt-1">
-                Import registration data from Airtable Registrations table
-              </p>
-            </div>
-            <div className="space-y-4">
-              <div className="text-sm text-gray-600">
-                <p className="mb-2">This will:</p>
-                <ul className="list-disc list-inside space-y-1">
-                  <li>Fetch all registrations from Airtable</li>
-                  <li>Link to events and organizations</li>
-                  <li>Create registrations in Neon database</li>
-                </ul>
-              </div>
-              <Button className="w-full">
-                Import Registrations
-              </Button>
-            </div>
-          </div>
         </div>
       </main>
     </div>
