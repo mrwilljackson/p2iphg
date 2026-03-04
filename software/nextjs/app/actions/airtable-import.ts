@@ -118,6 +118,8 @@ interface ImportVolunteerData {
 export async function importVolunteerToNeon(volunteerData: ImportVolunteerData) {
   try {
     // First, find the event by name to get the eventId
+    console.log(`Looking for event: "${volunteerData.eventName}"`);
+
     const eventRecords = await db
       .select()
       .from(events)
@@ -125,9 +127,13 @@ export async function importVolunteerToNeon(volunteerData: ImportVolunteerData) 
       .limit(1);
 
     if (eventRecords.length === 0) {
+      // Get all event names to help debug
+      const allEvents = await db.select({ name: events.name }).from(events);
+      const availableEvents = allEvents.map(e => e.name).join(', ');
+
       return {
         success: false,
-        error: `Event not found: ${volunteerData.eventName}`,
+        error: `Event not found: "${volunteerData.eventName}". Available events: ${availableEvents || 'none'}`,
       };
     }
 
