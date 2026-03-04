@@ -105,6 +105,7 @@ export async function importMultipleEventsToNeon(eventsData: ImportEventData[]) 
 // ============================================================================
 
 interface ImportVolunteerData {
+  eventAirtableId: string | null;
   eventName: string;
   email: string;
   firstName: string;
@@ -117,23 +118,41 @@ interface ImportVolunteerData {
 
 export async function importVolunteerToNeon(volunteerData: ImportVolunteerData) {
   try {
-    // First, find the event by name to get the eventId
-    console.log(`Looking for event: "${volunteerData.eventName}"`);
+    // First, find the event by Airtable Record ID (preferred) or name (fallback)
+    let eventRecords;
 
-    const eventRecords = await db
-      .select()
-      .from(events)
-      .where(eq(events.name, volunteerData.eventName))
-      .limit(1);
+    if (volunteerData.eventAirtableId) {
+      // Try to find event by Airtable Record ID (most reliable)
+      console.log(`Looking for event by Airtable ID: "${volunteerData.eventAirtableId}"`);
+      eventRecords = await db
+        .select()
+        .from(events)
+        .where(eq(events.airtableRecordId, volunteerData.eventAirtableId))
+        .limit(1);
+    }
+
+    // Fallback to name matching if no Airtable ID or not found
+    if (!eventRecords || eventRecords.length === 0) {
+      console.log(`Looking for event by name: "${volunteerData.eventName}"`);
+      eventRecords = await db
+        .select()
+        .from(events)
+        .where(eq(events.name, volunteerData.eventName))
+        .limit(1);
+    }
 
     if (eventRecords.length === 0) {
-      // Get all event names to help debug
-      const allEvents = await db.select({ name: events.name }).from(events);
-      const availableEvents = allEvents.map(e => e.name).join(', ');
+      // Get all events to help debug
+      const allEvents = await db
+        .select({ name: events.name, airtableRecordId: events.airtableRecordId })
+        .from(events);
+      const availableEvents = allEvents
+        .map(e => `"${e.name}" (${e.airtableRecordId || 'no ID'})`)
+        .join(', ');
 
       return {
         success: false,
-        error: `Event not found: "${volunteerData.eventName}". Available events: ${availableEvents || 'none'}`,
+        error: `Event not found: "${volunteerData.eventName}" (Airtable ID: ${volunteerData.eventAirtableId || 'none'}). Available events: ${availableEvents || 'none'}`,
       };
     }
 

@@ -16,6 +16,7 @@ interface AirtableEvent {
 
 interface AirtableVolunteer {
   airtableRecordId: string;
+  eventAirtableId: string | null;
   eventName: string;
   email: string;
   firstName: string;
@@ -462,9 +463,14 @@ export default function AirtableImportPage() {
                             {volunteer.firstName} {volunteer.lastName}
                           </div>
                           <div className="text-sm text-gray-600">{volunteer.email}</div>
-                          <div className="text-sm text-gray-500">Event: {volunteer.eventName}</div>
+                          <div className="text-sm text-gray-500">
+                            Event: {volunteer.eventName}
+                            {volunteer.eventAirtableId && (
+                              <span className="text-xs text-gray-400"> ({volunteer.eventAirtableId})</span>
+                            )}
+                          </div>
                           <div className="text-xs text-gray-400 mt-1">
-                            ID: {volunteer.airtableRecordId}
+                            Volunteer ID: {volunteer.airtableRecordId}
                           </div>
                         </div>
                       </div>

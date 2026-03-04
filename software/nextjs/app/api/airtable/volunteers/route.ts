@@ -7,7 +7,8 @@ const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
 interface AirtableVolunteer {
   id: string;
   fields: {
-    'Event': string;
+    'Event': string[];  // Array of linked record IDs
+    'Event Name': string;
     'Email': string;
     'First Name': string;
     'Last Name': string;
@@ -55,7 +56,8 @@ export async function GET(request: NextRequest) {
     // Transform Airtable records to our format
     const volunteers = data.records.map(record => ({
       airtableRecordId: record.id,
-      eventName: record.fields['Event'],
+      eventAirtableId: record.fields['Event']?.[0] || null,  // First linked event ID
+      eventName: record.fields['Event Name'] || 'Unknown Event',
       email: record.fields['Email'],
       firstName: record.fields['First Name'],
       lastName: record.fields['Last Name'],
@@ -122,7 +124,8 @@ export async function POST(request: NextRequest) {
 
         // Prepare volunteer data for import
         const volunteerData = {
-          eventName: record.fields['Event'],
+          eventAirtableId: record.fields['Event']?.[0] || null,
+          eventName: record.fields['Event Name'] || 'Unknown Event',
           email: record.fields['Email'],
           firstName: record.fields['First Name'],
           lastName: record.fields['Last Name'],
