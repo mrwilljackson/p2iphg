@@ -9,7 +9,7 @@ const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
 interface AirtableOrganization {
   id: string;
   fields: {
-    'Organisation Name': string;  // UK spelling in Airtable
+    'Organisation Name': string | string[];  // UK spelling in Airtable - can be array (lookup field) or string
     'Event': string[];  // Array of linked record IDs (for display)
     'airtable_event_id'?: string | string[];  // Can be text field (string) or linked record (array)
     'Group Type'?: string;
@@ -89,11 +89,17 @@ export async function GET(request: NextRequest) {
         ? (eventMap.get(eventAirtableId) || `Unknown Event (${eventAirtableId})`)
         : 'No Event Assigned';
 
+      // Extract organisation name (handle lookup field which returns array)
+      let orgName = record.fields['Organisation Name'];
+      if (Array.isArray(orgName)) {
+        orgName = orgName[0]; // Extract first element if array
+      }
+
       return {
         airtableRecordId: record.id,
         eventAirtableId,
         eventName,
-        name: record.fields['Organisation Name'],  // UK spelling
+        name: orgName,  // UK spelling
         groupType: record.fields['Group Type'] || 'Other',
         expectedGroupSize: record.fields['Expected Group Size'] || null,
         contactFirstName: record.fields['Contact First Name'] || null,
@@ -168,6 +174,8 @@ export async function POST(request: NextRequest) {
 
         // Debug: Log the actual fields from Airtable
         console.log('📋 Organization fields from Airtable:', Object.keys(record.fields));
+        console.log('📋 Organisation Name field value:', record.fields['Organisation Name']);
+        console.log('📋 Organisation Name type:', typeof record.fields['Organisation Name']);
         console.log('📋 Full record:', JSON.stringify(record.fields, null, 2));
 
         // Prepare organization data for import
@@ -186,10 +194,16 @@ export async function POST(request: NextRequest) {
           ? (eventMap.get(eventAirtableId) || `Unknown Event (${eventAirtableId})`)
           : 'No Event Assigned';
 
+        // Extract organisation name (handle lookup field which returns array)
+        let orgName = record.fields['Organisation Name'];
+        if (Array.isArray(orgName)) {
+          orgName = orgName[0]; // Extract first element if array
+        }
+
         const organizationData = {
           eventAirtableId,
           eventName,
-          name: record.fields['Organisation Name'],  // UK spelling
+          name: orgName,  // UK spelling
           groupType: record.fields['Group Type'] || 'Other',
           expectedGroupSize: record.fields['Expected Group Size'] || null,
           contactFirstName: record.fields['Contact First Name'] || null,
