@@ -15,6 +15,8 @@ interface ImportEventData {
 
 export async function importEventToNeon(eventData: ImportEventData) {
   try {
+    console.log('Importing event with data:', JSON.stringify(eventData, null, 2));
+
     // Check if event already exists by airtableRecordId
     const existingEvent = await db
       .select()
@@ -55,6 +57,8 @@ export async function importEventToNeon(eventData: ImportEventData) {
           airtableRecordId: eventData.airtableRecordId,
         })
         .returning();
+
+      console.log('Created event:', JSON.stringify(newEvent, null, 2));
 
       return {
         success: true,
