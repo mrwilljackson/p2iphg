@@ -10,6 +10,7 @@ interface AirtableOrganization {
   id: string;
   fields: {
     'Organisation Name': string | string[];  // UK spelling in Airtable - can be array (lookup field) or string
+    'Organisation Name Text'?: string;  // Formula field with actual text name (if available)
     'Event': string[];  // Array of linked record IDs (for display)
     'airtable_event_id'?: string | string[];  // Can be text field (string) or linked record (array)
     'Group Type'?: string;
@@ -90,7 +91,8 @@ export async function GET(request: NextRequest) {
         : 'No Event Assigned';
 
       // Extract organisation name (handle lookup field which returns array)
-      let orgName = record.fields['Organisation Name'];
+      // Prefer 'Organisation Name Text' formula field if available, otherwise use 'Organisation Name'
+      let orgName = record.fields['Organisation Name Text'] || record.fields['Organisation Name'];
       if (Array.isArray(orgName)) {
         orgName = orgName[0]; // Extract first element if array
       }
@@ -195,7 +197,8 @@ export async function POST(request: NextRequest) {
           : 'No Event Assigned';
 
         // Extract organisation name (handle lookup field which returns array)
-        let orgName = record.fields['Organisation Name'];
+        // Prefer 'Organisation Name Text' formula field if available, otherwise use 'Organisation Name'
+        let orgName = record.fields['Organisation Name Text'] || record.fields['Organisation Name'];
         if (Array.isArray(orgName)) {
           orgName = orgName[0]; // Extract first element if array
         }
