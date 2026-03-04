@@ -736,7 +736,11 @@ export default function P2IAdminDashboard() {
               <Button className="w-full justify-start" variant="outline">
                 🔄 Sync with Airtable
               </Button>
-              <Button className="w-full justify-start" variant="outline">
+              <Button
+                className="w-full justify-start"
+                variant="outline"
+                onClick={() => router.push("/admin/p2i/airtable-import")}
+              >
                 ⬇️ Import from Airtable
               </Button>
               <Button className="w-full justify-start" variant="outline">
