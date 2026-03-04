@@ -9,7 +9,7 @@ const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
 interface AirtableOrganization {
   id: string;
   fields: {
-    'Organization Name': string;
+    'Organisation Name': string;  // UK spelling in Airtable
     'Event': string[];  // Array of linked record IDs (for display)
     'airtable_event_id'?: string | string[];  // Can be text field (string) or linked record (array)
     'Group Type'?: string;
@@ -93,7 +93,7 @@ export async function GET(request: NextRequest) {
         airtableRecordId: record.id,
         eventAirtableId,
         eventName,
-        name: record.fields['Organization Name'],
+        name: record.fields['Organisation Name'],  // UK spelling
         groupType: record.fields['Group Type'] || 'Other',
         expectedGroupSize: record.fields['Expected Group Size'] || null,
         contactFirstName: record.fields['Contact First Name'] || null,
@@ -166,6 +166,10 @@ export async function POST(request: NextRequest) {
 
         const record: AirtableOrganization = await response.json();
 
+        // Debug: Log the actual fields from Airtable
+        console.log('📋 Organization fields from Airtable:', Object.keys(record.fields));
+        console.log('📋 Full record:', JSON.stringify(record.fields, null, 2));
+
         // Prepare organization data for import
         // Use the airtable_event_id field for matching (preferred)
         // Handle both string (text field) and array (linked record field)
@@ -185,7 +189,7 @@ export async function POST(request: NextRequest) {
         const organizationData = {
           eventAirtableId,
           eventName,
-          name: record.fields['Organization Name'],
+          name: record.fields['Organisation Name'],  // UK spelling
           groupType: record.fields['Group Type'] || 'Other',
           expectedGroupSize: record.fields['Expected Group Size'] || null,
           contactFirstName: record.fields['Contact First Name'] || null,
