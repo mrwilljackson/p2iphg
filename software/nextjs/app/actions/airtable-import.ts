@@ -122,6 +122,8 @@ interface ImportVolunteerData {
 
 export async function importVolunteerToNeon(volunteerData: ImportVolunteerData) {
   try {
+    console.log('Importing volunteer with data:', JSON.stringify(volunteerData, null, 2));
+
     // First, find the event by Airtable Record ID (preferred) or name (fallback)
     let eventRecords;
 
@@ -133,6 +135,11 @@ export async function importVolunteerToNeon(volunteerData: ImportVolunteerData) 
         .from(events)
         .where(eq(events.airtableRecordId, volunteerData.eventAirtableId))
         .limit(1);
+
+      console.log(`Found ${eventRecords.length} event(s) by Airtable ID`);
+      if (eventRecords.length > 0) {
+        console.log('Matched event:', JSON.stringify(eventRecords[0], null, 2));
+      }
     }
 
     // Fallback to name matching if no Airtable ID or not found
@@ -143,6 +150,11 @@ export async function importVolunteerToNeon(volunteerData: ImportVolunteerData) 
         .from(events)
         .where(eq(events.name, volunteerData.eventName))
         .limit(1);
+
+      console.log(`Found ${eventRecords.length} event(s) by name`);
+      if (eventRecords.length > 0) {
+        console.log('Matched event:', JSON.stringify(eventRecords[0], null, 2));
+      }
     }
 
     if (eventRecords.length === 0) {
