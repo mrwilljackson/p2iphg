@@ -29,16 +29,20 @@ interface AirtableResponse {
 
 export async function GET(request: NextRequest) {
   try {
+    console.log('🔍 Fetching organizations from Airtable...');
+
     if (!AIRTABLE_API_KEY || !AIRTABLE_BASE_ID) {
+      console.error('❌ Airtable credentials not configured');
       return NextResponse.json(
         { error: 'Airtable credentials not configured' },
         { status: 500 }
       );
     }
 
-    // Fetch all organizations from Airtable
-    const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/Organizations`;
-    
+    // Fetch all organizations from Airtable (UK spelling: Organisations)
+    const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/Organisations`;
+    console.log('📡 Fetching from URL:', url);
+
     const response = await fetch(url, {
       headers: {
         'Authorization': `Bearer ${AIRTABLE_API_KEY}`,
@@ -46,9 +50,11 @@ export async function GET(request: NextRequest) {
       },
     });
 
+    console.log('📥 Response status:', response.status, response.statusText);
+
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Airtable API error:', errorText);
+      console.error('❌ Airtable API error:', errorText);
       return NextResponse.json(
         { error: 'Failed to fetch organizations from Airtable', details: errorText },
         { status: response.status }
@@ -56,9 +62,11 @@ export async function GET(request: NextRequest) {
     }
 
     const data: AirtableResponse = await response.json();
+    console.log('✅ Fetched', data.records.length, 'organizations from Airtable');
 
     // Get all events from Neon to map Airtable IDs to names
     const allEvents = await db.select().from(events);
+    console.log('📊 Found', allEvents.length, 'events in Neon database');
     const eventMap = new Map(
       allEvents.map(event => [event.airtableRecordId, event.name])
     );
@@ -131,7 +139,7 @@ export async function POST(request: NextRequest) {
 
     for (const recordId of organizationIds) {
       try {
-        const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/Organizations/${recordId}`;
+        const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/Organisations/${recordId}`;
         
         const response = await fetch(url, {
           headers: {
