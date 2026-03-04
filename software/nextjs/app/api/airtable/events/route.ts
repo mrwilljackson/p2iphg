@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { importMultipleEventsToNeon } from '@/app/actions/airtable-import';
 
 const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
 const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
@@ -114,13 +115,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Fetch the specific events from Airtable
-    const importedEvents = [];
-    const errors = [];
+    const eventsToImport = [];
+    const fetchErrors = [];
 
     for (const recordId of eventIds) {
       try {
         const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/Events/${recordId}`;
-        
+
         const response = await fetch(url, {
           headers: {
             'Authorization': `Bearer ${AIRTABLE_API_KEY}`,
@@ -129,14 +130,13 @@ export async function POST(request: NextRequest) {
         });
 
         if (!response.ok) {
-          errors.push({ recordId, error: `Failed to fetch: ${response.statusText}` });
+          fetchErrors.push({ recordId, error: `Failed to fetch: ${response.statusText}` });
           continue;
         }
 
         const record: AirtableEvent = await response.json();
 
-        // Import to Neon database using server action
-        // We'll need to create this action
+        // Prepare event data for import
         const eventData = {
           name: record.fields['Event Name'],
           date: record.fields['Event Date'],
@@ -146,23 +146,27 @@ export async function POST(request: NextRequest) {
           airtableRecordId: record.id,
         };
 
-        // TODO: Call server action to create event in Neon
-        // For now, we'll return the data
-        importedEvents.push(eventData);
+        eventsToImport.push(eventData);
 
       } catch (error) {
-        errors.push({ 
-          recordId, 
-          error: error instanceof Error ? error.message : 'Unknown error' 
+        fetchErrors.push({
+          recordId,
+          error: error instanceof Error ? error.message : 'Unknown error'
         });
       }
     }
 
+    // Import all fetched events to Neon database
+    const importResults = await importMultipleEventsToNeon(eventsToImport);
+
     return NextResponse.json({
       success: true,
-      imported: importedEvents.length,
-      events: importedEvents,
-      errors: errors.length > 0 ? errors : undefined,
+      fetched: eventsToImport.length,
+      created: importResults.created,
+      updated: importResults.updated,
+      failed: importResults.failed,
+      fetchErrors: fetchErrors.length > 0 ? fetchErrors : undefined,
+      importErrors: importResults.errors.length > 0 ? importResults.errors : undefined,
     });
 
   } catch (error) {

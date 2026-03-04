@@ -103,10 +103,26 @@ export default function AirtableImportPage() {
         throw new Error(data.error || 'Failed to import events');
       }
 
-      setEventsSuccess(`Successfully imported ${data.imported} event(s)`);
+      // Build success message
+      const messages = [];
+      if (data.created > 0) messages.push(`${data.created} created`);
+      if (data.updated > 0) messages.push(`${data.updated} updated`);
+      if (data.failed > 0) messages.push(`${data.failed} failed`);
+
+      const successMsg = `✅ Import complete: ${messages.join(', ')}`;
+      setEventsSuccess(successMsg);
+
+      // Show errors if any
+      if (data.importErrors && data.importErrors.length > 0) {
+        const errorMsg = data.importErrors
+          .map((e: any) => `${e.eventName}: ${e.error}`)
+          .join('; ');
+        setEventsError(`Some imports failed: ${errorMsg}`);
+      }
+
       setSelectedEventIds([]);
       // Optionally refresh the list
-      handleFetchEvents();
+      // handleFetchEvents();
     } catch (error) {
       setEventsError(error instanceof Error ? error.message : 'Failed to import events');
     } finally {
