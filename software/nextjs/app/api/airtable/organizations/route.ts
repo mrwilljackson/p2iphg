@@ -11,7 +11,7 @@ interface AirtableOrganization {
   fields: {
     'Organization Name': string;
     'Event': string[];  // Array of linked record IDs (for display)
-    'airtable_event_id'?: string;  // Direct Event Airtable Record ID for matching
+    'airtable_event_id'?: string | string[];  // Can be text field (string) or linked record (array)
     'Group Type'?: string;
     'Expected Group Size'?: number;
     'Contact First Name'?: string;
@@ -75,7 +75,16 @@ export async function GET(request: NextRequest) {
     // Transform Airtable records to our format
     const organizations = data.records.map(record => {
       // Use the airtable_event_id field for matching (preferred)
-      const eventAirtableId = record.fields['airtable_event_id'] || record.fields['Event']?.[0] || null;
+      // Handle both string (text field) and array (linked record field)
+      let eventAirtableId = record.fields['airtable_event_id'];
+      if (Array.isArray(eventAirtableId)) {
+        eventAirtableId = eventAirtableId[0]; // Extract first element if array
+      }
+      // Fallback to Event linked field if airtable_event_id not present
+      if (!eventAirtableId) {
+        eventAirtableId = record.fields['Event']?.[0] || null;
+      }
+
       const eventName = eventAirtableId
         ? (eventMap.get(eventAirtableId) || `Unknown Event (${eventAirtableId})`)
         : 'No Event Assigned';
@@ -159,7 +168,16 @@ export async function POST(request: NextRequest) {
 
         // Prepare organization data for import
         // Use the airtable_event_id field for matching (preferred)
-        const eventAirtableId = record.fields['airtable_event_id'] || record.fields['Event']?.[0] || null;
+        // Handle both string (text field) and array (linked record field)
+        let eventAirtableId = record.fields['airtable_event_id'];
+        if (Array.isArray(eventAirtableId)) {
+          eventAirtableId = eventAirtableId[0]; // Extract first element if array
+        }
+        // Fallback to Event linked field if airtable_event_id not present
+        if (!eventAirtableId) {
+          eventAirtableId = record.fields['Event']?.[0] || null;
+        }
+
         const eventName = eventAirtableId
           ? (eventMap.get(eventAirtableId) || `Unknown Event (${eventAirtableId})`)
           : 'No Event Assigned';
