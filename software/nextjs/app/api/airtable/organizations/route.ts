@@ -10,7 +10,8 @@ interface AirtableOrganization {
   id: string;
   fields: {
     'Organization Name': string;
-    'Event': string[];  // Array of linked record IDs
+    'Event': string[];  // Array of linked record IDs (for display)
+    'airtable_event_id'?: string;  // Direct Event Airtable Record ID for matching
     'Group Type'?: string;
     'Expected Group Size'?: number;
     'Contact First Name'?: string;
@@ -73,11 +74,12 @@ export async function GET(request: NextRequest) {
 
     // Transform Airtable records to our format
     const organizations = data.records.map(record => {
-      const eventAirtableId = record.fields['Event']?.[0] || null;
-      const eventName = eventAirtableId 
+      // Use the airtable_event_id field for matching (preferred)
+      const eventAirtableId = record.fields['airtable_event_id'] || record.fields['Event']?.[0] || null;
+      const eventName = eventAirtableId
         ? (eventMap.get(eventAirtableId) || `Unknown Event (${eventAirtableId})`)
         : 'No Event Assigned';
-      
+
       return {
         airtableRecordId: record.id,
         eventAirtableId,
@@ -156,7 +158,8 @@ export async function POST(request: NextRequest) {
         const record: AirtableOrganization = await response.json();
 
         // Prepare organization data for import
-        const eventAirtableId = record.fields['Event']?.[0] || null;
+        // Use the airtable_event_id field for matching (preferred)
+        const eventAirtableId = record.fields['airtable_event_id'] || record.fields['Event']?.[0] || null;
         const eventName = eventAirtableId
           ? (eventMap.get(eventAirtableId) || `Unknown Event (${eventAirtableId})`)
           : 'No Event Assigned';
