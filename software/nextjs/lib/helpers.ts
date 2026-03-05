@@ -11,13 +11,22 @@ import type { ComboboxOption } from '@/components/ui/combobox';
 /**
  * Convert organizations to combobox options
  * Always includes "Family Group" as a special option for on-the-day family registrations
+ * Deduplicates organizations by name (keeps first occurrence)
  */
 export function organizationsToOptions(organizations: Organization[]): ComboboxOption[] {
   // Filter out any existing "Family Group" entries from the database
   const filteredOrgs = organizations.filter(org => org.name !== 'Family Group');
 
+  // Deduplicate by organization name (keep first occurrence)
+  const uniqueOrgs = filteredOrgs.reduce((acc, org) => {
+    if (!acc.some(existing => existing.name === org.name)) {
+      acc.push(org);
+    }
+    return acc;
+  }, [] as Organization[]);
+
   // Convert organizations to options
-  const orgOptions = filteredOrgs.map((org) => ({
+  const orgOptions = uniqueOrgs.map((org) => ({
     value: org.id!,
     label: org.name,
   }));
