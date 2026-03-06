@@ -15,7 +15,7 @@
  */
 
 import { db } from './db/client';
-import { events, organizations, volunteers, registrations } from './db/schema';
+import { events, organizations, organisations, organisationContacts, volunteers, registrations } from './db/schema';
 import { eq, and, ilike, or, isNotNull } from 'drizzle-orm';
 import { Event, Organization, Volunteer, Registration } from './types';
 import { calculateParticipantCounts, type RegistrationForCounting, type ParticipantCounts } from './participant-counting';
@@ -95,16 +95,43 @@ export class DatabaseService {
 
   /**
    * Get all organizations for a specific event
-   * If no eventId provided, returns all organizations
+   * Reads from the `organisations` (UK) table, joined with `organisation_contacts`
+   * Matches event via airtable_event_id ↔ events.airtable_record_id
    */
   static async getOrganizations(eventId?: string): Promise<Organization[]> {
     try {
-      const query = eventId
-        ? db.select().from(organizations).where(eq(organizations.eventId, eventId))
-        : db.select().from(organizations);
-      
-      const result = await query;
-      return result.map(mapOrganizationFromDb);
+      // Look up the event's airtable_record_id so we can match organisations
+      let eventAirtableId: string | null = null;
+      let eventUuid: string | undefined = eventId;
+      if (eventId) {
+        const evt = await db.select().from(events).where(eq(events.id, eventId)).limit(1);
+        eventAirtableId = evt[0]?.airtableRecordId ?? null;
+      }
+
+      // Query organisations (UK table) with optional contact details
+      const result = await db
+        .select({
+          org: organisations,
+          contact: organisationContacts,
+        })
+        .from(organisations)
+        .leftJoin(
+          organisationContacts,
+          eq(organisations.airtableRecordId, organisationContacts.organisationId)
+        );
+
+      // Filter by event if eventId was provided
+      // Fall back to all orgs if airtable-based filter returns zero results
+      // (handles case where organisations haven't been linked to events in Airtable yet)
+      let filtered = result;
+      if (eventAirtableId) {
+        const byEvent = result.filter(r => r.org.airtableEventId === eventAirtableId);
+        if (byEvent.length > 0) {
+          filtered = byEvent;
+        }
+      }
+
+      return filtered.map(r => mapOrganisationToOrganization(r.org, r.contact, eventUuid));
     } catch (error) {
       console.error('Error fetching organizations:', error);
       throw error;
@@ -113,16 +140,36 @@ export class DatabaseService {
 
   /**
    * Get organization by ID
+   * Checks both organisations (UK) and organizations (US) tables
    */
   static async getOrganizationById(id: string): Promise<Organization | null> {
     try {
-      const result = await db
+      // Try UK table first
+      const ukResult = await db
+        .select({
+          org: organisations,
+          contact: organisationContacts,
+        })
+        .from(organisations)
+        .leftJoin(
+          organisationContacts,
+          eq(organisations.airtableRecordId, organisationContacts.organisationId)
+        )
+        .where(eq(organisations.id, id))
+        .limit(1);
+
+      if (ukResult[0]) {
+        return mapOrganisationToOrganization(ukResult[0].org, ukResult[0].contact);
+      }
+
+      // Fall back to US table (for family groups created on-the-day)
+      const usResult = await db
         .select()
         .from(organizations)
         .where(eq(organizations.id, id))
         .limit(1);
-      
-      return result[0] ? mapOrganizationFromDb(result[0]) : null;
+
+      return usResult[0] ? mapOrganizationFromDb(usResult[0]) : null;
     } catch (error) {
       console.error('Error fetching organization by ID:', error);
       throw error;
@@ -185,26 +232,18 @@ export class DatabaseService {
 
   /**
    * Search organizations by name for a specific event
-   * Case-insensitive search
+   * Case-insensitive search — queries UK organisations table
    */
   static async searchOrganizations(query: string, eventId?: string): Promise<Organization[]> {
     try {
-      const conditions = [];
-      
-      if (query) {
-        conditions.push(ilike(organizations.name, `%${query}%`));
-      }
-      
-      if (eventId) {
-        conditions.push(eq(organizations.eventId, eventId));
-      }
+      // Get all orgs for the event, then filter by name client-side
+      // (simpler than building dynamic conditions across joined tables)
+      const allOrgs = await this.getOrganizations(eventId);
 
-      const dbQuery = conditions.length > 0
-        ? db.select().from(organizations).where(and(...conditions))
-        : db.select().from(organizations);
-      
-      const result = await dbQuery;
-      return result.map(mapOrganizationFromDb);
+      if (!query) return allOrgs;
+
+      const lowerQuery = query.toLowerCase();
+      return allOrgs.filter(org => org.name.toLowerCase().includes(lowerQuery));
     } catch (error) {
       console.error('Error searching organizations:', error);
       throw error;
@@ -296,22 +335,25 @@ export class DatabaseService {
   /**
    * Get all registrations for a specific event
    * Returns basic fields for list view including organization name
+   * Checks both organisations (UK) and organizations (US) tables for the org name
    */
   static async getAllRegistrations(eventId: string): Promise<Registration[]> {
     try {
       const result = await db
         .select({
           registration: registrations,
-          organizationName: organizations.name,
+          ukOrgName: organisations.name,
+          usOrgName: organizations.name,
         })
         .from(registrations)
+        .leftJoin(organisations, eq(registrations.organizationId, organisations.id))
         .leftJoin(organizations, eq(registrations.organizationId, organizations.id))
         .where(eq(registrations.eventId, eventId))
         .orderBy(registrations.createdAt);
 
       return result.map(row => ({
         ...mapRegistrationFromDb(row.registration),
-        organizationName: row.organizationName || undefined,
+        organizationName: row.ukOrgName || row.usOrgName || undefined,
       }));
     } catch (error) {
       console.error('Error fetching all registrations:', error);
@@ -328,9 +370,11 @@ export class DatabaseService {
       const result = await db
         .select({
           registration: registrations,
-          organizationName: organizations.name,
+          ukOrgName: organisations.name,
+          usOrgName: organizations.name,
         })
         .from(registrations)
+        .leftJoin(organisations, eq(registrations.organizationId, organisations.id))
         .leftJoin(organizations, eq(registrations.organizationId, organizations.id))
         .where(
           and(
@@ -342,7 +386,7 @@ export class DatabaseService {
 
       return result.map(row => ({
         ...mapRegistrationFromDb(row.registration),
-        organizationName: row.organizationName || undefined,
+        organizationName: row.ukOrgName || row.usOrgName || undefined,
       }));
     } catch (error) {
       console.error('Error fetching registrations by organization:', error);
@@ -359,9 +403,11 @@ export class DatabaseService {
       const result = await db
         .select({
           registration: registrations,
-          organizationName: organizations.name,
+          ukOrgName: organisations.name,
+          usOrgName: organizations.name,
         })
         .from(registrations)
+        .leftJoin(organisations, eq(registrations.organizationId, organisations.id))
         .leftJoin(organizations, eq(registrations.organizationId, organizations.id))
         .where(eq(registrations.id, id))
         .limit(1);
@@ -370,7 +416,7 @@ export class DatabaseService {
 
       return {
         ...mapRegistrationFromDb(result[0].registration),
-        organizationName: result[0].organizationName || undefined,
+        organizationName: result[0].ukOrgName || result[0].usOrgName || undefined,
       };
     } catch (error) {
       console.error('Error fetching registration by ID:', error);
@@ -528,7 +574,7 @@ export class DatabaseService {
    */
   static async getRegistrationCountsByRole(eventId: string): Promise<ParticipantCounts> {
     try {
-      // Get all registrations with organization details
+      // Get all registrations with organization details from both UK and US tables
       const allRegistrations = await db
         .select({
           id: registrations.id,
@@ -538,18 +584,36 @@ export class DatabaseService {
           senStudents: registrations.senStudents,
           groupLeaderParticipating: registrations.groupLeaderParticipating,
           organizationId: registrations.organizationId,
-          organizationName: organizations.name,
-          groupType: organizations.groupType,
-          organizationAirtableRecordId: organizations.airtableRecordId,
+          ukOrgName: organisations.name,
+          usOrgName: organizations.name,
+          ukGroupType: organisations.groupType,
+          usGroupType: organizations.groupType,
+          ukAirtableRecordId: organisations.airtableRecordId,
+          usAirtableRecordId: organizations.airtableRecordId,
         })
         .from(registrations)
+        .leftJoin(organisations, eq(registrations.organizationId, organisations.id))
         .leftJoin(organizations, eq(registrations.organizationId, organizations.id))
         .where(eq(registrations.eventId, eventId));
 
-      // Get all pre-registered organizations for this event (to count expected groups)
-      // Only organizations with airtable_record_id are pre-registered (expected)
-      // Organizations without airtable_record_id are walk-ins/on-the-day signups
-      const allOrgs = await db
+      // Get pre-registered organisations from UK table (primary source)
+      // Look up event's airtable_record_id for matching
+      const evt = await db.select().from(events).where(eq(events.id, eventId)).limit(1);
+      const eventAirtableId = evt[0]?.airtableRecordId ?? null;
+
+      const ukOrgs = eventAirtableId
+        ? await db
+            .select({
+              id: organisations.id,
+              name: organisations.name,
+              groupType: organisations.groupType,
+            })
+            .from(organisations)
+            .where(eq(organisations.airtableEventId, eventAirtableId))
+        : [];
+
+      // Also get pre-registered orgs from US table (legacy/family groups)
+      const usOrgs = await db
         .select({
           id: organizations.id,
           name: organizations.name,
@@ -560,7 +624,6 @@ export class DatabaseService {
         .where(
           and(
             eq(organizations.eventId, eventId),
-            // Only count organizations with airtable_record_id (pre-registered)
             isNotNull(organizations.airtableRecordId)
           )
         );
@@ -574,17 +637,29 @@ export class DatabaseService {
         senStudents: r.senStudents,
         groupLeaderParticipating: r.groupLeaderParticipating,
         organizationId: r.organizationId,
-        organizationName: r.organizationName,
-        groupType: r.groupType as any,
-        organizationAirtableRecordId: r.organizationAirtableRecordId,
+        organizationName: r.ukOrgName || r.usOrgName,
+        groupType: (r.ukGroupType || r.usGroupType) as any,
+        organizationAirtableRecordId: r.ukAirtableRecordId || r.usAirtableRecordId,
       }));
 
-      const organizationsForCounting = allOrgs.map(org => ({
-        id: org.id,
-        name: org.name,
-        groupType: org.groupType as any,
-        expectedGroupSize: org.expectedGroupSize,
-      }));
+      // Merge org lists for counting, preferring UK orgs
+      const ukOrgIds = new Set(ukOrgs.map(o => o.id));
+      const organizationsForCounting = [
+        ...ukOrgs.map(org => ({
+          id: org.id,
+          name: org.name || '',
+          groupType: org.groupType as any,
+          expectedGroupSize: null as number | null,
+        })),
+        ...usOrgs
+          .filter(org => !ukOrgIds.has(org.id))
+          .map(org => ({
+            id: org.id,
+            name: org.name,
+            groupType: org.groupType as any,
+            expectedGroupSize: org.expectedGroupSize,
+          })),
+      ];
 
       // Use the business logic module to calculate counts
       return calculateParticipantCounts(registrationsForCounting, organizationsForCounting);
@@ -630,6 +705,33 @@ function mapOrganizationFromDb(dbOrg: any): Organization {
     airtableRecordId: dbOrg.airtableRecordId,
     createdAt: dbOrg.createdAt?.toISOString(),
     modifiedAt: dbOrg.modifiedAt?.toISOString(),
+  };
+}
+
+/**
+ * Map from UK organisations + organisation_contacts tables to the Organization type
+ * Contact details come from the joined organisation_contacts row
+ */
+function mapOrganisationToOrganization(
+  org: any,
+  contact: any,
+  eventId?: string
+): Organization {
+  return {
+    id: org.id,
+    eventId: eventId || '', // UK table links via airtable_event_id, not a UUID event_id
+    name: org.name || '',
+    groupType: org.groupType || 'Other',
+    expectedGroupSize: contact?.expectedGroupSize ? parseInt(contact.expectedGroupSize, 10) : undefined,
+    imageUrl: org.imageUrl || null,
+    contactFirstName: contact?.contactFirstName || null,
+    contactLastName: contact?.contactLastName || null,
+    contactEmail: contact?.contactEmail || null,
+    contactPhone: contact?.contactPhone || null,
+    notes: contact?.notes || null,
+    airtableRecordId: org.airtableRecordId || null,
+    createdAt: org.createdAt?.toISOString(),
+    modifiedAt: org.modifiedAt?.toISOString(),
   };
 }
 

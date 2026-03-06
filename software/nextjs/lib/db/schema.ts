@@ -89,7 +89,7 @@ export const registrations = pgTable('registrations', {
   attendeeName: text('attendee_name').notNull(),
   attendeeSurname: text('attendee_surname').notNull(),
   email: text('email'),
-  organizationId: uuid('organization_id').references(() => organizations.id),
+  organizationId: uuid('organization_id'), // References either organisations (UK) or organizations (US) table
   impairment: text('impairment'),
   role: text('role').notNull(), // 'Participant' | 'Volunteer' | 'Group'
   photoConsent: boolean('photo_consent').notNull(),
@@ -107,12 +107,51 @@ export const registrations = pgTable('registrations', {
   modifiedAt: timestamp('modified_at').defaultNow(),
 });
 
+/**
+ * Organisations Table (UK spelling)
+ * Stores organisation data imported from Airtable
+ * Linked to events via airtable_event_id (text) matching events.airtable_record_id
+ */
+export const organisations = pgTable('organisations', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: text('name'),
+  groupType: text('group_type'),
+  imageUrl: text('image_url'),
+  airtableRecordId: text('airtable_record_id'),
+  airtableEventId: text('airtable_event_id'),
+  createdAt: timestamp('created_at'),
+  modifiedAt: timestamp('modified_at'),
+});
+
+/**
+ * Organisation Contacts Table
+ * Stores contact details for organisations
+ * Linked to organisations via organisation_id (airtable record ID) matching organisations.airtable_record_id
+ */
+export const organisationContacts = pgTable('organisation_contacts', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  organisationId: text('organisation_id'), // Airtable record ID of the organisation
+  airtableEventId: text('airtable_event_id'),
+  contactFirstName: text('contact_first_name'),
+  contactLastName: text('contact_last_name'),
+  contactEmail: text('contact_email'),
+  contactPhone: text('contact_phone'),
+  expectedGroupSize: text('expected_group_size'),
+  notes: text('notes'),
+  airtableRecordId: text('airtable_record_id'),
+  createdAt: timestamp('created_at'),
+  modifiedAt: timestamp('modified_at'),
+});
+
 // Export types for TypeScript
 export type Event = typeof events.$inferSelect;
 export type NewEvent = typeof events.$inferInsert;
 
 export type Organization = typeof organizations.$inferSelect;
 export type NewOrganization = typeof organizations.$inferInsert;
+
+export type OrganisationRow = typeof organisations.$inferSelect;
+export type OrganisationContactRow = typeof organisationContacts.$inferSelect;
 
 export type Volunteer = typeof volunteers.$inferSelect;
 export type NewVolunteer = typeof volunteers.$inferInsert;

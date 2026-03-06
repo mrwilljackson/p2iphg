@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
       }
       // Fallback to Event linked field if airtable_event_id not present
       if (!eventAirtableId) {
-        eventAirtableId = record.fields['Event']?.[0] || null;
+        eventAirtableId = record.fields['Event']?.[0] || undefined;
       }
 
       const eventName = eventAirtableId
@@ -189,7 +189,7 @@ export async function POST(request: NextRequest) {
         }
         // Fallback to Event linked field if airtable_event_id not present
         if (!eventAirtableId) {
-          eventAirtableId = record.fields['Event']?.[0] || null;
+          eventAirtableId = record.fields['Event']?.[0] || undefined;
         }
 
         const eventName = eventAirtableId
@@ -204,7 +204,7 @@ export async function POST(request: NextRequest) {
         }
 
         const organizationData = {
-          eventAirtableId,
+          eventAirtableId: eventAirtableId ?? null,
           eventName,
           name: orgName,  // UK spelling
           groupType: record.fields['Group Type'] || 'Other',

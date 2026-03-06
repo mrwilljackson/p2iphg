@@ -103,3 +103,4 @@ secrets.txt
 exports/*.csv
 reports/*.csv
 
+software/nextjs/build-result.txt

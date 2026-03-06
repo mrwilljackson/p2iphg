@@ -323,6 +323,19 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
     );
   }
 
+  if (!currentEvent) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
+        <div className="text-4xl mb-4">⚠️</div>
+        <h2 className="text-xl font-semibold text-orange-600 mb-2">
+          No Active Event
+        </h2>
+        <p className="text-gray-600">There is no active event set up for registration.</p>
+        <p className="text-gray-500 text-sm mt-2">Please ask an administrator to set an event as active.</p>
+      </div>
+    );
+  }
+
   if (submitSuccess) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] text-center">

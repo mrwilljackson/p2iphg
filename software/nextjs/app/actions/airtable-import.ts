@@ -2,7 +2,17 @@
 
 import { db } from "@/lib/db/client";
 import { events, volunteers, organizations } from "@/lib/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
+
+const VALID_GROUP_TYPES = ['Family', 'Disability', 'Corporate', 'Sporting', 'Community', 'Educational', 'Other'] as const;
+type GroupType = typeof VALID_GROUP_TYPES[number];
+
+function normalizeGroupType(value: string | undefined | null): GroupType {
+  if (value && (VALID_GROUP_TYPES as readonly string[]).includes(value)) {
+    return value as GroupType;
+  }
+  return 'Other';
+}
 
 interface ImportEventData {
   name: string;
@@ -349,7 +359,7 @@ export async function importOrganizationToNeon(organizationData: ImportOrganizat
         .set({
           eventId,
           name: organizationData.name,
-          groupType: organizationData.groupType,
+          groupType: normalizeGroupType(organizationData.groupType),
           expectedGroupSize: organizationData.expectedGroupSize,
           contactFirstName: organizationData.contactFirstName,
           contactLastName: organizationData.contactLastName,
@@ -373,7 +383,7 @@ export async function importOrganizationToNeon(organizationData: ImportOrganizat
         .values({
           eventId,
           name: organizationData.name,
-          groupType: organizationData.groupType,
+          groupType: normalizeGroupType(organizationData.groupType),
           expectedGroupSize: organizationData.expectedGroupSize,
           contactFirstName: organizationData.contactFirstName,
           contactLastName: organizationData.contactLastName,
