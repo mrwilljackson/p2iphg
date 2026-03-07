@@ -634,125 +634,126 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
               </p>
             )}
 
-            {/* Existing group leader notice - shown when another leader from same org has already registered */}
-            {selectedRole === "Group" && shouldShowSection("groupLeaderParticipation") && existingLeaderInfo?.hasExistingLeaders && (
-              <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p className="text-sm font-semibold text-blue-800 mb-2">
-                  ℹ️ This organisation already has a group registration
-                </p>
-                <div className="text-sm text-blue-700 mb-3">
-                  {existingLeaderInfo.leaders.map((leader, i) => (
-                    <p key={i}>
-                      <strong>{leader.name}</strong> has registered {leader.groupSize} participant{leader.groupSize !== 1 ? 's' : ''}
-                    </p>
-                  ))}
-                  <p className="mt-1 font-medium">
-                    Total participants already registered: {existingLeaderInfo.totalParticipantsRegistered}
-                  </p>
-                </div>
-                <p className="text-sm text-blue-800 font-medium mb-2">What would you like to do?</p>
-                <div className="space-y-2">
-                  <label className="flex items-center space-x-2 border border-blue-300 rounded-lg p-3 cursor-pointer hover:bg-blue-100 bg-white">
-                    <input
-                      type="radio"
-                      name="additionalLeaderChoice"
-                      value="additional_leader"
-                      checked={additionalLeaderChoice === 'additional_leader'}
-                      onChange={() => {
-                        setAdditionalLeaderChoice('additional_leader');
-                        // Set groupSize to 0 — no additional participants
-                        form.setValue('groupSize', 0);
-                        form.setValue('disabledStudents', 0);
-                        form.setValue('senStudents', 0);
-                      }}
-                      className="accent-blue-600"
-                    />
-                    <div className="flex-1">
-                      <span className="font-medium">Register as additional leader only</span>
-                      <p className="text-xs text-gray-500 mt-0.5">No extra participants — they are already counted</p>
-                    </div>
-                  </label>
-                  <label className="flex items-center space-x-2 border border-blue-300 rounded-lg p-3 cursor-pointer hover:bg-blue-100 bg-white">
-                    <input
-                      type="radio"
-                      name="additionalLeaderChoice"
-                      value="additional_participants"
-                      checked={additionalLeaderChoice === 'additional_participants'}
-                      onChange={() => {
-                        setAdditionalLeaderChoice('additional_participants');
-                        // Clear the auto-set values so user can enter their own
-                        form.setValue('groupSize', undefined);
-                        form.setValue('disabledStudents', undefined);
-                        form.setValue('senStudents', undefined);
-                      }}
-                      className="accent-blue-600"
-                    />
-                    <div className="flex-1">
-                      <span className="font-medium">Register additional participants</span>
-                      <p className="text-xs text-gray-500 mt-0.5">I&apos;m bringing more people from this organisation</p>
-                    </div>
-                  </label>
-                </div>
-              </div>
-            )}
-
-            {/* Group Leader Participation - For Group role only - Step 2 */}
-            {selectedRole === "Group" && shouldShowSection("groupLeaderParticipation") && (
-              <FormField
-                control={form.control}
-                name="groupLeaderParticipating"
-                render={({ field }) => (
-                  <FormItem className="mt-4">
-                    <FormLabel>Will you be participating in the games?</FormLabel>
-                    <FormControl>
-                      <RadioGroup
-                        onValueChange={(value) => field.onChange(value === "true")}
-                        value={field.value === undefined ? undefined : field.value ? "true" : "false"}
-                        className="space-y-2"
-                      >
-                        <label className="flex items-center space-x-2 border rounded-lg p-3 cursor-pointer hover:bg-gray-50">
-                          <RadioGroupItem value="true" id="participating-yes" />
-                          <div className="flex-1">I will be joining in the games as a participant</div>
-                        </label>
-                        <label className="flex items-center space-x-2 border rounded-lg p-3 cursor-pointer hover:bg-gray-50">
-                          <RadioGroupItem value="false" id="participating-no" />
-                          <div className="flex-1">I will not be taking part in the games</div>
-                        </label>
-                      </RadioGroup>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-
-            {/* Group Size Field - For NON-Disability/NON-Family Groups - Show after name fields - Step 2 for Group */}
-            {selectedRole === "Group" && shouldShowSection("groupDetails") && !shouldShowImpairmentFields && additionalLeaderChoice !== 'additional_leader' && isFieldVisible("groupSize", selectedRole) && (
-              <FormField
-                control={form.control}
-                name="groupSize"
-                render={({ field }) => (
-                  <FormItem className="mt-4">
-                    <FormLabel>How many participants are in your group (not including yourself)? *</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        min="1"
-                        max="999"
-                        placeholder="e.g., 25"
-                        value={field.value ?? ""}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          field.onChange(value === "" ? undefined : parseInt(value, 10));
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
           </>
+        )}
+
+        {/* Existing group leader notice - shown when another leader from same org has already registered */}
+        {selectedRole === "Group" && shouldShowSection("groupLeaderParticipation") && existingLeaderInfo?.hasExistingLeaders && (
+          <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <p className="text-sm font-semibold text-blue-800 mb-2">
+              ℹ️ This organisation already has a group registration
+            </p>
+            <div className="text-sm text-blue-700 mb-3">
+              {existingLeaderInfo.leaders.map((leader, i) => (
+                <p key={i}>
+                  <strong>{leader.name}</strong> has registered {leader.groupSize} participant{leader.groupSize !== 1 ? 's' : ''}
+                </p>
+              ))}
+              <p className="mt-1 font-medium">
+                Total participants already registered: {existingLeaderInfo.totalParticipantsRegistered}
+              </p>
+            </div>
+            <p className="text-sm text-blue-800 font-medium mb-2">What would you like to do?</p>
+            <div className="space-y-2">
+              <label className="flex items-center space-x-2 border border-blue-300 rounded-lg p-3 cursor-pointer hover:bg-blue-100 bg-white">
+                <input
+                  type="radio"
+                  name="additionalLeaderChoice"
+                  value="additional_leader"
+                  checked={additionalLeaderChoice === 'additional_leader'}
+                  onChange={() => {
+                    setAdditionalLeaderChoice('additional_leader');
+                    // Set groupSize to 0 — no additional participants
+                    form.setValue('groupSize', 0);
+                    form.setValue('disabledStudents', 0);
+                    form.setValue('senStudents', 0);
+                  }}
+                  className="accent-blue-600"
+                />
+                <div className="flex-1">
+                  <span className="font-medium">Register as additional leader only</span>
+                  <p className="text-xs text-gray-500 mt-0.5">No extra participants — they are already counted</p>
+                </div>
+              </label>
+              <label className="flex items-center space-x-2 border border-blue-300 rounded-lg p-3 cursor-pointer hover:bg-blue-100 bg-white">
+                <input
+                  type="radio"
+                  name="additionalLeaderChoice"
+                  value="additional_participants"
+                  checked={additionalLeaderChoice === 'additional_participants'}
+                  onChange={() => {
+                    setAdditionalLeaderChoice('additional_participants');
+                    // Clear the auto-set values so user can enter their own
+                    form.setValue('groupSize', undefined);
+                    form.setValue('disabledStudents', undefined);
+                    form.setValue('senStudents', undefined);
+                  }}
+                  className="accent-blue-600"
+                />
+                <div className="flex-1">
+                  <span className="font-medium">Register additional participants</span>
+                  <p className="text-xs text-gray-500 mt-0.5">I&apos;m bringing more people from this organisation</p>
+                </div>
+              </label>
+            </div>
+          </div>
+        )}
+
+        {/* Group Leader Participation - For Group role only - Step 2 */}
+        {selectedRole === "Group" && shouldShowSection("groupLeaderParticipation") && (
+          <FormField
+            control={form.control}
+            name="groupLeaderParticipating"
+            render={({ field }) => (
+              <FormItem className="mt-4">
+                <FormLabel>Will you be participating in the games?</FormLabel>
+                <FormControl>
+                  <RadioGroup
+                    onValueChange={(value) => field.onChange(value === "true")}
+                    value={field.value === undefined ? undefined : field.value ? "true" : "false"}
+                    className="space-y-2"
+                  >
+                    <label className="flex items-center space-x-2 border rounded-lg p-3 cursor-pointer hover:bg-gray-50">
+                      <RadioGroupItem value="true" id="participating-yes" />
+                      <div className="flex-1">I will be joining in the games as a participant</div>
+                    </label>
+                    <label className="flex items-center space-x-2 border rounded-lg p-3 cursor-pointer hover:bg-gray-50">
+                      <RadioGroupItem value="false" id="participating-no" />
+                      <div className="flex-1">I will not be taking part in the games</div>
+                    </label>
+                  </RadioGroup>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+
+        {/* Group Size Field - For NON-Disability/NON-Family Groups - Show after name fields - Step 2 for Group */}
+        {selectedRole === "Group" && shouldShowSection("groupDetails") && !shouldShowImpairmentFields && additionalLeaderChoice !== 'additional_leader' && isFieldVisible("groupSize", selectedRole) && (
+          <FormField
+            control={form.control}
+            name="groupSize"
+            render={({ field }) => (
+              <FormItem className="mt-4">
+                <FormLabel>How many participants are in your group (not including yourself)? *</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    min="1"
+                    max="999"
+                    placeholder="e.g., 25"
+                    value={field.value ?? ""}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      field.onChange(value === "" ? undefined : parseInt(value, 10));
+                    }}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         )}
 
         {/* Email - For Volunteer role only */}
