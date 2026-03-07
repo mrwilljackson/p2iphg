@@ -51,16 +51,6 @@ function TestFormContentInner({ currentEvent }: TestFormContentProps) {
 
       {/* Main Content */}
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        {/* Test Page Notice */}
-        <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
-          <p className="text-sm text-blue-800 font-medium">
-            ✅ Registration form connected to online PHG database
-          </p>
-          <p className="text-xs text-blue-600 mt-1">
-            (No Airtable sync yet)
-          </p>
-        </div>
-
         {/* Form Card */}
         <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 sm:p-8">
           <RegistrationForm preselectedRole={preselectedRole} />
