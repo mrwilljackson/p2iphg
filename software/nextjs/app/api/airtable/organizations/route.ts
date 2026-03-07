@@ -99,7 +99,7 @@ export async function GET(request: NextRequest) {
 
       return {
         airtableRecordId: record.id,
-        eventAirtableId,
+        eventAirtableId: eventAirtableId ?? null,
         eventName,
         name: orgName,  // UK spelling
         groupType: record.fields['Group Type'] || 'Other',

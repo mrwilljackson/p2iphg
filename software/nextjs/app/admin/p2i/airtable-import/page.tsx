@@ -40,6 +40,20 @@ interface AirtableOrganization {
   notes: string | null;
 }
 
+interface AirtableOrganisationContact {
+  airtableRecordId: string;
+  organisationId: string | null;
+  organisationName: string | null;
+  airtableEventId: string | null;
+  groupType: string | null;
+  contactFirstName: string | null;
+  contactLastName: string | null;
+  contactEmail: string | null;
+  contactPhone: string | null;
+  expectedGroupSize: string | null;
+  notes: string | null;
+}
+
 export default function AirtableImportPage() {
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -68,6 +82,18 @@ export default function AirtableImportPage() {
   const [isImportingOrganizations, setIsImportingOrganizations] = useState(false);
   const [organizationsError, setOrganizationsError] = useState<string | null>(null);
   const [organizationsSuccess, setOrganizationsSuccess] = useState<string | null>(null);
+
+  // Organisation Contacts state
+  const [availableContacts, setAvailableContacts] = useState<AirtableOrganisationContact[]>([]);
+  const [selectedContactIds, setSelectedContactIds] = useState<string[]>([]);
+  const [isFetchingContacts, setIsFetchingContacts] = useState(false);
+  const [isImportingContacts, setIsImportingContacts] = useState(false);
+  const [contactsError, setContactsError] = useState<string | null>(null);
+  const [contactsSuccess, setContactsSuccess] = useState<string | null>(null);
+
+  // Event filter state — set when user imports an event
+  const [filterEventAirtableId, setFilterEventAirtableId] = useState<string | null>(null);
+  const [filterEventName, setFilterEventName] = useState<string | null>(null);
 
   useEffect(() => {
     // Check if user is authenticated as P2I Admin
@@ -162,6 +188,15 @@ export default function AirtableImportPage() {
         setEventsError(`Some imports failed: ${errorMsg}`);
       }
 
+      // Auto-set the event filter to the first imported event
+      if (selectedEventIds.length > 0) {
+        const importedEvent = availableEvents.find(e => e.airtableRecordId === selectedEventIds[0]);
+        if (importedEvent) {
+          setFilterEventAirtableId(importedEvent.airtableRecordId);
+          setFilterEventName(importedEvent.name);
+        }
+      }
+
       setSelectedEventIds([]);
       // Optionally refresh the list
       // handleFetchEvents();
@@ -171,6 +206,43 @@ export default function AirtableImportPage() {
       setIsImportingEvents(false);
     }
   };
+
+  // Clear event filter
+  const handleClearEventFilter = () => {
+    setFilterEventAirtableId(null);
+    setFilterEventName(null);
+  };
+
+  // Set event filter from a fetched event (without importing)
+  const handleSetEventFilter = (event: AirtableEvent) => {
+    setFilterEventAirtableId(event.airtableRecordId);
+    setFilterEventName(event.name);
+  };
+
+  // Computed filtered lists — filter by selected event, or show all if no filter
+  // Contacts filter directly by their airtableEventId
+  const filteredContacts = filterEventAirtableId
+    ? availableContacts.filter(c => c.airtableEventId === filterEventAirtableId)
+    : availableContacts;
+
+  // Organisations don't have a direct event link — use the contacts to find
+  // which org airtable record IDs are associated with the selected event
+  const filteredOrganizations = filterEventAirtableId
+    ? (() => {
+        const orgIdsForEvent = new Set(
+          filteredContacts
+            .map(c => c.organisationId)
+            .filter(Boolean)
+        );
+        console.log('🔍 Filter debug — orgIdsForEvent:', [...orgIdsForEvent]);
+        console.log('🔍 Filter debug — org airtableRecordIds:', availableOrganizations.map(o => o.airtableRecordId));
+        return availableOrganizations.filter(o => orgIdsForEvent.has(o.airtableRecordId));
+      })()
+    : availableOrganizations;
+
+  const filteredVolunteers = filterEventAirtableId
+    ? availableVolunteers.filter(v => v.eventAirtableId === filterEventAirtableId)
+    : availableVolunteers;
 
   // Fetch available volunteers from Airtable
   const handleFetchVolunteers = async () => {
@@ -342,6 +414,89 @@ export default function AirtableImportPage() {
     }
   };
 
+  // Fetch available organisation contacts from Airtable
+  const handleFetchContacts = async () => {
+    setIsFetchingContacts(true);
+    setContactsError(null);
+    setContactsSuccess(null);
+    setAvailableContacts([]);
+    setSelectedContactIds([]);
+
+    try {
+      const response = await fetch('/api/airtable/organisation-contacts');
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch organisation contacts');
+      }
+
+      setAvailableContacts(data.contacts);
+      setContactsSuccess(`Found ${data.count} organisation contact(s) in Airtable`);
+    } catch (error) {
+      setContactsError(error instanceof Error ? error.message : 'Failed to fetch organisation contacts');
+    } finally {
+      setIsFetchingContacts(false);
+    }
+  };
+
+  // Toggle contact selection
+  const handleToggleContact = (contactId: string) => {
+    setSelectedContactIds(prev =>
+      prev.includes(contactId)
+        ? prev.filter(id => id !== contactId)
+        : [...prev, contactId]
+    );
+  };
+
+  // Import selected organisation contacts
+  const handleImportContacts = async () => {
+    if (selectedContactIds.length === 0) {
+      setContactsError('Please select at least one contact to import');
+      return;
+    }
+
+    setIsImportingContacts(true);
+    setContactsError(null);
+    setContactsSuccess(null);
+
+    try {
+      const response = await fetch('/api/airtable/organisation-contacts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ contactIds: selectedContactIds }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to import organisation contacts');
+      }
+
+      const messages = [];
+      if (data.created > 0) messages.push(`${data.created} created`);
+      if (data.updated > 0) messages.push(`${data.updated} updated`);
+      if (data.failed > 0) messages.push(`${data.failed} failed`);
+
+      const successMsg = `✅ Import complete: ${messages.join(', ')}`;
+      setContactsSuccess(successMsg);
+
+      if (data.errors && data.errors.length > 0) {
+        const errorMsg = data.errors
+          .map((e: any) => `${e.contactName}: ${e.error}`)
+          .join('; ');
+        setContactsError(`Some imports failed: ${errorMsg}`);
+      }
+
+      setSelectedContactIds([]);
+    } catch (error) {
+      setContactsError(error instanceof Error ? error.message : 'Failed to import organisation contacts');
+    } finally {
+      setIsImportingContacts(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -376,6 +531,26 @@ export default function AirtableImportPage() {
           </div>
         </div>
       </header>
+
+      {/* Event Filter Banner */}
+      {filterEventAirtableId && filterEventName && (
+        <div className="bg-blue-50 border-b border-blue-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
+            <p className="text-sm text-blue-800">
+              🔍 <strong>Filtering by event:</strong> {filterEventName}
+              <span className="text-xs text-blue-600 ml-2">({filterEventAirtableId})</span>
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleClearEventFilter}
+              className="text-blue-700 border-blue-300 hover:bg-blue-100"
+            >
+              ✕ Clear Filter
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -447,15 +622,28 @@ export default function AirtableImportPage() {
                             ID: {event.airtableRecordId}
                           </p>
                         </div>
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                          event.status === 'active'
-                            ? 'bg-green-100 text-green-800'
-                            : event.status === 'planned'
-                            ? 'bg-blue-100 text-blue-800'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {event.status}
-                        </span>
+                        <div className="flex flex-col items-end gap-1">
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                            event.status === 'active'
+                              ? 'bg-green-100 text-green-800'
+                              : event.status === 'planned'
+                              ? 'bg-blue-100 text-blue-800'
+                              : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {event.status}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className={`text-xs ${filterEventAirtableId === event.airtableRecordId ? 'text-blue-700 font-semibold' : 'text-gray-500'}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSetEventFilter(event);
+                            }}
+                          >
+                            {filterEventAirtableId === event.airtableRecordId ? '✓ Filtering' : '🔍 Use as Filter'}
+                          </Button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -499,9 +687,9 @@ export default function AirtableImportPage() {
           {/* Import Organizations */}
           <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
             <div className="mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">🏢 Import Organizations</h2>
+              <h2 className="text-xl font-semibold text-gray-900">🏢 Import Organisations</h2>
               <p className="text-sm text-gray-600 mt-1">
-                Import organization data from Airtable Organizations table
+                Import organisation data from Airtable Organisations table
               </p>
             </div>
             <div className="space-y-4">
@@ -527,13 +715,18 @@ export default function AirtableImportPage() {
               )}
 
               {/* Step 2: Select Organizations */}
-              {availableOrganizations.length > 0 && (
+              {filteredOrganizations.length > 0 && (
                 <div className="border border-gray-200 rounded-md p-4 max-h-96 overflow-y-auto">
                   <h3 className="font-semibold text-gray-900 mb-3">
                     2. Select Organizations to Import ({selectedOrganizationIds.length} selected)
+                    {filterEventAirtableId && (
+                      <span className="text-xs text-blue-600 font-normal ml-2">
+                        — showing {filteredOrganizations.length} of {availableOrganizations.length}
+                      </span>
+                    )}
                   </h3>
                   <div className="space-y-2">
-                    {availableOrganizations.map((organization) => (
+                    {filteredOrganizations.map((organization) => (
                       <div
                         key={organization.airtableRecordId}
                         className="flex items-start space-x-3 p-3 hover:bg-gray-50 rounded-md border border-gray-100"
@@ -571,7 +764,7 @@ export default function AirtableImportPage() {
               )}
 
               {/* Step 3: Import Button */}
-              {availableOrganizations.length > 0 && (
+              {filteredOrganizations.length > 0 && (
                 <Button
                   onClick={handleImportOrganizations}
                   disabled={selectedOrganizationIds.length === 0 || isImportingOrganizations}
@@ -581,6 +774,104 @@ export default function AirtableImportPage() {
                   {isImportingOrganizations
                     ? '⏳ Importing...'
                     : `3. Import ${selectedOrganizationIds.length} Selected Organization(s) to Neon`
+                  }
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Import Organisation Contacts */}
+          <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
+            <div className="mb-4">
+              <h2 className="text-xl font-semibold text-gray-900">📇 Import Organisation Contacts</h2>
+              <p className="text-sm text-gray-600 mt-1">
+                Import organisation contact data from Airtable Organisation Contacts table
+              </p>
+            </div>
+            <div className="space-y-4">
+              {/* Step 1: Fetch Contacts */}
+              <Button
+                onClick={handleFetchContacts}
+                disabled={isFetchingContacts}
+                className="w-full"
+              >
+                {isFetchingContacts ? '⏳ Fetching...' : '1. Fetch Organisation Contacts from Airtable'}
+              </Button>
+
+              {/* Success/Error Messages */}
+              {contactsSuccess && (
+                <div className="p-3 bg-green-50 border border-green-200 rounded-md text-sm text-green-800">
+                  {contactsSuccess}
+                </div>
+              )}
+              {contactsError && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-800">
+                  {contactsError}
+                </div>
+              )}
+
+              {/* Step 2: Select Contacts */}
+              {filteredContacts.length > 0 && (
+                <div className="border border-gray-200 rounded-md p-4 max-h-96 overflow-y-auto">
+                  <h3 className="font-semibold text-gray-900 mb-3">
+                    2. Select Contacts to Import ({selectedContactIds.length} selected)
+                    {filterEventAirtableId && (
+                      <span className="text-xs text-blue-600 font-normal ml-2">
+                        — showing {filteredContacts.length} of {availableContacts.length}
+                      </span>
+                    )}
+                  </h3>
+                  <div className="space-y-2">
+                    {filteredContacts.map((contact) => (
+                      <div
+                        key={contact.airtableRecordId}
+                        className="flex items-start space-x-3 p-3 hover:bg-gray-50 rounded-md border border-gray-100"
+                      >
+                        <Checkbox
+                          checked={selectedContactIds.includes(contact.airtableRecordId)}
+                          onCheckedChange={() => handleToggleContact(contact.airtableRecordId)}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-gray-900">
+                            {contact.contactFirstName} {contact.contactLastName}
+                          </div>
+                          {contact.contactEmail && (
+                            <div className="text-sm text-gray-600">{contact.contactEmail}</div>
+                          )}
+                          {contact.contactPhone && (
+                            <div className="text-sm text-gray-500">📞 {contact.contactPhone}</div>
+                          )}
+                          {contact.expectedGroupSize && (
+                            <div className="text-sm text-gray-500">
+                              Expected group size: {contact.expectedGroupSize}
+                            </div>
+                          )}
+                          {contact.organisationId && (
+                            <div className="text-xs text-gray-400">
+                              Org ID: {contact.organisationId}
+                            </div>
+                          )}
+                          <div className="text-xs text-gray-400 mt-1">
+                            Contact ID: {contact.airtableRecordId}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Step 3: Import Button */}
+              {filteredContacts.length > 0 && (
+                <Button
+                  onClick={handleImportContacts}
+                  disabled={selectedContactIds.length === 0 || isImportingContacts}
+                  className="w-full"
+                  variant={selectedContactIds.length > 0 ? "default" : "secondary"}
+                >
+                  {isImportingContacts
+                    ? '⏳ Importing...'
+                    : `3. Import ${selectedContactIds.length} Selected Contact(s) to Neon`
                   }
                 </Button>
               )}
@@ -618,13 +909,18 @@ export default function AirtableImportPage() {
               )}
 
               {/* Step 2: Select Volunteers */}
-              {availableVolunteers.length > 0 && (
+              {filteredVolunteers.length > 0 && (
                 <div className="border border-gray-200 rounded-md p-4 max-h-96 overflow-y-auto">
                   <h3 className="font-semibold text-gray-900 mb-3">
                     2. Select Volunteers to Import ({selectedVolunteerIds.length} selected)
+                    {filterEventAirtableId && (
+                      <span className="text-xs text-blue-600 font-normal ml-2">
+                        — showing {filteredVolunteers.length} of {availableVolunteers.length}
+                      </span>
+                    )}
                   </h3>
                   <div className="space-y-2">
-                    {availableVolunteers.map((volunteer) => (
+                    {filteredVolunteers.map((volunteer) => (
                       <div
                         key={volunteer.airtableRecordId}
                         className="flex items-start space-x-3 p-3 hover:bg-gray-50 rounded-md border border-gray-100"
@@ -655,7 +951,7 @@ export default function AirtableImportPage() {
               )}
 
               {/* Step 3: Import Button */}
-              {availableVolunteers.length > 0 && (
+              {filteredVolunteers.length > 0 && (
                 <Button
                   onClick={handleImportVolunteers}
                   disabled={selectedVolunteerIds.length === 0 || isImportingVolunteers}

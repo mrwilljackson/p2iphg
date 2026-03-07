@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db/client";
-import { events, volunteers, organizations } from "@/lib/db/schema";
+import { events, volunteers, organisations, organisationContacts } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 
 const VALID_GROUP_TYPES = ['Family', 'Disability', 'Corporate', 'Sporting', 'Community', 'Educational', 'Other'] as const;
@@ -95,7 +95,7 @@ export async function importMultipleEventsToNeon(eventsData: ImportEventData[]) 
 
   for (const eventData of eventsData) {
     const result = await importEventToNeon(eventData);
-    
+
     if (result.success) {
       if (result.action === 'created') {
         results.created++;
@@ -293,115 +293,55 @@ interface ImportOrganizationData {
 
 export async function importOrganizationToNeon(organizationData: ImportOrganizationData) {
   try {
-    console.log('Importing organization with data:', JSON.stringify(organizationData, null, 2));
+    console.log('Importing organisation with data:', JSON.stringify(organizationData, null, 2));
 
-    // First, find the event by Airtable Record ID (preferred) or name (fallback)
-    let eventRecords;
-
-    if (organizationData.eventAirtableId) {
-      // Try to find event by Airtable Record ID (most reliable)
-      console.log(`Looking for event by Airtable ID: "${organizationData.eventAirtableId}"`);
-      eventRecords = await db
-        .select()
-        .from(events)
-        .where(eq(events.airtableRecordId, organizationData.eventAirtableId))
-        .limit(1);
-
-      console.log(`Found ${eventRecords.length} event(s) by Airtable ID`);
-      if (eventRecords.length > 0) {
-        console.log('Matched event:', JSON.stringify(eventRecords[0], null, 2));
-      }
-    }
-
-    // Fallback to name matching if no Airtable ID or not found
-    if (!eventRecords || eventRecords.length === 0) {
-      console.log(`Looking for event by name: "${organizationData.eventName}"`);
-      eventRecords = await db
-        .select()
-        .from(events)
-        .where(eq(events.name, organizationData.eventName))
-        .limit(1);
-
-      console.log(`Found ${eventRecords.length} event(s) by name`);
-      if (eventRecords.length > 0) {
-        console.log('Matched event:', JSON.stringify(eventRecords[0], null, 2));
-      }
-    }
-
-    if (eventRecords.length === 0) {
-      // Get all events to help debug
-      const allEvents = await db
-        .select({ name: events.name, airtableRecordId: events.airtableRecordId })
-        .from(events);
-      const availableEvents = allEvents
-        .map(e => `"${e.name}" (${e.airtableRecordId || 'no ID'})`)
-        .join(', ');
-
-      return {
-        success: false,
-        error: `Event not found: "${organizationData.eventName}" (Airtable ID: ${organizationData.eventAirtableId || 'none'}). Available events: ${availableEvents || 'none'}`,
-      };
-    }
-
-    const eventId = eventRecords[0].id;
-
-    // Check if organization already exists by airtableRecordId
-    const existingOrganization = await db
+    // Check if organisation already exists by airtableRecordId in the UK table
+    const existingOrganisation = await db
       .select()
-      .from(organizations)
-      .where(eq(organizations.airtableRecordId, organizationData.airtableRecordId))
+      .from(organisations)
+      .where(eq(organisations.airtableRecordId, organizationData.airtableRecordId))
       .limit(1);
 
-    if (existingOrganization.length > 0) {
-      // Organization already exists - update it
-      const [updatedOrganization] = await db
-        .update(organizations)
+    if (existingOrganisation.length > 0) {
+      // Organisation already exists - update it
+      const [updated] = await db
+        .update(organisations)
         .set({
-          eventId,
           name: organizationData.name,
           groupType: normalizeGroupType(organizationData.groupType),
-          expectedGroupSize: organizationData.expectedGroupSize,
-          contactFirstName: organizationData.contactFirstName,
-          contactLastName: organizationData.contactLastName,
-          contactEmail: organizationData.contactEmail,
-          contactPhone: organizationData.contactPhone,
-          notes: organizationData.notes,
+          airtableEventId: organizationData.eventAirtableId,
           modifiedAt: new Date(),
         })
-        .where(eq(organizations.airtableRecordId, organizationData.airtableRecordId))
+        .where(eq(organisations.airtableRecordId, organizationData.airtableRecordId))
         .returning();
 
       return {
         success: true,
-        action: 'updated',
-        organization: updatedOrganization,
+        action: 'updated' as const,
+        organization: updated,
       };
     } else {
-      // Organization doesn't exist - create it
-      const [newOrganization] = await db
-        .insert(organizations)
+      // Organisation doesn't exist - create it
+      const [created] = await db
+        .insert(organisations)
         .values({
-          eventId,
           name: organizationData.name,
           groupType: normalizeGroupType(organizationData.groupType),
-          expectedGroupSize: organizationData.expectedGroupSize,
-          contactFirstName: organizationData.contactFirstName,
-          contactLastName: organizationData.contactLastName,
-          contactEmail: organizationData.contactEmail,
-          contactPhone: organizationData.contactPhone,
-          notes: organizationData.notes,
           airtableRecordId: organizationData.airtableRecordId,
+          airtableEventId: organizationData.eventAirtableId,
+          createdAt: new Date(),
+          modifiedAt: new Date(),
         })
         .returning();
 
       return {
         success: true,
-        action: 'created',
-        organization: newOrganization,
+        action: 'created' as const,
+        organization: created,
       };
     }
   } catch (error) {
-    console.error('Error importing organization to Neon:', error);
+    console.error('Error importing organisation to Neon:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -438,3 +378,117 @@ export async function importMultipleOrganizationsToNeon(organizationsData: Impor
   return results;
 }
 
+
+
+// ============================================================
+// ORGANISATION CONTACTS IMPORT
+// ============================================================
+
+interface ImportOrganisationContactData {
+  airtableRecordId: string;
+  organisationId: string | null;
+  airtableEventId: string | null;
+  contactFirstName: string | null;
+  contactLastName: string | null;
+  contactEmail: string | null;
+  contactPhone: string | null;
+  expectedGroupSize: string | null;
+  notes: string | null;
+}
+
+export async function importOrganisationContactToNeon(contactData: ImportOrganisationContactData) {
+  try {
+    console.log('Importing organisation contact with data:', JSON.stringify(contactData, null, 2));
+
+    // Check if contact already exists by airtableRecordId
+    const existing = await db
+      .select()
+      .from(organisationContacts)
+      .where(eq(organisationContacts.airtableRecordId, contactData.airtableRecordId))
+      .limit(1);
+
+    if (existing.length > 0) {
+      // Contact already exists - update it
+      const [updated] = await db
+        .update(organisationContacts)
+        .set({
+          organisationId: contactData.organisationId,
+          airtableEventId: contactData.airtableEventId,
+          contactFirstName: contactData.contactFirstName,
+          contactLastName: contactData.contactLastName,
+          contactEmail: contactData.contactEmail,
+          contactPhone: contactData.contactPhone,
+          expectedGroupSize: contactData.expectedGroupSize,
+          notes: contactData.notes,
+          modifiedAt: new Date(),
+        })
+        .where(eq(organisationContacts.airtableRecordId, contactData.airtableRecordId))
+        .returning();
+
+      return {
+        success: true,
+        action: 'updated' as const,
+        contact: updated,
+      };
+    } else {
+      // Contact doesn't exist - create it
+      const [created] = await db
+        .insert(organisationContacts)
+        .values({
+          organisationId: contactData.organisationId,
+          airtableEventId: contactData.airtableEventId,
+          contactFirstName: contactData.contactFirstName,
+          contactLastName: contactData.contactLastName,
+          contactEmail: contactData.contactEmail,
+          contactPhone: contactData.contactPhone,
+          expectedGroupSize: contactData.expectedGroupSize,
+          notes: contactData.notes,
+          airtableRecordId: contactData.airtableRecordId,
+          createdAt: new Date(),
+          modifiedAt: new Date(),
+        })
+        .returning();
+
+      return {
+        success: true,
+        action: 'created' as const,
+        contact: created,
+      };
+    }
+  } catch (error) {
+    console.error('Error importing organisation contact to Neon:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
+}
+
+export async function importMultipleOrganisationContactsToNeon(contactsData: ImportOrganisationContactData[]) {
+  const results = {
+    created: 0,
+    updated: 0,
+    failed: 0,
+    errors: [] as Array<{ contactName: string; error: string }>,
+  };
+
+  for (const contactData of contactsData) {
+    const result = await importOrganisationContactToNeon(contactData);
+
+    if (result.success) {
+      if (result.action === 'created') {
+        results.created++;
+      } else if (result.action === 'updated') {
+        results.updated++;
+      }
+    } else {
+      results.failed++;
+      results.errors.push({
+        contactName: `${contactData.contactFirstName || ''} ${contactData.contactLastName || ''}`.trim() || contactData.airtableRecordId,
+        error: result.error || 'Unknown error',
+      });
+    }
+  }
+
+  return results;
+}
