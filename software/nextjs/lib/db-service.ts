@@ -15,8 +15,9 @@
  */
 
 import { db } from './db/client';
-import { events, organizations, organisations, organisationContacts, volunteers, registrations } from './db/schema';
-import { eq, and, ilike, or, isNotNull } from 'drizzle-orm';
+import { events, organisations, organisationContacts, volunteers, registrations } from './db/schema';
+import { eq, and, ilike } from 'drizzle-orm';
+import { randomUUID } from 'crypto';
 import { Event, Organization, Volunteer, Registration } from './types';
 import { calculateParticipantCounts, type RegistrationForCounting, type ParticipantCounts } from './participant-counting';
 
@@ -140,12 +141,11 @@ export class DatabaseService {
 
   /**
    * Get organization by ID
-   * Checks both organisations (UK) and organizations (US) tables
+   * Queries the UK organisations table with joined contact details
    */
   static async getOrganizationById(id: string): Promise<Organization | null> {
     try {
-      // Try UK table first
-      const ukResult = await db
+      const result = await db
         .select({
           org: organisations,
           contact: organisationContacts,
@@ -158,18 +158,11 @@ export class DatabaseService {
         .where(eq(organisations.id, id))
         .limit(1);
 
-      if (ukResult[0]) {
-        return mapOrganisationToOrganization(ukResult[0].org, ukResult[0].contact);
+      if (result[0]) {
+        return mapOrganisationToOrganization(result[0].org, result[0].contact);
       }
 
-      // Fall back to US table (for family groups created on-the-day)
-      const usResult = await db
-        .select()
-        .from(organizations)
-        .where(eq(organizations.id, id))
-        .limit(1);
-
-      return usResult[0] ? mapOrganizationFromDb(usResult[0]) : null;
+      return null;
     } catch (error) {
       console.error('Error fetching organization by ID:', error);
       throw error;
@@ -334,26 +327,23 @@ export class DatabaseService {
 
   /**
    * Get all registrations for a specific event
-   * Returns basic fields for list view including organization name
-   * Checks both organisations (UK) and organizations (US) tables for the org name
+   * Returns basic fields for list view including organization name from UK organisations table
    */
   static async getAllRegistrations(eventId: string): Promise<Registration[]> {
     try {
       const result = await db
         .select({
           registration: registrations,
-          ukOrgName: organisations.name,
-          usOrgName: organizations.name,
+          orgName: organisations.name,
         })
         .from(registrations)
         .leftJoin(organisations, eq(registrations.organizationId, organisations.id))
-        .leftJoin(organizations, eq(registrations.organizationId, organizations.id))
         .where(eq(registrations.eventId, eventId))
         .orderBy(registrations.createdAt);
 
       return result.map(row => ({
         ...mapRegistrationFromDb(row.registration),
-        organizationName: row.ukOrgName || row.usOrgName || undefined,
+        organizationName: row.orgName || undefined,
       }));
     } catch (error) {
       console.error('Error fetching all registrations:', error);
@@ -370,12 +360,10 @@ export class DatabaseService {
       const result = await db
         .select({
           registration: registrations,
-          ukOrgName: organisations.name,
-          usOrgName: organizations.name,
+          orgName: organisations.name,
         })
         .from(registrations)
         .leftJoin(organisations, eq(registrations.organizationId, organisations.id))
-        .leftJoin(organizations, eq(registrations.organizationId, organizations.id))
         .where(
           and(
             eq(registrations.eventId, eventId),
@@ -386,7 +374,7 @@ export class DatabaseService {
 
       return result.map(row => ({
         ...mapRegistrationFromDb(row.registration),
-        organizationName: row.ukOrgName || row.usOrgName || undefined,
+        organizationName: row.orgName || undefined,
       }));
     } catch (error) {
       console.error('Error fetching registrations by organization:', error);
@@ -403,12 +391,10 @@ export class DatabaseService {
       const result = await db
         .select({
           registration: registrations,
-          ukOrgName: organisations.name,
-          usOrgName: organizations.name,
+          orgName: organisations.name,
         })
         .from(registrations)
         .leftJoin(organisations, eq(registrations.organizationId, organisations.id))
-        .leftJoin(organizations, eq(registrations.organizationId, organizations.id))
         .where(eq(registrations.id, id))
         .limit(1);
 
@@ -416,7 +402,7 @@ export class DatabaseService {
 
       return {
         ...mapRegistrationFromDb(result[0].registration),
-        organizationName: result[0].ukOrgName || result[0].usOrgName || undefined,
+        organizationName: result[0].orgName || undefined,
       };
     } catch (error) {
       console.error('Error fetching registration by ID:', error);
@@ -460,23 +446,39 @@ export class DatabaseService {
 
   /**
    * Create a new organization (for admin use)
+   * Creates a record in the UK organisations table + organisation_contacts for contact details
    */
   static async createOrganization(data: Omit<Organization, 'id' | 'createdAt' | 'modifiedAt'>): Promise<Organization> {
     try {
-      const result = await db.insert(organizations).values({
-        eventId: data.eventId,
+      // Look up event's airtable_record_id for linking
+      const evt = data.eventId
+        ? await db.select().from(events).where(eq(events.id, data.eventId)).limit(1)
+        : [];
+      const eventAirtableId = evt[0]?.airtableRecordId ?? null;
+
+      // Generate a local record ID for linking org ↔ contacts (no Airtable ID yet)
+      const localRecordId = data.airtableRecordId || `local-${randomUUID()}`;
+
+      const [newOrg] = await db.insert(organisations).values({
         name: data.name,
         groupType: data.groupType || 'Other',
         imageUrl: data.imageUrl || null,
+        airtableRecordId: localRecordId,
+        airtableEventId: eventAirtableId,
+      }).returning();
+
+      // Create contact record
+      const [newContact] = await db.insert(organisationContacts).values({
+        organisationId: localRecordId,
+        airtableEventId: eventAirtableId,
         contactFirstName: data.contactFirstName || null,
         contactLastName: data.contactLastName || null,
         contactEmail: data.contactEmail || null,
         contactPhone: data.contactPhone || null,
         notes: data.notes || null,
-        airtableRecordId: data.airtableRecordId || null,
       }).returning();
 
-      return mapOrganizationFromDb(result[0]);
+      return mapOrganisationToOrganization(newOrg, newContact, data.eventId);
     } catch (error) {
       console.error('Error creating organization:', error);
       throw error;
@@ -484,10 +486,10 @@ export class DatabaseService {
   }
 
   /**
-   * Find or create a family group organization
-   * Family groups are unique by: name + eventId + contactEmail
+   * Find or create a family group organization in the UK organisations table
+   * Family groups are unique by: name + event + contactEmail
    *
-   * @param eventId - The event ID
+   * @param eventId - The event UUID
    * @param surname - The family surname (e.g., "Smith")
    * @param contactEmail - The group leader's email
    * @param contactFirstName - The group leader's first name
@@ -504,38 +506,55 @@ export class DatabaseService {
     try {
       const familyGroupName = `${surname} Family Group`;
 
-      // Check if this family group already exists for this event with this contact email
+      // Get event's airtable_record_id for linking to UK table's airtable_event_id
+      const evt = await db.select().from(events).where(eq(events.id, eventId)).limit(1);
+      const eventAirtableId = evt[0]?.airtableRecordId ?? null;
+
+      // Check if this family group already exists in the UK organisations table
       const existing = await db
-        .select()
-        .from(organizations)
+        .select({ org: organisations, contact: organisationContacts })
+        .from(organisations)
+        .leftJoin(
+          organisationContacts,
+          eq(organisations.airtableRecordId, organisationContacts.organisationId)
+        )
         .where(
           and(
-            eq(organizations.eventId, eventId),
-            eq(organizations.name, familyGroupName),
-            eq(organizations.contactEmail, contactEmail)
+            eq(organisations.name, familyGroupName),
+            eventAirtableId ? eq(organisations.airtableEventId, eventAirtableId) : undefined,
           )
-        )
-        .limit(1);
+        );
 
-      if (existing.length > 0) {
-        return mapOrganizationFromDb(existing[0]);
+      // Match by contact email to deduplicate
+      const matchByEmail = existing.find(r => r.contact?.contactEmail === contactEmail);
+      if (matchByEmail) {
+        return mapOrganisationToOrganization(matchByEmail.org, matchByEmail.contact, eventId);
       }
 
-      // Create new family group organization
-      const result = await db.insert(organizations).values({
-        eventId: eventId,
+      // Create new family group in UK organisations table
+      // Use a local-{uuid} as airtable_record_id to link org ↔ contacts
+      const localRecordId = `local-${randomUUID()}`;
+
+      const [newOrg] = await db.insert(organisations).values({
         name: familyGroupName,
         groupType: 'Family',
         imageUrl: null,
+        airtableRecordId: localRecordId,
+        airtableEventId: eventAirtableId,
+      }).returning();
+
+      // Create contact record linked via the local record ID
+      const [newContact] = await db.insert(organisationContacts).values({
+        organisationId: localRecordId,
+        airtableEventId: eventAirtableId,
         contactFirstName: contactFirstName,
         contactLastName: contactLastName,
         contactEmail: contactEmail,
         contactPhone: null,
         notes: 'Auto-created family group',
-        airtableRecordId: null,
       }).returning();
 
-      return mapOrganizationFromDb(result[0]);
+      return mapOrganisationToOrganization(newOrg, newContact, eventId);
     } catch (error) {
       console.error('Error finding or creating family group:', error);
       throw error;
@@ -574,7 +593,7 @@ export class DatabaseService {
    */
   static async getRegistrationCountsByRole(eventId: string): Promise<ParticipantCounts> {
     try {
-      // Get all registrations with organization details from both UK and US tables
+      // Get all registrations with organization details from the UK organisations table
       const allRegistrations = await db
         .select({
           id: registrations.id,
@@ -584,24 +603,20 @@ export class DatabaseService {
           senStudents: registrations.senStudents,
           groupLeaderParticipating: registrations.groupLeaderParticipating,
           organizationId: registrations.organizationId,
-          ukOrgName: organisations.name,
-          usOrgName: organizations.name,
-          ukGroupType: organisations.groupType,
-          usGroupType: organizations.groupType,
-          ukAirtableRecordId: organisations.airtableRecordId,
-          usAirtableRecordId: organizations.airtableRecordId,
+          orgName: organisations.name,
+          orgGroupType: organisations.groupType,
+          orgAirtableRecordId: organisations.airtableRecordId,
         })
         .from(registrations)
         .leftJoin(organisations, eq(registrations.organizationId, organisations.id))
-        .leftJoin(organizations, eq(registrations.organizationId, organizations.id))
         .where(eq(registrations.eventId, eventId));
 
-      // Get pre-registered organisations from UK table (primary source)
+      // Get pre-registered organisations from UK table
       // Look up event's airtable_record_id for matching
       const evt = await db.select().from(events).where(eq(events.id, eventId)).limit(1);
       const eventAirtableId = evt[0]?.airtableRecordId ?? null;
 
-      const ukOrgs = eventAirtableId
+      const allOrgs = eventAirtableId
         ? await db
             .select({
               id: organisations.id,
@@ -612,22 +627,6 @@ export class DatabaseService {
             .where(eq(organisations.airtableEventId, eventAirtableId))
         : [];
 
-      // Also get pre-registered orgs from US table (legacy/family groups)
-      const usOrgs = await db
-        .select({
-          id: organizations.id,
-          name: organizations.name,
-          groupType: organizations.groupType,
-          expectedGroupSize: organizations.expectedGroupSize,
-        })
-        .from(organizations)
-        .where(
-          and(
-            eq(organizations.eventId, eventId),
-            isNotNull(organizations.airtableRecordId)
-          )
-        );
-
       // Convert to format expected by counting logic
       const registrationsForCounting: RegistrationForCounting[] = allRegistrations.map(r => ({
         id: r.id,
@@ -637,29 +636,17 @@ export class DatabaseService {
         senStudents: r.senStudents,
         groupLeaderParticipating: r.groupLeaderParticipating,
         organizationId: r.organizationId,
-        organizationName: r.ukOrgName || r.usOrgName,
-        groupType: (r.ukGroupType || r.usGroupType) as any,
-        organizationAirtableRecordId: r.ukAirtableRecordId || r.usAirtableRecordId,
+        organizationName: r.orgName,
+        groupType: r.orgGroupType as any,
+        organizationAirtableRecordId: r.orgAirtableRecordId,
       }));
 
-      // Merge org lists for counting, preferring UK orgs
-      const ukOrgIds = new Set(ukOrgs.map(o => o.id));
-      const organizationsForCounting = [
-        ...ukOrgs.map(org => ({
-          id: org.id,
-          name: org.name || '',
-          groupType: org.groupType as any,
-          expectedGroupSize: null as number | null,
-        })),
-        ...usOrgs
-          .filter(org => !ukOrgIds.has(org.id))
-          .map(org => ({
-            id: org.id,
-            name: org.name,
-            groupType: org.groupType as any,
-            expectedGroupSize: org.expectedGroupSize,
-          })),
-      ];
+      const organizationsForCounting = allOrgs.map(org => ({
+        id: org.id,
+        name: org.name || '',
+        groupType: org.groupType as any,
+        expectedGroupSize: null as number | null,
+      }));
 
       // Use the business logic module to calculate counts
       return calculateParticipantCounts(registrationsForCounting, organizationsForCounting);
@@ -686,25 +673,6 @@ function mapEventFromDb(dbEvent: any): Event {
     airtableRecordId: dbEvent.airtableRecordId,
     createdAt: dbEvent.createdAt?.toISOString(),
     modifiedAt: dbEvent.modifiedAt?.toISOString(),
-  };
-}
-
-function mapOrganizationFromDb(dbOrg: any): Organization {
-  return {
-    id: dbOrg.id,
-    eventId: dbOrg.eventId,
-    name: dbOrg.name,
-    groupType: dbOrg.groupType,
-    expectedGroupSize: dbOrg.expectedGroupSize,
-    imageUrl: dbOrg.imageUrl,
-    contactFirstName: dbOrg.contactFirstName,
-    contactLastName: dbOrg.contactLastName,
-    contactEmail: dbOrg.contactEmail,
-    contactPhone: dbOrg.contactPhone,
-    notes: dbOrg.notes,
-    airtableRecordId: dbOrg.airtableRecordId,
-    createdAt: dbOrg.createdAt?.toISOString(),
-    modifiedAt: dbOrg.modifiedAt?.toISOString(),
   };
 }
 
