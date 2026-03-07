@@ -13,7 +13,7 @@ interface AirtableOrganization {
     'Organisation Name Text'?: string;  // Formula field with actual text name (if available)
     'Event': string[];  // Array of linked record IDs (for display)
     'airtable_event_id'?: string | string[];  // Can be text field (string) or linked record (array)
-    'Group Type'?: string;
+    'Type'?: string;  // Called "Type" in Airtable, maps to group_type in Neon
     'Expected Group Size'?: number;
     'Contact First Name'?: string;
     'Contact Last Name'?: string;
@@ -102,7 +102,7 @@ export async function GET(request: NextRequest) {
         eventAirtableId: eventAirtableId ?? null,
         eventName,
         name: orgName,  // UK spelling
-        groupType: record.fields['Group Type'] || 'Other',
+        groupType: record.fields['Type'] || 'Other',
         expectedGroupSize: record.fields['Expected Group Size'] || null,
         contactFirstName: record.fields['Contact First Name'] || null,
         contactLastName: record.fields['Contact Last Name'] || null,
@@ -207,7 +207,7 @@ export async function POST(request: NextRequest) {
           eventAirtableId: eventAirtableId ?? null,
           eventName,
           name: orgName,  // UK spelling
-          groupType: record.fields['Group Type'] || 'Other',
+          groupType: record.fields['Type'] || 'Other',
           expectedGroupSize: record.fields['Expected Group Size'] || null,
           contactFirstName: record.fields['Contact First Name'] || null,
           contactLastName: record.fields['Contact Last Name'] || null,

@@ -35,29 +35,6 @@ export const events = pgTable('events', {
   modifiedAt: timestamp('modified_at').defaultNow(),
 });
 
-/**
- * Organizations Table
- * Stores organization data fetched from Airtable before the event
- * Organizations are event-specific
- */
-export const organizations = pgTable('organizations', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  eventId: uuid('event_id').notNull().references(() => events.id),
-  name: text('name').notNull(),
-  groupType: text('group_type', {
-    enum: ['Family', 'Disability', 'Corporate', 'Sporting', 'Community', 'Educational', 'Other']
-  }).default('Other'),
-  expectedGroupSize: integer('expected_group_size'), // Expected number of participants (for planning)
-  imageUrl: text('image_url'),
-  contactFirstName: text('contact_first_name'),
-  contactLastName: text('contact_last_name'),
-  contactEmail: text('contact_email'),
-  contactPhone: text('contact_phone'),
-  notes: text('notes'),
-  airtableRecordId: text('airtable_record_id'),
-  createdAt: timestamp('created_at').defaultNow(),
-  modifiedAt: timestamp('modified_at').defaultNow(),
-});
 
 /**
  * Volunteers Table
@@ -146,9 +123,6 @@ export const organisationContacts = pgTable('organisation_contacts', {
 // Export types for TypeScript
 export type Event = typeof events.$inferSelect;
 export type NewEvent = typeof events.$inferInsert;
-
-export type Organization = typeof organizations.$inferSelect;
-export type NewOrganization = typeof organizations.$inferInsert;
 
 export type OrganisationRow = typeof organisations.$inferSelect;
 export type OrganisationContactRow = typeof organisationContacts.$inferSelect;

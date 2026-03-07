@@ -7,8 +7,38 @@ import { eq } from "drizzle-orm";
 const VALID_GROUP_TYPES = ['Family', 'Disability', 'Corporate', 'Sporting', 'Community', 'Educational', 'Other'] as const;
 type GroupType = typeof VALID_GROUP_TYPES[number];
 
+/**
+ * Map Airtable 'Type' field values to our 7 dashboard categories.
+ * Airtable has 18+ organisation types; we consolidate them for reporting.
+ */
+const AIRTABLE_TYPE_TO_GROUP_TYPE: Record<string, GroupType> = {
+  'Family': 'Family',
+  'Disability': 'Disability',
+  'Business': 'Corporate',
+  'Corporate Partner': 'Corporate',
+  'Sports Body': 'Sporting',
+  'Sports Club': 'Sporting',
+  'Competitor': 'Sporting',
+  'Community Group': 'Community',
+  'Social Groups and Events': 'Community',
+  'Education Body': 'Educational',
+  'Charity': 'Other',
+  'Estate Agents': 'Other',
+  'Funder': 'Other',
+  'Government': 'Other',
+  'Health': 'Other',
+  'HR': 'Other',
+  'Media and News': 'Other',
+  'Supplier': 'Other',
+};
+
 function normalizeGroupType(value: string | undefined | null): GroupType {
-  if (value && (VALID_GROUP_TYPES as readonly string[]).includes(value)) {
+  if (!value) return 'Other';
+  // Check the Airtable-to-dashboard mapping first
+  const mapped = AIRTABLE_TYPE_TO_GROUP_TYPE[value];
+  if (mapped) return mapped;
+  // Fallback: if it's already one of our 7 categories, use it directly
+  if ((VALID_GROUP_TYPES as readonly string[]).includes(value)) {
     return value as GroupType;
   }
   return 'Other';

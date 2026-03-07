@@ -29,7 +29,7 @@ const sql = neon(process.env.DATABASE_URL);
 const db = drizzle(sql, { schema });
 
 // Destructure schema tables
-const { events, organizations, volunteers } = schema;
+const { events, organisations: organizations, volunteers } = schema;
 
 // Import mock data arrays
 const MOCK_EVENTS: Event[] = [

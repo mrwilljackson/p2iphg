@@ -28,7 +28,7 @@ const sql = neon(process.env.DATABASE_URL);
 const db = drizzle(sql, { schema });
 
 // Destructure schema tables
-const { events, organizations, volunteers, registrations } = schema;
+const { events, organisations: organizations, volunteers, registrations } = schema;
 
 async function seed() {
   console.log('🌱 Starting database seed...');

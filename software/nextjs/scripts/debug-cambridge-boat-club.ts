@@ -14,7 +14,7 @@ import { resolve } from 'path';
 config({ path: resolve(__dirname, '../.env.local') });
 
 import { db } from '../lib/db/client';
-import { registrations, organizations, events } from '../lib/db/schema';
+import { registrations, organisations as organizations, events } from '../lib/db/schema';
 import { eq } from 'drizzle-orm';
 
 async function debugCambridgeBoatClub() {

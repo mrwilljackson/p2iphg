@@ -29,7 +29,7 @@ const sql = neon(process.env.DATABASE_URL);
 const db = drizzle(sql, { schema });
 
 // Destructure schema tables
-const { events, organizations, volunteers, registrations } = schema;
+const { events, organisations: organizations, volunteers, registrations } = schema;
 
 async function clearDatabase() {
   console.log('🗑️  Starting database clear...');

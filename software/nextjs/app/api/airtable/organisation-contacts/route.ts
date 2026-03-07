@@ -11,7 +11,7 @@ interface AirtableOrganisationContact {
     'organisation_record_id (from Organisation ID)'?: string[]; // Org's airtable record ID (for linking)
     'Organisation Name (from Organisation ID)'?: string[];      // Org name (lookup)
     'airtable_event_id'?: string[];
-    'Group Type'?: string;
+    'Type'?: string;  // Called "Type" in Airtable, maps to group_type in Neon
     'Contact First Name'?: string;
     'Contact Last Name'?: string;
     'Contact Email'?: string;
@@ -78,7 +78,7 @@ export async function GET(request: NextRequest) {
         organisationId: organisationAirtableId || null,
         organisationName: organisationName || null,
         airtableEventId: eventAirtableId || null,
-        groupType: record.fields['Group Type'] || null,
+        groupType: record.fields['Type'] || null,
         contactFirstName: record.fields['Contact First Name'] || null,
         contactLastName: record.fields['Contact Last Name'] || null,
         contactEmail: record.fields['Contact Email'] || null,
@@ -156,7 +156,7 @@ export async function POST(request: NextRequest) {
           airtableRecordId: record.id,
           organisationId: organisationAirtableId || null,
           airtableEventId: eventAirtableId || null,
-          groupType: record.fields['Group Type'] || null,
+          groupType: record.fields['Type'] || null,
           contactFirstName: record.fields['Contact First Name'] || null,
           contactLastName: record.fields['Contact Last Name'] || null,
           contactEmail: record.fields['Contact Email'] || null,
