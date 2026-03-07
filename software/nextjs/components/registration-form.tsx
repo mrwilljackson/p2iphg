@@ -641,7 +641,7 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
         {selectedRole === "Group" && shouldShowSection("groupLeaderParticipation") && existingLeaderInfo?.hasExistingLeaders && (
           <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
             <p className="text-sm font-semibold text-blue-800 mb-2">
-              ℹ️ This organisation already has a group registration
+              ℹ️ {selectedOrg?.name || 'This organisation'} already has a group registration
             </p>
             <div className="text-sm text-blue-700 mb-3">
               {existingLeaderInfo.leaders.map((leader, i) => (
