@@ -26,7 +26,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
-import { getCurrentEvent, getOrganizations, getVolunteerEmails, getVolunteerByEmail, createRegistration, findOrCreateFamilyGroup } from "@/lib/actions";
+import { getCurrentEvent, getOrganizations, getVolunteerEmails, getVolunteerByEmail, createRegistration, findOrCreateFamilyGroup, getExistingGroupLeaders } from "@/lib/actions";
 import { organizationsToOptions } from "@/lib/helpers";
 import { isFieldVisible, type RegistrationType } from "@/lib/field-visibility-config";
 import type { RegistrationRole } from "@/lib/types";
@@ -46,6 +46,14 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
   const [showVolunteerAlert, setShowVolunteerAlert] = useState(false);
   const [showOrganizationAlert, setShowOrganizationAlert] = useState(false);
   const [allOrganizations, setAllOrganizations] = useState<Organization[]>([]);
+
+  // Multi-leader detection state
+  const [existingLeaderInfo, setExistingLeaderInfo] = useState<{
+    hasExistingLeaders: boolean;
+    leaders: { name: string; groupSize: number }[];
+    totalParticipantsRegistered: number;
+  } | null>(null);
+  const [additionalLeaderChoice, setAdditionalLeaderChoice] = useState<'additional_leader' | 'additional_participants' | null>(null);
 
   // Multi-step form state
   const [currentStep, setCurrentStep] = useState(1);
@@ -96,6 +104,27 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
     setCurrentStep(1);
   }, [selectedRole]);
 
+  // Check for existing group leaders when org is selected and role is Group
+  useEffect(() => {
+    async function checkExistingLeaders() {
+      if (selectedRole === 'Group' && selectedOrgId && selectedOrgId !== 'FAMILY_GROUP_PLACEHOLDER' && selectedOrgId !== 'NOT_LISTED' && currentEvent?.id) {
+        try {
+          const info = await getExistingGroupLeaders(currentEvent.id, selectedOrgId);
+          setExistingLeaderInfo(info);
+          // Reset choice when org changes
+          setAdditionalLeaderChoice(null);
+        } catch (error) {
+          console.error('Error checking existing leaders:', error);
+          setExistingLeaderInfo(null);
+        }
+      } else {
+        setExistingLeaderInfo(null);
+        setAdditionalLeaderChoice(null);
+      }
+    }
+    checkExistingLeaders();
+  }, [selectedRole, selectedOrgId, currentEvent?.id]);
+
   // Check if selected organization is a disability group or Family Group
   // Family Group placeholder has special ID "FAMILY_GROUP_PLACEHOLDER"
   const selectedOrg = allOrganizations.find(org => org.id === selectedOrgId);
@@ -129,7 +158,12 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
       if (currentStep === 1) {
         fieldsToValidate = ["organizationId", "email", "attendeeName", "attendeeSurname"];
       } else if (currentStep === 2) {
-        fieldsToValidate = ["groupLeaderParticipating", "groupSize", "disabledStudents", "senStudents"];
+        if (additionalLeaderChoice === 'additional_leader') {
+          // Additional leader only — skip group size fields (already set to 0)
+          fieldsToValidate = ["groupLeaderParticipating"];
+        } else {
+          fieldsToValidate = ["groupLeaderParticipating", "groupSize", "disabledStudents", "senStudents"];
+        }
       }
     }
 
@@ -600,6 +634,68 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
               </p>
             )}
 
+            {/* Existing group leader notice - shown when another leader from same org has already registered */}
+            {selectedRole === "Group" && shouldShowSection("groupLeaderParticipation") && existingLeaderInfo?.hasExistingLeaders && (
+              <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-sm font-semibold text-blue-800 mb-2">
+                  ℹ️ This organisation already has a group registration
+                </p>
+                <div className="text-sm text-blue-700 mb-3">
+                  {existingLeaderInfo.leaders.map((leader, i) => (
+                    <p key={i}>
+                      <strong>{leader.name}</strong> has registered {leader.groupSize} participant{leader.groupSize !== 1 ? 's' : ''}
+                    </p>
+                  ))}
+                  <p className="mt-1 font-medium">
+                    Total participants already registered: {existingLeaderInfo.totalParticipantsRegistered}
+                  </p>
+                </div>
+                <p className="text-sm text-blue-800 font-medium mb-2">What would you like to do?</p>
+                <div className="space-y-2">
+                  <label className="flex items-center space-x-2 border border-blue-300 rounded-lg p-3 cursor-pointer hover:bg-blue-100 bg-white">
+                    <input
+                      type="radio"
+                      name="additionalLeaderChoice"
+                      value="additional_leader"
+                      checked={additionalLeaderChoice === 'additional_leader'}
+                      onChange={() => {
+                        setAdditionalLeaderChoice('additional_leader');
+                        // Set groupSize to 0 — no additional participants
+                        form.setValue('groupSize', 0);
+                        form.setValue('disabledStudents', 0);
+                        form.setValue('senStudents', 0);
+                      }}
+                      className="accent-blue-600"
+                    />
+                    <div className="flex-1">
+                      <span className="font-medium">Register as additional leader only</span>
+                      <p className="text-xs text-gray-500 mt-0.5">No extra participants — they are already counted</p>
+                    </div>
+                  </label>
+                  <label className="flex items-center space-x-2 border border-blue-300 rounded-lg p-3 cursor-pointer hover:bg-blue-100 bg-white">
+                    <input
+                      type="radio"
+                      name="additionalLeaderChoice"
+                      value="additional_participants"
+                      checked={additionalLeaderChoice === 'additional_participants'}
+                      onChange={() => {
+                        setAdditionalLeaderChoice('additional_participants');
+                        // Clear the auto-set values so user can enter their own
+                        form.setValue('groupSize', undefined);
+                        form.setValue('disabledStudents', undefined);
+                        form.setValue('senStudents', undefined);
+                      }}
+                      className="accent-blue-600"
+                    />
+                    <div className="flex-1">
+                      <span className="font-medium">Register additional participants</span>
+                      <p className="text-xs text-gray-500 mt-0.5">I&apos;m bringing more people from this organisation</p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            )}
+
             {/* Group Leader Participation - For Group role only - Step 2 */}
             {selectedRole === "Group" && shouldShowSection("groupLeaderParticipation") && (
               <FormField
@@ -631,7 +727,7 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
             )}
 
             {/* Group Size Field - For NON-Disability/NON-Family Groups - Show after name fields - Step 2 for Group */}
-            {selectedRole === "Group" && shouldShowSection("groupDetails") && !shouldShowImpairmentFields && isFieldVisible("groupSize", selectedRole) && (
+            {selectedRole === "Group" && shouldShowSection("groupDetails") && !shouldShowImpairmentFields && additionalLeaderChoice !== 'additional_leader' && isFieldVisible("groupSize", selectedRole) && (
               <FormField
                 control={form.control}
                 name="groupSize"
@@ -874,12 +970,12 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
 
 
         {/* Separator: Impairment -> Group Details (conditional) */}
-        {!showOrganizationAlert && shouldShowSection("groupDetails") && shouldShowImpairmentFields && isFieldVisible("groupSize", selectedRole) && (
+        {!showOrganizationAlert && shouldShowSection("groupDetails") && shouldShowImpairmentFields && additionalLeaderChoice !== 'additional_leader' && isFieldVisible("groupSize", selectedRole) && (
           <hr className="my-6 border-gray-200" />
         )}
 
         {/* Group Size Field - For Disability and Family Groups ONLY - Show after impairment field - Step 2 for Group */}
-        {!showOrganizationAlert && shouldShowSection("groupDetails") && shouldShowImpairmentFields && isFieldVisible("groupSize", selectedRole) && (
+        {!showOrganizationAlert && shouldShowSection("groupDetails") && shouldShowImpairmentFields && additionalLeaderChoice !== 'additional_leader' && isFieldVisible("groupSize", selectedRole) && (
           <FormField
             control={form.control}
             name="groupSize"
@@ -906,7 +1002,7 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
         )}
 
         {/* Disabled Students - Only for Disability Groups and Family Groups - Step 2 for Group */}
-        {!showOrganizationAlert && shouldShowSection("groupDetails") && shouldShowImpairmentFields && isFieldVisible("disabledStudents", selectedRole) && (
+        {!showOrganizationAlert && shouldShowSection("groupDetails") && shouldShowImpairmentFields && additionalLeaderChoice !== 'additional_leader' && isFieldVisible("disabledStudents", selectedRole) && (
           <FormField
             control={form.control}
             name="disabledStudents"
@@ -933,7 +1029,7 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
         )}
 
         {/* SEN Students - Only for Disability Groups and Family Groups - Step 2 for Group */}
-        {!showOrganizationAlert && shouldShowSection("groupDetails") && shouldShowImpairmentFields && isFieldVisible("senStudents", selectedRole) && (
+        {!showOrganizationAlert && shouldShowSection("groupDetails") && shouldShowImpairmentFields && additionalLeaderChoice !== 'additional_leader' && isFieldVisible("senStudents", selectedRole) && (
           <FormField
             control={form.control}
             name="senStudents"

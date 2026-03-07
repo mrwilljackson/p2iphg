@@ -135,6 +135,30 @@ export async function getRegistrationsByOrganization(eventId: string, organizati
   return await DatabaseService.getRegistrationsByOrganization(eventId, organizationId);
 }
 
+/**
+ * Get existing group leader registrations for an organization at an event.
+ * Used by the form to detect when another leader has already registered
+ * and inform the second leader about existing participant counts.
+ */
+export async function getExistingGroupLeaders(eventId: string, organizationId: string): Promise<{
+  hasExistingLeaders: boolean;
+  leaders: { name: string; groupSize: number }[];
+  totalParticipantsRegistered: number;
+}> {
+  const registrations = await DatabaseService.getRegistrationsByOrganization(eventId, organizationId);
+  const groupRegs = registrations.filter(r => r.role === 'Group');
+  const totalParticipants = groupRegs.reduce((sum, r) => sum + (r.groupSize || 0), 0);
+
+  return {
+    hasExistingLeaders: groupRegs.length > 0,
+    leaders: groupRegs.map(r => ({
+      name: `${r.attendeeName} ${r.attendeeSurname}`,
+      groupSize: r.groupSize || 0,
+    })),
+    totalParticipantsRegistered: totalParticipants,
+  };
+}
+
 export async function getOrganizationById(id: string): Promise<Organization | null> {
   return await DatabaseService.getOrganizationById(id);
 }

@@ -202,42 +202,77 @@ export function calculateParticipantCounts(
   // Array to store detailed group information
   const groupDetails: GroupDetail[] = [];
 
-  // Process each group registration
+  // Aggregate group registrations by organizationId
+  // Multiple leaders from the same org should be combined into one entry
+  const orgGroupMap = new Map<string, {
+    organizationId: string;
+    organizationName: string;
+    groupType: GroupType | null;
+    totalGroupSize: number;
+    totalDisabled: number;
+    totalSen: number;
+    leaderCount: number;
+    participatingLeaderCount: number;
+    hasAirtableRecord: boolean;
+  }>();
+
   for (const group of groupRegistrations) {
-    const groupSize = group.groupSize || 0;
-    const isExpectedOnly = isExpectedOnlyGroupType(group.groupType);
+    const orgId = group.organizationId || `unknown-${group.id}`;
+    const existing = orgGroupMap.get(orgId);
 
-    // Calculate expected participants for this group
-    // Group Size = number of participants from the organization (NOT including leader)
-    // If leader is participating, add 1 to the count
-    let expectedCount = groupSize;
-
-    // Add group leader to expected count if they are participating
-    if (group.groupLeaderParticipating === true) {
-      expectedCount += 1;
+    if (existing) {
+      // Additional leader for same org — aggregate their numbers
+      existing.totalGroupSize += group.groupSize || 0;
+      existing.totalDisabled += group.disabledStudents || 0;
+      existing.totalSen += group.senStudents || 0;
+      existing.leaderCount += 1;
+      if (group.groupLeaderParticipating === true) {
+        existing.participatingLeaderCount += 1;
+      }
+      if (group.organizationAirtableRecordId) {
+        existing.hasAirtableRecord = true;
+      }
+    } else {
+      orgGroupMap.set(orgId, {
+        organizationId: orgId,
+        organizationName: group.organizationName || '',
+        groupType: group.groupType || null,
+        totalGroupSize: group.groupSize || 0,
+        totalDisabled: group.disabledStudents || 0,
+        totalSen: group.senStudents || 0,
+        leaderCount: 1,
+        participatingLeaderCount: group.groupLeaderParticipating === true ? 1 : 0,
+        hasAirtableRecord: !!group.organizationAirtableRecordId,
+      });
     }
+  }
+
+  // Process each aggregated organization group
+  for (const [, orgGroup] of orgGroupMap) {
+    const isExpectedOnly = isExpectedOnlyGroupType(orgGroup.groupType);
+
+    // Expected = total group size across all leaders + number of participating leaders
+    const expectedCount = orgGroup.totalGroupSize + orgGroup.participatingLeaderCount;
 
     // Add to appropriate category
     if (isExpectedOnly) {
-      // Family & Disability: Expected = Registered (group-level count from actual registration)
       familyDisabilityExpected += expectedCount;
-      familyDisabilityRegistered += expectedCount; // Also add to registered since they registered
+      familyDisabilityRegistered += expectedCount;
     } else {
-      // Other groups: Track expected separately from registered
       otherGroupsExpected += expectedCount;
     }
 
     // Add disabled and SEN students to totals
-    totalDisabledStudents += group.disabledStudents || 0;
-    totalSenStudents += group.senStudents || 0;
+    totalDisabledStudents += orgGroup.totalDisabled;
+    totalSenStudents += orgGroup.totalSen;
 
-    // Check if this is a walk-in (no airtable_record_id)
-    if (!group.organizationAirtableRecordId) {
+    // Check if this is a walk-in (no airtable_record_id on any leader)
+    if (!orgGroup.hasAirtableRecord) {
       walkInGroupsCount++;
     }
 
-    // Categorize group type
-    switch (group.groupType) {
+    // Categorize group type (once per org, not per leader)
+    switch (orgGroup.groupType) {
       case 'Family':
         familyGroupsCount++;
         break;
@@ -260,30 +295,27 @@ export function calculateParticipantCounts(
         otherGroupsCount++;
     }
 
-    // Calculate registered count for this group
+    // Calculate registered count for this org
     let registeredCount = expectedCount; // Default for Family/Disability
-    if (!isExpectedOnly && group.organizationId) {
+    if (!isExpectedOnly && orgGroup.organizationId) {
       // For other groups, count actual individual registrations
       registeredCount = participantRegistrations.filter(
-        r => r.organizationId === group.organizationId
+        r => r.organizationId === orgGroup.organizationId
       ).length;
 
-      // If group leader is participating, add 1 to the registered count
-      // (group leader registers with role='Group', not counted in participantRegistrations)
-      if (group.groupLeaderParticipating === true) {
-        registeredCount += 1;
-      }
+      // Add participating leaders to registered count
+      registeredCount += orgGroup.participatingLeaderCount;
 
-      // Add this group's registered count to the total for other groups
+      // Add this org's registered count to the total for other groups
       otherGroupsRegistered += registeredCount;
     }
 
-    // Add to group details array
-    if (group.organizationId && group.organizationName) {
+    // Add to group details array (one row per org)
+    if (orgGroup.organizationId && orgGroup.organizationName) {
       groupDetails.push({
-        organizationId: group.organizationId,
-        organizationName: group.organizationName,
-        groupType: group.groupType || null,
+        organizationId: orgGroup.organizationId,
+        organizationName: orgGroup.organizationName,
+        groupType: orgGroup.groupType,
         expected: expectedCount,
         registered: registeredCount,
       });
