@@ -314,7 +314,7 @@ export function calculateParticipantCounts(
     // Always add — use fallback name if org name is missing to avoid silent counting gaps
     groupDetails.push({
       organizationId: orgGroup.organizationId,
-      organizationName: orgGroup.organizationName || 'Unknown Group',
+      organizationName: orgGroup.organizationName || 'Family Group',
       groupType: orgGroup.groupType,
       expected: expectedCount,
       registered: registeredCount,
