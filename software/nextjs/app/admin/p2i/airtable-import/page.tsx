@@ -234,8 +234,6 @@ export default function AirtableImportPage() {
             .map(c => c.organisationId)
             .filter(Boolean)
         );
-        console.log('🔍 Filter debug — orgIdsForEvent:', [...orgIdsForEvent]);
-        console.log('🔍 Filter debug — org airtableRecordIds:', availableOrganizations.map(o => o.airtableRecordId));
         return availableOrganizations.filter(o => orgIdsForEvent.has(o.airtableRecordId));
       })()
     : availableOrganizations;

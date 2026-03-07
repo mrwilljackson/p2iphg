@@ -59,11 +59,7 @@ export async function GET(request: NextRequest) {
     const data: AirtableResponse = await response.json();
     console.log('✅ Fetched', data.records.length, 'organisation contacts from Airtable');
 
-    // Log field names from first record for debugging
-    if (data.records.length > 0) {
-      console.log('📋 Organisation Contact fields:', Object.keys(data.records[0].fields));
-      console.log('📋 First contact full record:', JSON.stringify(data.records[0].fields, null, 2));
-    }
+
 
     const contacts = data.records.map(record => {
       // 'Organisation ID' is the linked record field — returns the org row's Airtable record.id
@@ -148,8 +144,6 @@ export async function POST(request: NextRequest) {
         }
 
         const record: AirtableOrganisationContact = await response.json();
-        console.log('📋 Organisation Contact fields:', Object.keys(record.fields));
-        console.log('📋 Full record:', JSON.stringify(record.fields, null, 2));
 
         // Use linked record field to get the org's real Airtable record.id
         const orgLinkedIds = record.fields['Organisation ID'];
