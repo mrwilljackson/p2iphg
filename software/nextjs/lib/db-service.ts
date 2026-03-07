@@ -121,12 +121,10 @@ export class DatabaseService {
           eq(organisations.airtableRecordId, organisationContacts.organisationId)
         );
 
-      // Filter by event if eventId was provided
-      // Fall back to all orgs if airtable-based filter returns zero results
-      // (handles case where organisations haven't been linked to events in Airtable yet)
+      // Filter by event via the contact's airtableEventId (orgs don't have direct event links)
       let filtered = result;
       if (eventAirtableId) {
-        const byEvent = result.filter(r => r.org.airtableEventId === eventAirtableId);
+        const byEvent = result.filter(r => r.contact?.airtableEventId === eventAirtableId);
         if (byEvent.length > 0) {
           filtered = byEvent;
         }
@@ -611,21 +609,43 @@ export class DatabaseService {
         .leftJoin(organisations, eq(registrations.organizationId, organisations.id))
         .where(eq(registrations.eventId, eventId));
 
-      // Get pre-registered organisations from UK table
-      // Look up event's airtable_record_id for matching
+      // Get pre-registered organisations via organisation_contacts (which has the event link)
+      // Organisations don't have a direct event link — the link is through contacts
       const evt = await db.select().from(events).where(eq(events.id, eventId)).limit(1);
       const eventAirtableId = evt[0]?.airtableRecordId ?? null;
 
-      const allOrgs = eventAirtableId
+      // Query organisation_contacts for this event, joined to organisations for name/groupType
+      const contactsForEvent = eventAirtableId
         ? await db
             .select({
-              id: organisations.id,
-              name: organisations.name,
-              groupType: organisations.groupType,
+              orgId: organisations.id,
+              orgName: organisations.name,
+              orgGroupType: organisations.groupType,
+              contactExpectedGroupSize: organisationContacts.expectedGroupSize,
             })
-            .from(organisations)
-            .where(eq(organisations.airtableEventId, eventAirtableId))
+            .from(organisationContacts)
+            .innerJoin(organisations, eq(organisationContacts.organisationId, organisations.airtableRecordId))
+            .where(eq(organisationContacts.airtableEventId, eventAirtableId))
         : [];
+
+      // Aggregate expectedGroupSize per organisation (multiple contacts may exist per org)
+      const orgMap = new Map<string, { id: string; name: string; groupType: string | null; expectedGroupSize: number }>();
+      for (const row of contactsForEvent) {
+        if (!row.orgId) continue;
+        const existing = orgMap.get(row.orgId);
+        const contactSize = row.contactExpectedGroupSize ? parseInt(row.contactExpectedGroupSize, 10) || 0 : 0;
+        if (existing) {
+          existing.expectedGroupSize += contactSize;
+        } else {
+          orgMap.set(row.orgId, {
+            id: row.orgId,
+            name: row.orgName || '',
+            groupType: row.orgGroupType,
+            expectedGroupSize: contactSize,
+          });
+        }
+      }
+      const allOrgs = Array.from(orgMap.values());
 
       // Convert to format expected by counting logic
       const registrationsForCounting: RegistrationForCounting[] = allRegistrations.map(r => ({
@@ -643,9 +663,9 @@ export class DatabaseService {
 
       const organizationsForCounting = allOrgs.map(org => ({
         id: org.id,
-        name: org.name || '',
+        name: org.name,
         groupType: org.groupType as any,
-        expectedGroupSize: null as number | null,
+        expectedGroupSize: org.expectedGroupSize > 0 ? org.expectedGroupSize : null,
       }));
 
       // Use the business logic module to calculate counts
