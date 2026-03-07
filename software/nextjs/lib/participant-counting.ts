@@ -311,15 +311,14 @@ export function calculateParticipantCounts(
     }
 
     // Add to group details array (one row per org)
-    if (orgGroup.organizationId && orgGroup.organizationName) {
-      groupDetails.push({
-        organizationId: orgGroup.organizationId,
-        organizationName: orgGroup.organizationName,
-        groupType: orgGroup.groupType,
-        expected: expectedCount,
-        registered: registeredCount,
-      });
-    }
+    // Always add — use fallback name if org name is missing to avoid silent counting gaps
+    groupDetails.push({
+      organizationId: orgGroup.organizationId,
+      organizationName: orgGroup.organizationName || 'Unknown Group',
+      groupType: orgGroup.groupType,
+      expected: expectedCount,
+      registered: registeredCount,
+    });
   }
 
   // Add organizations that haven't registered yet (expected groups)
