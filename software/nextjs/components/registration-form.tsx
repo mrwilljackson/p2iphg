@@ -1079,13 +1079,17 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
                     <label className="flex items-start space-x-2 border rounded-lg p-4 cursor-pointer hover:bg-gray-50">
                       <RadioGroupItem value="true" id="photo-yes" className="mt-1" />
                       <span className="font-normal flex-1">
-                        Yes, I consent to the use of photographs as specified
+                        {selectedRole === "Group"
+                          ? "Yes, the whole group including staff consents to the use of photographs as specified"
+                          : "Yes, I consent to the use of photographs as specified"}
                       </span>
                     </label>
                     <label className="flex items-start space-x-2 border rounded-lg p-4 cursor-pointer hover:bg-gray-50">
                       <RadioGroupItem value="false" id="photo-no" className="mt-1" />
                       <span className="font-normal flex-1">
-                        No, I will wear an orange wristband to denote I do not wish photos of me to be used in this way
+                        {selectedRole === "Group"
+                          ? "No. Those within the group will wear a coloured wristband to denote they do not wish photos to be used in this way. Those not wearing wristbands have consented."
+                          : "No, I will wear an orange wristband to denote I do not wish photos of me to be used in this way"}
                       </span>
                     </label>
                   </RadioGroup>
