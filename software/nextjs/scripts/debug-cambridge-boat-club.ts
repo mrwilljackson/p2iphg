@@ -36,12 +36,15 @@ async function debugCambridgeBoatClub() {
   console.log('Event ID:', currentEvent[0].id);
 
   // 2. Find Cambridge Uni Boat Club organization
-  const cambridgeOrg = await db
-    .select()
-    .from(organizations)
-    .where(eq(organizations.eventId, currentEvent[0].id));
+  // organisations table links via airtableEventId (text), not a UUID eventId
+  const cambridgeOrg = currentEvent[0].airtableRecordId
+    ? await db
+        .select()
+        .from(organizations)
+        .where(eq(organizations.airtableEventId, currentEvent[0].airtableRecordId))
+    : await db.select().from(organizations);
 
-  const cambridge = cambridgeOrg.find(org => org.name.toLowerCase().includes('cambridge'));
+  const cambridge = cambridgeOrg.find(org => org.name?.toLowerCase().includes('cambridge'));
 
   if (!cambridge) {
     console.log('\n❌ Cambridge Uni Boat Club not found');
