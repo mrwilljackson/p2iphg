@@ -63,20 +63,25 @@ export const tables = {
  * Based on AIRTABLE_INTEGRATION.md V2.0 Section 5
  */
 export const AIRTABLE_FIELDS = {
-  // Registrations table
+  // Registrations table — confirmed field names 2026-03-11
   REGISTRATION: {
     FIRST_NAME: "First Name",
     LAST_NAME: "Last Name",
     EMAIL: "Email",
     ORGANIZATION: "Organization", // Linked record to Organizations table
-    IMPAIRMENT: "Do you have an impairment",
-    PHOTO_CONSENT: "Photography Consent",
-    MARKETING_CONSENT: "Marketing Consent",
+    IMPAIRMENT: "Impairment",
+    PHOTO_CONSENT: "Photo Consent",
+    FEEDBACK_CONSENT: "Feedback Consent",
+    NEXT_EVENT_CONSENT: "Next Event Consent",
     EVENT: "Event", // Linked record to Events table
     ROLE: "Role",
+    GROUP_SIZE: "Group Size",
+    DISABLED_STUDENTS: "Disabled Students",
+    SEN_STUDENTS: "SEN Students",
+    LEADER_PARTICIPATING: "Leader Participating",
     CHECKIN_TIME: "Check-in Time",
     CHECKOUT_TIME: "Check-out Time",
-    APP_RECORD_ID: "App Record ID", // For bidirectional sync
+    RECORD_ID: "Record ID", // Neon UUID for bidirectional sync
   },
   // Events table
   EVENT: {

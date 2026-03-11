@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getCurrentEvent, getEventById, getRegistrationCountsByRole, getAllRegistrations, getOrganizations, getAllVolunteers, createEvent } from "@/lib/actions";
+import { syncRegistrationsToAirtable } from "@/app/actions/airtable-sync";
 import type { Event, Registration, Organization, Volunteer } from "@/lib/types";
 import type { ParticipantCounts } from "@/lib/participant-counting";
 
@@ -51,6 +52,11 @@ export default function P2IAdminDashboard() {
   const [newEventLocation, setNewEventLocation] = useState("");
   const [newEventDescription, setNewEventDescription] = useState("");
   const [isCreatingEvent, setIsCreatingEvent] = useState(false);
+
+  // Airtable sync state
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncMessage, setSyncMessage] = useState<string | null>(null);
+
   const [counts, setCounts] = useState<ParticipantCounts>({
     individualParticipants: 0,
     groupParticipants: {
@@ -373,6 +379,43 @@ export default function P2IAdminDashboard() {
     } catch (error) {
       console.error('Error exporting CSV:', error);
       alert('Failed to export CSV. Please try again.');
+    }
+  };
+
+  const handleSyncToAirtable = async () => {
+    if (!currentEvent) {
+      alert("No event data available to sync");
+      return;
+    }
+
+    if (!confirm("This will push all pending registrations to Airtable. Continue?")) {
+      return;
+    }
+
+    setIsSyncing(true);
+    setSyncMessage(null);
+
+    try {
+      const result = await syncRegistrationsToAirtable();
+
+      if (result.synced === 0 && result.failed === 0 && result.skipped === 0) {
+        setSyncMessage("No pending registrations to sync.");
+      } else {
+        const parts: string[] = [];
+        if (result.synced > 0) parts.push(`✅ ${result.synced} synced`);
+        if (result.failed > 0) parts.push(`❌ ${result.failed} failed`);
+        if (result.skipped > 0) parts.push(`⚠️ ${result.skipped} skipped`);
+        setSyncMessage(parts.join(" · "));
+      }
+
+      if (result.errors.length > 0) {
+        console.error("Sync errors:", result.errors);
+      }
+    } catch (error) {
+      console.error("Error syncing to Airtable:", error);
+      setSyncMessage(`❌ Sync failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+    } finally {
+      setIsSyncing(false);
     }
   };
 
@@ -733,21 +776,31 @@ export default function P2IAdminDashboard() {
               >
                 ⬇️ Export to CSV
               </Button>
-              <Button className="w-full justify-start" variant="outline">
-                🔄 Sync with Airtable
+              <Button
+                className="w-full justify-start"
+                variant="outline"
+                onClick={handleSyncToAirtable}
+                disabled={isSyncing}
+              >
+                {isSyncing ? "⏳ Syncing..." : "🔄 Sync Registrations to Airtable"}
               </Button>
+              {syncMessage && (
+                <div className={`p-3 rounded-md text-sm ${
+                  syncMessage.includes("❌")
+                    ? "bg-red-50 border border-red-200 text-red-800"
+                    : syncMessage.includes("⚠️")
+                    ? "bg-yellow-50 border border-yellow-200 text-yellow-800"
+                    : "bg-green-50 border border-green-200 text-green-800"
+                }`}>
+                  {syncMessage}
+                </div>
+              )}
               <Button
                 className="w-full justify-start"
                 variant="outline"
                 onClick={() => router.push("/admin/p2i/airtable-import")}
               >
                 ⬇️ Import from Airtable
-              </Button>
-              <Button className="w-full justify-start" variant="outline">
-                ⬆️ Export to Airtable
-              </Button>
-              <Button className="w-full justify-start" variant="outline">
-                ⚙️ Airtable Settings
               </Button>
             </div>
           </div>

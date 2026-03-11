@@ -1,0 +1,102 @@
+REGISTRATION SYNC: NEON → AIRTABLE FIELD MAPPING
+==================================================
+Purpose: Map each Neon registrations column to the corresponding Airtable
+         Registrations table field for post-event sync.
+
+Date: 2026-03-11
+Status: IMPLEMENTED — Sync action: app/actions/airtable-sync.ts
+
+NOTE: The user specified the Airtable table name as 'regsitrations' (sic).
+      Please confirm the actual table name in Airtable before we proceed.
+      Current code references it as: base("Registrations")
+
+
+=== FIELD-BY-FIELD MAPPING ===
+
+# | Neon Column (snake_case)     | Drizzle Property         | Airtable Field Name          | Airtable Type       | Transform / Notes
+--|------------------------------|--------------------------|------------------------------|---------------------|------------------------------------------
+1 | id                           | id                       | Record ID                | Single line text    | Send Neon UUID so we can track what's been synced
+2 | event_id                     | eventId                  | Event                        | Link to Events      | LOOKUP REQUIRED: Must resolve Neon event UUID → event's airtable_record_id, then send as array: [airtableRecordId]
+3 | attendee_name                | attendeeName             | First Name                   | Single line text    | Direct mapping
+4 | attendee_surname             | attendeeSurname          | Last Name                    | Single line text    | Direct mapping
+5 | email                        | email                    | Email                        | Email               | Direct mapping (nullable)
+6 | organization_id              | organizationId           | Organization                 | Link to Orgs        | LOOKUP REQUIRED: Must resolve Neon org UUID → org's airtable_record_id, then send as array: [airtableRecordId]. Skip if null.
+7 | impairment                   | impairment               | Impairment                   | Single select       | Direct mapping (nullable). Check actual single-select options in Airtable match the free text values stored in Neon.
+8 | role                         | role                     | Role                         | Single select       | Direct mapping: 'Participant' | 'Volunteer' | 'Group'
+9 | photo_consent                | photoConsent             | Photo Consent                | Checkbox            | Boolean → Airtable checkbox: true = checked, undefined = unchecked (do NOT send false)
+10| feedback_consent             | feedbackConsent          | Feedback Consent             | Checkbox            | Boolean → Airtable checkbox: true = checked, undefined = unchecked
+11| next_event_consent           | nextEventConsent         | Next Event Consent           | Checkbox            | Boolean → Airtable checkbox: true = checked, undefined = unchecked
+12| group_size                   | groupSize                | Group Size                   | Number (integer)    | Only relevant for role='Group'. Send as number or omit if null.
+13| disabled_students            | disabledStudents         | Disabled Students            | Number (integer)    | Only relevant for role='Group'. Send as number or omit if null.
+14| sen_students                 | senStudents              | SEN Students                 | Number (integer)    | Only relevant for role='Group'. Send as number or omit if null.
+15| group_leader_participating   | groupLeaderParticipating | Leader Participating         | Checkbox            | Boolean → Airtable checkbox. Only relevant for role='Group'.
+16| checkin_time                 | checkinTime              | Check-in Time                | Date & Time         | Timestamp → ISO 8601 string, or omit if null
+17| checkout_time                | checkoutTime             | Check-out Time               | Date & Time         | Timestamp → ISO 8601 string, or omit if null
+18| sync_status                  | syncStatus               | Sync Status                  | Single select       | Update to 'synced' after successful push. Do NOT send to Airtable — this is local tracking only.
+19| airtable_record_id           | airtableRecordId         | (not sent)                   | -                   | RECEIVE BACK: After creating record in Airtable, store the returned Airtable record ID here in Neon.
+20| created_at                   | createdAt                | (not sent)                   | Created time (auto) | Airtable auto-generates this — do not send.
+21| modified_at                  | modifiedAt               | (not sent)                   | Last modified (auto)| Airtable auto-generates this — do not send.
+
+
+=== DISCREPANCIES TO RESOLVE ===
+
+1. AIRTABLE TABLE NAME
+   - User typed: 'regsitrations' (typo?)
+   - Code currently uses: base("Registrations")
+   - ACTION: Confirm the actual table name in Airtable.
+   A. Table name in airtable is 'Registrations'
+
+2. IMPAIRMENT FIELD
+   - Neon stores FREE TEXT (e.g. "Yes", "No", "Rather not say", or custom text)
+   - Airtable doc says: Single select with options "Yes, No, Rather not say"
+   - Existing AIRTABLE_FIELDS mapping uses: "Do you have an impairment"
+   - Airtable doc uses: "Impairment"
+   - ACTION: Confirm the actual field name AND whether free-text values will match the single-select options.
+   A. Field name in airtable is "Impairment" and free-text values will match the single-select options.
+
+3. PHOTO CONSENT FIELD NAME
+   - Existing AIRTABLE_FIELDS mapping uses: "Photography Consent"
+   - Airtable doc uses: "Photo Consent"
+   - ACTION: Confirm which name is used in the actual Airtable base.
+   A. Field name in airtable is "Photo Consent"
+
+4. MARKETING CONSENT vs FEEDBACK/NEXT EVENT CONSENT
+   - Existing AIRTABLE_FIELDS has: "Marketing Consent" (single field)
+   - Neon has TWO separate fields: feedback_consent + next_event_consent
+   - Airtable doc has TWO fields: "Feedback Consent" + "Next Event Consent"
+   - ACTION: Confirm Airtable has these two separate fields (not the old single "Marketing Consent").
+   A. Airtable has two separate fields: "Feedback Consent" and "Next Event Consent"
+
+5. ORGANIZATION LINKING
+   - Neon stores organization_id as a UUID referencing the local organisations table
+   - Airtable expects a linked record array containing the org's Airtable Record ID
+   - Some orgs may not have an airtable_record_id (locally created orgs)
+   - ACTION: Decide whether to skip org linking for orgs without an Airtable record ID, or create them first.
+   A. Skip org linking for orgs without an Airtable record ID
+
+6. EVENT LINKING
+   - Neon stores event_id as a UUID
+   - Airtable expects a linked record array containing the event's Airtable Record ID
+   - ACTION: Confirm the event exists in Airtable before syncing (it should, since events are created in Airtable first).
+   A. The event will exist in airtable as it was taken from airtable to begin with so no need to check
+
+=== SYNC LOGIC SUMMARY ===
+
+1. Query all registrations from Neon where sync_status = 'pending' (or all, if first sync)
+2. For each registration:
+   a. Look up event's airtable_record_id from events table
+   b. Look up organisation's airtable_record_id from organisations table (if org linked)
+   c. Build Airtable fields object with mapped field names
+   d. Create record in Airtable via API
+   e. On success: store returned Airtable record ID in Neon, set sync_status = 'synced'
+   f. On failure: set sync_status = 'failed', log error
+3. Return summary of created/failed records
+
+
+=== AIRTABLE API NOTES ===
+
+- Airtable batch creates support up to 10 records per request
+- Checkboxes: send true for checked, omit field entirely for unchecked (do NOT send false)
+- Linked records: send as array of Airtable Record IDs, e.g. ["recABC123"]
+- Rate limit: 5 requests per second per base
+
