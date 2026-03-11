@@ -69,7 +69,7 @@ export const AIRTABLE_FIELDS = {
     FIRST_NAME: "First Name",
     LAST_NAME: "Last Name",
     EMAIL: "Email",
-    ORGANIZATION: "Organization", // Linked record to Organizations table
+    ORGANIZATION: "Organisation", // singleLineText in Airtable (UK spelling)
     IMPAIRMENT: "Impairment",
     PHOTO_CONSENT: "Photo Consent",
     FEEDBACK_CONSENT: "Feedback Consent",

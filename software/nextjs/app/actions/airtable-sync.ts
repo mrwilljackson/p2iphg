@@ -29,28 +29,34 @@ interface SyncResult {
 function buildAirtableFields(
   reg: typeof registrations.$inferSelect,
   eventAirtableId: string | null,
-  orgAirtableId: string | null,
+  orgName: string | null,
 ) {
   const F = AIRTABLE_FIELDS.REGISTRATION;
 
+  // NOTE: "Record ID" is autoNumber in Airtable (computed) — do NOT send it.
   const fields: Record<string, unknown> = {
-    [F.RECORD_ID]: reg.id,
     [F.FIRST_NAME]: reg.attendeeName,
     [F.LAST_NAME]: reg.attendeeSurname,
     [F.ROLE]: reg.role,
   };
 
-  // Linked records — arrays of Airtable Record IDs
+  // Event — linked record (array of Airtable Record IDs)
   if (eventAirtableId) {
     fields[F.EVENT] = [eventAirtableId];
   }
-  if (orgAirtableId) {
-    fields[F.ORGANIZATION] = [orgAirtableId];
+
+  // Organisation — singleLineText in Airtable, send org name as plain text
+  if (orgName) {
+    fields[F.ORGANIZATION] = orgName;
   }
 
   // Optional text / email
   if (reg.email) fields[F.EMAIL] = reg.email;
-  if (reg.impairment) fields[F.IMPAIRMENT] = reg.impairment;
+
+  // Impairment — checkbox in Airtable. Convert "Yes" → true, else omit.
+  if (reg.impairment && reg.impairment.toLowerCase() === "yes") {
+    fields[F.IMPAIRMENT] = true;
+  }
 
   // Checkboxes — only send true, omit for false/null
   if (reg.photoConsent) fields[F.PHOTO_CONSENT] = true;
@@ -77,7 +83,7 @@ function buildAirtableFields(
  */
 async function createAirtableBatch(
   records: Array<{ fields: Record<string, unknown> }>
-): Promise<Array<{ id: string; neonId: string }>> {
+): Promise<string[]> {
   const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/Registrations`;
 
   const response = await fetch(url, {
@@ -95,10 +101,8 @@ async function createAirtableBatch(
   }
 
   const data = await response.json();
-  return (data.records as Array<{ id: string; fields: Record<string, unknown> }>).map((rec) => ({
-    id: rec.id,
-    neonId: rec.fields[AIRTABLE_FIELDS.REGISTRATION.RECORD_ID] as string,
-  }));
+  // Return created Airtable record IDs (positional — matches input order)
+  return (data.records as Array<{ id: string }>).map((rec) => rec.id);
 }
 
 /**
@@ -147,12 +151,12 @@ export async function syncRegistrationsToAirtable(): Promise<SyncResult> {
   }
 
 
-  // Org lookups — only for registrations that have an organizationId
+  // Org lookups — fetch org names (Organisation field is singleLineText in Airtable)
   const orgIds = [...new Set(pendingRegs.filter((r) => r.organizationId).map((r) => r.organizationId!))];
   const orgMap = new Map<string, string | null>();
   for (const oid of orgIds) {
     const rows = await db.select().from(organisations).where(eq(organisations.id, oid));
-    if (rows[0]) orgMap.set(rows[0].id, rows[0].airtableRecordId);
+    if (rows[0]) orgMap.set(rows[0].id, rows[0].name);
   }
 
   // 3. Process in batches of BATCH_SIZE
@@ -181,12 +185,11 @@ export async function syncRegistrationsToAirtable(): Promise<SyncResult> {
         continue;
       }
 
-      const orgAirtableId = reg.organizationId
+      const orgName = reg.organizationId
         ? (orgMap.get(reg.organizationId) ?? null)
         : null;
-      // Skip org linking if org doesn't have an airtable_record_id (per user instruction)
 
-      const fields = buildAirtableFields(reg, eventAirtableId, orgAirtableId);
+      const fields = buildAirtableFields(reg, eventAirtableId, orgName);
       airtableRecords.push({ fields });
       batchRegIds.push(reg.id);
     }
@@ -198,16 +201,16 @@ export async function syncRegistrationsToAirtable(): Promise<SyncResult> {
       const created = await createAirtableBatch(airtableRecords);
       console.log(`[airtable-sync] Batch success: ${created.length} records created`);
 
-      // Update Neon with returned Airtable record IDs
-      for (const rec of created) {
+      // Update Neon with returned Airtable record IDs (positional match)
+      for (let j = 0; j < created.length; j++) {
         await db
           .update(registrations)
           .set({
             syncStatus: "synced",
-            airtableRecordId: rec.id,
+            airtableRecordId: created[j],
             modifiedAt: new Date(),
           })
-          .where(eq(registrations.id, rec.neonId));
+          .where(eq(registrations.id, batchRegIds[j]));
         result.synced++;
       }
     } catch (error) {
