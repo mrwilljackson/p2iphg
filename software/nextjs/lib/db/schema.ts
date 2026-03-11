@@ -22,6 +22,7 @@ import { pgTable, text, boolean, timestamp, uuid, integer } from 'drizzle-orm/pg
  * - 'planned': Future events that are not yet active
  * - 'active': The current active event (only one at a time)
  * - 'completed': Past events that have finished
+ * - 'archived': Events whose participant/organisation data has been cleared
  */
 export const events = pgTable('events', {
   id: uuid('id').primaryKey().defaultRandom(),

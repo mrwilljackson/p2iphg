@@ -10,7 +10,7 @@ import { z } from "zod";
 // Enum Schemas
 // ============================================================================
 
-export const eventStatusSchema = z.enum(["active", "completed", "cancelled"]);
+export const eventStatusSchema = z.enum(["active", "completed", "cancelled", "archived"]);
 
 export const registrationRoleSchema = z.enum(["Participant", "Volunteer", "Group"]);
 

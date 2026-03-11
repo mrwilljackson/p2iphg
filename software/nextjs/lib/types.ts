@@ -13,8 +13,9 @@
  * - 'planned': Future events that are not yet active
  * - 'active': The current active event (only one at a time)
  * - 'completed': Past events that have finished
+ * - 'archived': Events whose participant/organisation data has been cleared
  */
-export type EventStatus = "planned" | "active" | "completed";
+export type EventStatus = "planned" | "active" | "completed" | "archived";
 export type RegistrationRole = "Participant" | "Volunteer" | "Group";
 export type SyncStatus = "pending" | "synced" | "failed";
 

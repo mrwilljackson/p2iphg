@@ -3,10 +3,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getCurrentEvent, getEventById, getRegistrationCountsByRole, getAllRegistrations, getOrganizations, getAllVolunteers, createEvent, markEventCompleted } from "@/lib/actions";
+import { getCurrentEvent, getEventById, getRegistrationCountsByRole, getAllRegistrations, getOrganizations, getAllVolunteers, createEvent, markEventCompleted, getEventDataCounts, clearEventData } from "@/lib/actions";
 import { syncRegistrationsToAirtable } from "@/app/actions/airtable-sync";
 import type { Event, Registration, Organization, Volunteer } from "@/lib/types";
 import type { ParticipantCounts } from "@/lib/participant-counting";
@@ -59,6 +60,18 @@ export default function P2IAdminDashboard() {
 
   // Event completion state
   const [isMarkingCompleted, setIsMarkingCompleted] = useState(false);
+
+  // Clear Event Data Dialog State
+  const [isClearEventOpen, setIsClearEventOpen] = useState(false);
+  const [clearEventCounts, setClearEventCounts] = useState<{
+    registrations: number;
+    volunteers: number;
+    organisations: number;
+    organisationContacts: number;
+    unsyncedRegistrations: number;
+  } | null>(null);
+  const [isClearEventLoading, setIsClearEventLoading] = useState(false);
+  const [forceClearUnsynced, setForceClearUnsynced] = useState(false);
 
   const [counts, setCounts] = useState<ParticipantCounts>({
     individualParticipants: 0,
@@ -472,6 +485,27 @@ export default function P2IAdminDashboard() {
     }
   };
 
+  // Load record counts when Clear Event Data dialog opens
+  const handleClearEventDialogOpen = async (open: boolean) => {
+    setIsClearEventOpen(open);
+    if (!open) {
+      setForceClearUnsynced(false);
+      setClearEventCounts(null);
+      return;
+    }
+    if (currentEvent) {
+      setIsClearEventLoading(true);
+      try {
+        const counts = await getEventDataCounts(currentEvent.id);
+        setClearEventCounts(counts);
+      } catch (error) {
+        console.error("Failed to load event data counts:", error);
+      } finally {
+        setIsClearEventLoading(false);
+      }
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -835,9 +869,189 @@ export default function P2IAdminDashboard() {
                 </DialogContent>
               </Dialog>
 
-              <Button className="w-full justify-start text-red-600 hover:text-red-700" variant="outline">
-                🗑️ Clear Database
-              </Button>
+              {/* Clear Event Data Dialog */}
+              <Dialog open={isClearEventOpen} onOpenChange={handleClearEventDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button
+                    className="w-full justify-start text-red-600 hover:text-red-700"
+                    variant="outline"
+                    disabled={!currentEvent}
+                  >
+                    🗑️ Clear Event Data
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[525px]">
+                  <DialogHeader>
+                    <DialogTitle className="text-red-600">⚠️ Clear Event Data</DialogTitle>
+                    <DialogDescription>
+                      This will permanently remove all participant and organisation data for this event from the PHG Events database.
+                      The event name will be retained as &apos;archived&apos; in the PHG Events database. No Airtable data will be changed.
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  {currentEvent && (
+                    <div className="space-y-4 py-2">
+                      {/* Event identification */}
+                      <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                        <h4 className="font-semibold text-gray-900 mb-1">{currentEvent.name}</h4>
+                        <p className="text-sm text-gray-600">
+                          {currentEvent.date} — {currentEvent.location || "No location"}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-1">ID: {currentEvent.id}</p>
+                      </div>
+
+                      {/* Record counts */}
+                      <div className="bg-white rounded-lg border border-gray-200 p-4">
+                        <h4 className="font-medium text-gray-900 mb-3">Records to be removed:</h4>
+                        {clearEventCounts ? (
+                          <div className="space-y-2 text-sm">
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">Registrations</span>
+                              <span className="font-medium">{clearEventCounts.registrations}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">Volunteers</span>
+                              <span className="font-medium">{clearEventCounts.volunteers}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">Organisations</span>
+                              <span className="font-medium">{clearEventCounts.organisations}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">Organisation Contacts</span>
+                              <span className="font-medium">{clearEventCounts.organisationContacts}</span>
+                            </div>
+                            <div className="border-t border-gray-200 pt-2 mt-2 flex justify-between font-semibold">
+                              <span>Total records</span>
+                              <span>
+                                {clearEventCounts.registrations +
+                                  clearEventCounts.volunteers +
+                                  clearEventCounts.organisations +
+                                  clearEventCounts.organisationContacts}
+                              </span>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 text-sm text-gray-400">
+                            <span className="animate-spin">⏳</span>
+                            <span>Loading record counts...</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Unsynced registrations warning */}
+                      {clearEventCounts && clearEventCounts.unsyncedRegistrations > 0 && (
+                        <div className="bg-amber-50 border border-amber-300 rounded-lg p-4">
+                          <div className="flex items-start gap-2">
+                            <span className="text-amber-600 text-lg">⚠️</span>
+                            <div>
+                              <h4 className="font-semibold text-amber-800">
+                                {clearEventCounts.unsyncedRegistrations} unsynced registration{clearEventCounts.unsyncedRegistrations !== 1 ? "s" : ""}
+                              </h4>
+                              <p className="text-sm text-amber-700 mt-1">
+                                These registrations have <strong>not been synced to Airtable</strong> and will be
+                                permanently lost. Go back and sync first, or check the box below to force clear.
+                              </p>
+                              <div className="flex items-center gap-2 mt-3">
+                                <Checkbox
+                                  id="force-clear"
+                                  checked={forceClearUnsynced}
+                                  onCheckedChange={(checked) => setForceClearUnsynced(checked === true)}
+                                />
+                                <Label
+                                  htmlFor="force-clear"
+                                  className="text-sm font-medium text-amber-800 cursor-pointer"
+                                >
+                                  I understand — force clear unsynced data
+                                </Label>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Event status note */}
+                      <p className="text-xs text-gray-500">
+                        The event record will be kept and its status changed to <strong>archived</strong>.
+                      </p>
+                    </div>
+                  )}
+
+                  <DialogFooter className="gap-2 sm:gap-0">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setIsClearEventOpen(false);
+                        setForceClearUnsynced(false);
+                        setClearEventCounts(null);
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      disabled={
+                        isClearEventLoading ||
+                        !clearEventCounts ||
+                        (clearEventCounts.unsyncedRegistrations > 0 && !forceClearUnsynced)
+                      }
+                      onClick={async () => {
+                        if (!currentEvent) return;
+                        setIsClearEventLoading(true);
+                        try {
+                          const result = await clearEventData(currentEvent.id, forceClearUnsynced);
+                          if (result.success) {
+                            const total = result.deleted.registrations + result.deleted.volunteers +
+                              result.deleted.organisationContacts + result.deleted.organisations;
+                            alert(
+                              `✅ Event data cleared successfully.\n\n` +
+                              `Deleted ${total} records:\n` +
+                              `  • ${result.deleted.registrations} registrations\n` +
+                              `  • ${result.deleted.volunteers} volunteers\n` +
+                              `  • ${result.deleted.organisationContacts} organisation contacts\n` +
+                              `  • ${result.deleted.organisations} organisations\n\n` +
+                              `Event "${currentEvent.name}" is now archived.`
+                            );
+                            // Close dialog and reset state
+                            setIsClearEventOpen(false);
+                            setForceClearUnsynced(false);
+                            setClearEventCounts(null);
+                            // Update the local event to reflect archived status
+                            setCurrentEvent({ ...currentEvent, status: 'archived' });
+                            // Clear local counts since data is gone
+                            setCounts({
+                              individualParticipants: 0,
+                              groupParticipants: {
+                                familyAndDisability: { expected: 0, registered: 0 },
+                                otherGroups: { expected: 0, registered: 0 },
+                                total: { expected: 0, registered: 0 },
+                              },
+                              groupDetails: [],
+                              totalParticipants: 0,
+                              disabledStudents: 0,
+                              senStudents: 0,
+                              volunteers: 0,
+                              groups: { total: 0, registered: 0, walkIns: 0, familyGroups: 0, disabilityGroups: 0, corporateGroups: 0, sportingGroups: 0, communityGroups: 0, educationalGroups: 0, otherGroups: 0 },
+                              totalRegistrations: 0,
+                            });
+                            setVolunteers([]);
+                            setVolunteerRegistrations([]);
+                          } else {
+                            alert(`❌ Failed to clear event data:\n${result.error}`);
+                          }
+                        } catch (error) {
+                          console.error("Error clearing event data:", error);
+                          alert("❌ An unexpected error occurred while clearing event data.");
+                        } finally {
+                          setIsClearEventLoading(false);
+                        }
+                      }}
+                    >
+                      {isClearEventLoading ? "Clearing..." : "🗑️ Clear Event Data"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
 
