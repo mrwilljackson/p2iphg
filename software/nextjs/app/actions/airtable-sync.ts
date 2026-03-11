@@ -106,17 +106,23 @@ async function createAirtableBatch(
  * Fetches pending registrations, pushes to Airtable in batches, updates sync status.
  */
 export async function syncRegistrationsToAirtable(): Promise<SyncResult> {
+  console.log("[airtable-sync] Starting sync...");
+  console.log("[airtable-sync] AIRTABLE_API_KEY set:", !!AIRTABLE_API_KEY);
+  console.log("[airtable-sync] AIRTABLE_BASE_ID set:", !!AIRTABLE_BASE_ID, AIRTABLE_BASE_ID ? `(${AIRTABLE_BASE_ID.substring(0, 6)}...)` : "");
+
   if (!AIRTABLE_API_KEY || !AIRTABLE_BASE_ID) {
     throw new Error("Airtable credentials not configured");
   }
 
   const result: SyncResult = { synced: 0, failed: 0, skipped: 0, errors: [] };
 
-  // 1. Fetch pending registrations (pending or null sync_status)
+  // 1. Fetch pending registrations (pending, failed, or null sync_status)
   const pendingRegs = await db
     .select()
     .from(registrations)
-    .where(or(eq(registrations.syncStatus, "pending"), isNull(registrations.syncStatus)));
+    .where(or(eq(registrations.syncStatus, "pending"), eq(registrations.syncStatus, "failed"), isNull(registrations.syncStatus)));
+
+  console.log(`[airtable-sync] Found ${pendingRegs.length} pending registrations`);
 
   if (pendingRegs.length === 0) {
     return result;
@@ -124,11 +130,13 @@ export async function syncRegistrationsToAirtable(): Promise<SyncResult> {
 
   // 2. Pre-fetch event and org airtable IDs for lookups
   const eventIds = [...new Set(pendingRegs.map((r) => r.eventId))];
+  console.log(`[airtable-sync] Event IDs:`, eventIds);
   const eventRows = await db.select().from(events).where(
     // fetch all events that match any of the event IDs
     // Using a simple approach since we typically have 1 event
     eq(events.id, eventIds[0])
   );
+  console.log(`[airtable-sync] Event rows:`, eventRows.map(e => ({ id: e.id, name: e.name, airtableRecordId: e.airtableRecordId })));
   // Build lookup map
   const eventMap = new Map(eventRows.map((e) => [e.id, e.airtableRecordId]));
 
@@ -160,6 +168,7 @@ export async function syncRegistrationsToAirtable(): Promise<SyncResult> {
 
       if (!eventAirtableId) {
         // Can't sync without event link — skip
+        console.warn(`[airtable-sync] Skipping reg ${reg.id}: event ${reg.eventId} has no airtable_record_id`);
         result.skipped++;
         result.errors.push({
           registrationId: reg.id,
@@ -185,7 +194,9 @@ export async function syncRegistrationsToAirtable(): Promise<SyncResult> {
     if (airtableRecords.length === 0) continue;
 
     try {
+      console.log(`[airtable-sync] Sending batch of ${airtableRecords.length} records to Airtable...`);
       const created = await createAirtableBatch(airtableRecords);
+      console.log(`[airtable-sync] Batch success: ${created.length} records created`);
 
       // Update Neon with returned Airtable record IDs
       for (const rec of created) {
@@ -202,6 +213,7 @@ export async function syncRegistrationsToAirtable(): Promise<SyncResult> {
     } catch (error) {
       // Mark entire batch as failed
       const errMsg = error instanceof Error ? error.message : "Unknown error";
+      console.error(`[airtable-sync] Batch failed:`, errMsg);
       for (const regId of batchRegIds) {
         await db
           .update(registrations)
