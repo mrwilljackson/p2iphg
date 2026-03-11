@@ -8,51 +8,52 @@
 import Airtable from "airtable";
 
 // ============================================================================
-// Environment Variables Validation
+// Airtable Client Configuration (Lazy Initialization)
 // ============================================================================
+// The client and base are initialized lazily to avoid throwing errors at module
+// load time. This allows other exports (e.g. AIRTABLE_FIELDS constants) to be
+// imported without requiring env vars to be set.
 
-if (!process.env.AIRTABLE_API_KEY) {
-  throw new Error("AIRTABLE_API_KEY environment variable is required");
+let _airtableClient: Airtable | null = null;
+let _base: ReturnType<Airtable["base"]> | null = null;
+
+function getAirtableClient(): Airtable {
+  if (!_airtableClient) {
+    if (!process.env.AIRTABLE_API_KEY) {
+      throw new Error("AIRTABLE_API_KEY environment variable is required");
+    }
+    _airtableClient = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY });
+  }
+  return _airtableClient;
 }
 
-if (!process.env.AIRTABLE_BASE_ID) {
-  throw new Error("AIRTABLE_BASE_ID environment variable is required");
+function getBase(): ReturnType<Airtable["base"]> {
+  if (!_base) {
+    if (!process.env.AIRTABLE_BASE_ID) {
+      throw new Error("AIRTABLE_BASE_ID environment variable is required");
+    }
+    _base = getAirtableClient().base(process.env.AIRTABLE_BASE_ID);
+  }
+  return _base;
 }
 
 // ============================================================================
-// Airtable Client Configuration
-// ============================================================================
-
-/**
- * Initialize Airtable client with API key
- * This runs once when the module is first imported
- */
-const airtableClient = new Airtable({
-  apiKey: process.env.AIRTABLE_API_KEY,
-});
-
-/**
- * Get the Airtable base instance
- */
-const base = airtableClient.base(process.env.AIRTABLE_BASE_ID);
-
-// ============================================================================
-// Table References
+// Table References (Lazy — accessed via getter)
 // ============================================================================
 
 /**
  * Airtable table references
- * 
+ *
  * Table Names (must match Airtable base):
  * - Registrations: Main registration records
  * - Events: Event records
  * - Organizations: Organization records
  */
 export const tables = {
-  registrations: base("Registrations"),
-  events: base("Events"),
-  organizations: base("Organizations"),
-} as const;
+  get registrations() { return getBase()("Registrations"); },
+  get events() { return getBase()("Events"); },
+  get organizations() { return getBase()("Organizations"); },
+};
 
 // ============================================================================
 // Field Name Mappings
@@ -142,10 +143,10 @@ export function createLinkedRecord(recordId: string): string[] {
 /**
  * Export the base instance for direct access if needed
  */
-export { base };
+export { getBase as getBaseInstance };
 
 /**
  * Export the Airtable client for advanced usage
  */
-export { airtableClient };
+export { getAirtableClient as getAirtableClientInstance };
 

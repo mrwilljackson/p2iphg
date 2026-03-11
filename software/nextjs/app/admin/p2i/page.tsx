@@ -99,33 +99,57 @@ export default function P2IAdminDashboard() {
   // Load current event and registration counts
   useEffect(() => {
     async function loadData() {
-      // Check if P2I admin has selected a specific event to administer
-      const administeringEventId = sessionStorage.getItem('administeringEventId');
+      try {
+        // Check if P2I admin has selected a specific event to administer
+        const administeringEventId = sessionStorage.getItem('administeringEventId');
 
-      let event: Event | null = null;
+        console.log('P2I Admin Dashboard - administeringEventId:', administeringEventId);
 
-      if (administeringEventId) {
-        // P2I admin is administering a specific event
-        event = await getEventById(administeringEventId);
-      } else {
-        // Default to current active event
-        event = await getCurrentEvent();
-      }
+        let event: Event | null = null;
 
-      setCurrentEvent(event);
+        if (administeringEventId) {
+          // P2I admin is administering a specific event
+          console.log('Loading administering event:', administeringEventId);
+          event = await getEventById(administeringEventId);
+        } else {
+          // Default to current active event
+          console.log('Loading current active event');
+          event = await getCurrentEvent();
+        }
 
-      if (event) {
-        const registrationCounts = await getRegistrationCountsByRole(event.id);
-        setCounts(registrationCounts);
+        console.log('P2I Admin - Loaded event:', event?.name, event?.id);
+        setCurrentEvent(event);
 
-        // Fetch all volunteers for this event
-        const allVolunteers = await getAllVolunteers(event.id);
-        setVolunteers(allVolunteers);
+        if (event) {
+          try {
+            const registrationCounts = await getRegistrationCountsByRole(event.id);
+            console.log('P2I Admin - Registration counts loaded:', registrationCounts.totalRegistrations);
+            setCounts(registrationCounts);
+          } catch (countErr) {
+            console.error('P2I Admin - Error loading registration counts:', countErr);
+          }
 
-        // Fetch all registrations and filter for volunteers
-        const allRegistrations = await getAllRegistrations(event.id);
-        const volRegistrations = allRegistrations.filter(r => r.role === 'Volunteer');
-        setVolunteerRegistrations(volRegistrations);
+          try {
+            // Fetch all volunteers for this event
+            const allVolunteers = await getAllVolunteers(event.id);
+            console.log('P2I Admin - Volunteers loaded:', allVolunteers.length);
+            setVolunteers(allVolunteers);
+          } catch (volErr) {
+            console.error('P2I Admin - Error loading volunteers:', volErr);
+          }
+
+          try {
+            // Fetch all registrations and filter for volunteers
+            const allRegistrations = await getAllRegistrations(event.id);
+            console.log('P2I Admin - All registrations loaded:', allRegistrations.length);
+            const volRegistrations = allRegistrations.filter(r => r.role === 'Volunteer');
+            setVolunteerRegistrations(volRegistrations);
+          } catch (regErr) {
+            console.error('P2I Admin - Error loading registrations:', regErr);
+          }
+        }
+      } catch (error) {
+        console.error('P2I Admin - Error in loadData:', error);
       }
     }
     loadData();
