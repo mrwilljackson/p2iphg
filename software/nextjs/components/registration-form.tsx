@@ -255,7 +255,18 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
         setIsLoading(true);
 
         // Fetch current event first
-        const event = await getCurrentEvent();
+        let event = await getCurrentEvent();
+
+        // If the event date is in the past, treat as no active event
+        if (event) {
+          const eventDate = new Date(event.date);
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          eventDate.setHours(0, 0, 0, 0);
+          if (eventDate < today) {
+            event = null;
+          }
+        }
 
         if (event) {
           setCurrentEvent(event);

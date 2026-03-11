@@ -25,6 +25,17 @@ export default function TestFormPage() {
           event = await getCurrentEvent();
         }
 
+        // If the event date is in the past, treat as no active event
+        if (event) {
+          const eventDate = new Date(event.date);
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          eventDate.setHours(0, 0, 0, 0);
+          if (eventDate < today) {
+            event = null;
+          }
+        }
+
         setCurrentEvent(event);
       } catch (error) {
         console.error("Error loading event:", error);
