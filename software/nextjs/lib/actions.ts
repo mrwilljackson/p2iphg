@@ -181,3 +181,11 @@ export async function getRegistrationCountsByRole(eventId: string): Promise<Part
   return await DatabaseService.getRegistrationCountsByRole(eventId);
 }
 
+/**
+ * Mark an event as completed
+ * Used when an event's date has passed and the admin wants to finalise it
+ */
+export async function markEventCompleted(eventId: string): Promise<Event> {
+  return await DatabaseService.markEventCompleted(eventId);
+}
+

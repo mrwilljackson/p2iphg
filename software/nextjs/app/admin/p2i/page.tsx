@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getCurrentEvent, getEventById, getRegistrationCountsByRole, getAllRegistrations, getOrganizations, getAllVolunteers, createEvent } from "@/lib/actions";
+import { getCurrentEvent, getEventById, getRegistrationCountsByRole, getAllRegistrations, getOrganizations, getAllVolunteers, createEvent, markEventCompleted } from "@/lib/actions";
 import { syncRegistrationsToAirtable } from "@/app/actions/airtable-sync";
 import type { Event, Registration, Organization, Volunteer } from "@/lib/types";
 import type { ParticipantCounts } from "@/lib/participant-counting";
@@ -56,6 +56,9 @@ export default function P2IAdminDashboard() {
   // Airtable sync state
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
+
+  // Event completion state
+  const [isMarkingCompleted, setIsMarkingCompleted] = useState(false);
 
   const [counts, setCounts] = useState<ParticipantCounts>({
     individualParticipants: 0,
@@ -179,6 +182,32 @@ export default function P2IAdminDashboard() {
       alert("Failed to create event. Please try again.");
     } finally {
       setIsCreatingEvent(false);
+    }
+  };
+
+  // Check if current event date is in the past
+  const isEventPast = (() => {
+    if (!currentEvent?.date) return false;
+    const eventDate = new Date(currentEvent.date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    eventDate.setHours(0, 0, 0, 0);
+    return eventDate < today;
+  })();
+
+  const handleMarkCompleted = async () => {
+    if (!currentEvent) return;
+    if (!confirm("Mark this event as completed? The public registration form will continue to show 'No Active Event'.")) return;
+
+    setIsMarkingCompleted(true);
+    try {
+      await markEventCompleted(currentEvent.id);
+      window.location.reload();
+    } catch (error) {
+      console.error("Error marking event as completed:", error);
+      alert("Failed to mark event as completed. Please try again.");
+    } finally {
+      setIsMarkingCompleted(false);
     }
   };
 
@@ -521,6 +550,29 @@ export default function P2IAdminDashboard() {
             </div>
           )}
         </div>
+
+        {/* Past Event Warning Banner */}
+        {currentEvent && isEventPast && currentEvent.status === 'active' && (
+          <div className="bg-amber-50 border border-amber-300 rounded-lg p-4 mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <span className="text-2xl">⚠️</span>
+              <div>
+                <p className="font-semibold text-amber-800">This event has passed</p>
+                <p className="text-sm text-amber-700">
+                  The event date was {new Date(currentEvent.date).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}.
+                  The public registration form is already hidden. When you&apos;re finished with post-event tasks (e.g. Airtable sync, CSV export), mark it as completed.
+                </p>
+              </div>
+            </div>
+            <Button
+              onClick={handleMarkCompleted}
+              disabled={isMarkingCompleted}
+              className="bg-amber-600 hover:bg-amber-700 text-white shrink-0"
+            >
+              {isMarkingCompleted ? '⏳ Updating...' : '✅ Mark as Completed'}
+            </Button>
+          </div>
+        )}
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
