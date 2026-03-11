@@ -40,14 +40,12 @@ function TestFormContentInner({ currentEvent }: TestFormContentProps) {
 
   return (
     <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100">
-      {/* Event Header */}
-      {currentEvent && (
-        <EventHeader
-          eventName={currentEvent.name}
-          eventDate={formatDate(currentEvent.date)}
-          eventLocation={currentEvent.location || ""}
-        />
-      )}
+      {/* Event Header — always shown for branding; event details only when active */}
+      <EventHeader
+        eventName={currentEvent?.name}
+        eventDate={currentEvent ? formatDate(currentEvent.date) : undefined}
+        eventLocation={currentEvent?.location || undefined}
+      />
 
       {/* Main Content */}
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
