@@ -129,6 +129,15 @@ export const registrationFormSchema = z.object({
     .max(999, "SEN students must be at most 999")
     .optional(),
   groupLeaderParticipating: z.boolean().optional(), // Whether group leader is participating in games (Group role only)
+}).superRefine((data, ctx) => {
+  // organizationId is required when role is "Group" or "Participant"
+  if ((data.role === "Group" || data.role === "Participant") && (!data.organizationId || data.organizationId.trim() === "")) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Please select your organisation or group",
+      path: ["organizationId"],
+    });
+  }
 });
 
 /**

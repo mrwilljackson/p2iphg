@@ -483,7 +483,7 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
                 name="organizationId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Your Organisation or Group Name:</FormLabel>
+                    <FormLabel>Your Organisation or Group Name: *</FormLabel>
                     <FormControl>
                       <Select
                         onValueChange={(value) => {
@@ -562,7 +562,7 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
                 name="organizationId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Your Group Name</FormLabel>
+                    <FormLabel>Your Group Name *</FormLabel>
                     <FormControl>
                       <Combobox
                         options={organizations}
