@@ -6,6 +6,7 @@
 > - `components/registration-form.tsx` (UI & step logic)
 > - `lib/field-visibility-config.ts` (field visibility per role)
 > - `lib/validation.ts` (Zod schema + superRefine rules)
+> - `lib/helpers.ts` (organisation-to-options conversion + role-based filtering)
 
 ---
 
@@ -95,37 +96,49 @@ Fields validated when pressing "Next":
 
 ## 5. Conditional UI Behaviours
 
-### 5.1 Organisation Field Differences by Role
+### 5.1 Organisation Dropdown — Role-Based Filtering
+
+The organisation dropdown is filtered by `groupType` (stored in the `organisations.group_type` database column) depending on the selected role. Filtering is applied in `lib/helpers.ts` → `organizationsToOptions()`.
+
+| Role | Filter Rule | Organisations Shown |
+|---|---|---|
+| **Participant** | Exclude `groupType` = `'Disability'` or `'Family'` | Corporate, Sporting, Community, Educational, Other + "Family Group" placeholder |
+| **Group** | Include **only** `groupType` = `'Disability'` or `'Family'` | Disability and Family organisations only |
+| **Volunteer** | N/A (org field hidden) | — |
+
+When the user switches role, the selected organisation is **cleared** automatically since the previous selection may not exist in the new filtered list.
+
+### 5.2 Organisation Field Differences by Role
 
 | Aspect | Participant | Group |
 |---|---|---|
 | **Widget** | `Combobox` (searchable, allows custom entry) | `Select` dropdown |
-| **Options** | All event orgs + "Family Group" placeholder | All event orgs + "⚠️ My organisation isn't listed here!" |
+| **Options** | Filtered non-Disability/Family orgs + "Family Group" placeholder | Filtered Disability/Family orgs + "⚠️ My organisation isn't listed here!" |
 | **Required** | ✅ Yes | ✅ Yes |
 | **Label** | "Your Group Name *" | "Your Organisation or Group Name: *" |
 
-### 5.2 Organisation Selection Side-Effects (Group Role)
+### 5.3 Organisation Selection Side-Effects (Group Role)
 - Selecting an org with contact details **auto-populates** `attendeeName`, `attendeeSurname`, and `email`.
 - Selecting **"NOT_LISTED"** shows the "Group Not Listed" alert and hides the rest of the form.
 
-### 5.3 Family Group Placeholder (Participant Role)
-- A "Family Group" option (`FAMILY_GROUP_PLACEHOLDER`) is always present.
+### 5.4 Family Group Placeholder (Participant Role Only)
+- The "Family Group" option (`FAMILY_GROUP_PLACEHOLDER`) is shown **only** for the Participant role.
 - The label is personalised to `"{surname} Family Group"` when a surname is entered.
 - On submit, a real `Organisation` record is created/found via `findOrCreateFamilyGroup()`.
 
-### 5.4 Volunteer Email Selection
+### 5.5 Volunteer Email Selection
 - Email field is a **Select dropdown** of pre-registered volunteer emails.
 - Selecting an email **auto-populates** name and consent fields from the volunteer record.
 - Selecting **"NOT_LISTED"** shows the Volunteer Not Listed alert with options to switch to Participant or speak to P2I staff.
 
-### 5.5 Group — Existing Leader Detection (Multi-Leader Flow)
+### 5.6 Group — Existing Leader Detection (Multi-Leader Flow)
 When a Group leader selects an organisation that already has a registered leader:
 - An info panel shows existing leader names, group sizes, and total participants.
 - Two radio options appear:
   - **"Register as additional leader only"** → sets `groupSize`, `disabledStudents`, `senStudents` to 0; skips group-size fields on Step 2.
   - **"Register additional participants"** → clears auto-set values; shows normal group-size fields.
 
-### 5.6 Group — Disability/Family Conditional Fields
+### 5.7 Group — Disability/Family Conditional Fields
 The variable `shouldShowImpairmentFields` is `true` when:
 - `organizationId === "FAMILY_GROUP_PLACEHOLDER"`, OR
 - Selected org's `groupType` is `'Disability'` or `'Family'`
@@ -138,13 +151,13 @@ When `shouldShowImpairmentFields` is `false` (other group types):
 - **Step 2** shows only `groupSize` with generic label: *"How many participants are in your group (not including yourself)?"*
 - `disabledStudents` and `senStudents` fields are hidden.
 
-### 5.7 Photo Consent Wording
+### 5.8 Photo Consent Wording
 | Role | Yes Text | No Text |
 |---|---|---|
 | Group | "Yes, the whole group including staff consents…" | "No. Those within the group will wear a coloured wristband…" |
 | Others | "Yes, I consent…" | "No, I will wear an orange wristband…" |
 
-### 5.8 Consent Fields (Volunteer Gating)
+### 5.9 Consent Fields (Volunteer Gating)
 For Volunteers, consent fields (photo, feedback, next-event) are **only shown after** a valid email is selected (not empty, not "NOT_LISTED").
 
 ---
