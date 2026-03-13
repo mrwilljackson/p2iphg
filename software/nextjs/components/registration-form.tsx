@@ -212,12 +212,14 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
     }
   }, [selectedRole]);
 
-  // Reset organization alert when role changes away from Group
+  // Reset organization alert and clear selected org when role changes
+  // (the filtered options list changes per role, so previous selection may be invalid)
   useEffect(() => {
     if (selectedRole !== "Group") {
       setShowOrganizationAlert(false);
     }
-  }, [selectedRole]);
+    form.setValue("organizationId", "");
+  }, [selectedRole, form]);
 
   // Update organizations list with personalized "Family Group" option
   useEffect(() => {
@@ -228,10 +230,10 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
       // Store full organization objects for later reference
       setAllOrganizations(orgs);
 
-      const orgOptions = organizationsToOptions(orgs);
+      const orgOptions = organizationsToOptions(orgs, selectedRole);
 
       // Find and update the "Family Group" option with personalized surname
-      // The organizationsToOptions helper always includes "Family Group" with value "FAMILY_GROUP_PLACEHOLDER"
+      // The organizationsToOptions helper includes "Family Group" only for Participant role
       const updatedOptions = orgOptions.map(option => {
         if (option.value === "FAMILY_GROUP_PLACEHOLDER" && attendeeSurname && attendeeSurname.trim()) {
           return {
@@ -246,7 +248,7 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
     };
 
     updateOrganizations();
-  }, [attendeeSurname, form]);
+  }, [attendeeSurname, selectedRole, form]);
 
   // Load pre-populated data on component mount
   useEffect(() => {
@@ -279,8 +281,8 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
             getVolunteerEmails(event.id),
           ]);
 
-          // Convert organizations to combobox options
-          setOrganizations(organizationsToOptions(orgs));
+          // Convert organizations to combobox options (filtered by role)
+          setOrganizations(organizationsToOptions(orgs, selectedRole));
 
           // Store volunteer emails
           setVolunteerEmails(emails);
