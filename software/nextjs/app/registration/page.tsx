@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { getCurrentEvent, getEventById } from "@/lib/actions";
-import { TestFormContent } from "@/components/test-form-content";
+import { TestFormContent } from "@/components/registration-content";
 import type { Event } from "@/lib/types";
 
 export default function TestFormPage() {

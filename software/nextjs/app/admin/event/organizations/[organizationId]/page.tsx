@@ -28,7 +28,7 @@ export default function OrganizationRegistrationsPage() {
     if (adminAuth === "true" && (adminLevel === "event" || adminLevel === "p2i")) {
       setIsAuthenticated(true);
     } else {
-      router.push("/test-form");
+      router.push("/registration");
     }
     setIsLoading(false);
   }, [router]);
@@ -75,7 +75,7 @@ export default function OrganizationRegistrationsPage() {
   const handleLogout = () => {
     sessionStorage.removeItem("adminAuth");
     sessionStorage.removeItem("adminLevel");
-    router.push("/test-form");
+    router.push("/registration");
   };
 
   if (isLoading) {

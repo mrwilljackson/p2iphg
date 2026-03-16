@@ -81,7 +81,7 @@ export default function RegisterVolunteerPage() {
     if (adminAuth === "true" && (adminLevel === "event" || adminLevel === "p2i")) {
       setIsAuthenticated(true);
     } else {
-      router.push("/test-form");
+      router.push("/registration");
     }
   }, [router]);
 

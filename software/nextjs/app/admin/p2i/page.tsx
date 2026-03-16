@@ -176,8 +176,8 @@ export default function P2IAdminDashboard() {
     if (adminAuth === "true" && adminLevel === "p2i") {
       setIsAuthenticated(true);
     } else {
-      // Redirect to test-form if not authenticated
-      router.push("/test-form");
+      // Redirect to registration if not authenticated
+      router.push("/registration");
     }
     setIsLoading(false);
   }, [router]);
@@ -185,7 +185,7 @@ export default function P2IAdminDashboard() {
   const handleLogout = () => {
     sessionStorage.removeItem("adminAuth");
     sessionStorage.removeItem("adminLevel");
-    router.push("/test-form");
+    router.push("/registration");
   };
 
   // Create Event Handler
@@ -756,7 +756,7 @@ export default function P2IAdminDashboard() {
               <Button 
                 className="w-full justify-start" 
                 variant="outline"
-                onClick={() => router.push("/test-form")}
+                onClick={() => router.push("/registration")}
               >
                 📝 Registration Form
               </Button>

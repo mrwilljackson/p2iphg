@@ -103,8 +103,8 @@ export default function AirtableImportPage() {
     if (adminAuth === "true" && adminLevel === "p2i") {
       setIsAuthenticated(true);
     } else {
-      // Redirect to test-form if not authenticated
-      router.push("/test-form");
+      // Redirect to registration if not authenticated
+      router.push("/registration");
     }
     setIsLoading(false);
   }, [router]);

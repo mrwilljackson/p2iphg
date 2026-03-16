@@ -99,8 +99,8 @@ export default function EventAdminDashboard() {
     if (adminAuth === "true" && (adminLevel === "event" || adminLevel === "p2i")) {
       setIsAuthenticated(true);
     } else {
-      // Redirect to test-form if not authenticated
-      router.push("/test-form");
+      // Redirect to registration if not authenticated
+      router.push("/registration");
     }
     setIsLoading(false);
   }, [router]);
@@ -108,7 +108,7 @@ export default function EventAdminDashboard() {
   const handleLogout = () => {
     sessionStorage.removeItem("adminAuth");
     sessionStorage.removeItem("adminLevel");
-    router.push("/test-form");
+    router.push("/registration");
   };
 
   if (isLoading) {
@@ -319,13 +319,13 @@ export default function EventAdminDashboard() {
             <div className="space-y-3">
               <Button
                 className="w-full justify-start text-lg h-16 bg-blue-500 hover:bg-blue-600 text-white"
-                onClick={() => router.push("/test-form?role=Participant")}
+                onClick={() => router.push("/registration?role=Participant")}
               >
                 🎯 New Participant Registration
               </Button>
               <Button
                 className="w-full justify-start text-lg h-16 bg-purple-500 hover:bg-purple-600 text-white"
-                onClick={() => router.push("/test-form?role=Group")}
+                onClick={() => router.push("/registration?role=Group")}
               >
                 👨‍👩‍👧‍👦 New Group Registration
               </Button>

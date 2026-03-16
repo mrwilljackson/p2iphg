@@ -85,7 +85,7 @@ For each field, set it to:
 
 1. Save the configuration file
 2. The Next.js dev server will automatically reload
-3. Open http://localhost:3000/test-form
+3. Open http://localhost:3000/registration
 4. Switch between registration types to see which fields appear
 
 ## Tips

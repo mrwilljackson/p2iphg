@@ -17,10 +17,10 @@ export default function AdminRedirect() {
       } else if (adminLevel === "event") {
         router.push("/admin/event");
       } else {
-        router.push("/test-form");
+        router.push("/registration");
       }
     } else {
-      router.push("/test-form");
+      router.push("/registration");
     }
   }, [router]);
 
