@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
         airtableRecordId: record.id,
         eventAirtableId,
         eventName,
-        email: record.fields['Email'],
+        email: record.fields['Email'] || '',
         firstName: record.fields['First Name'],
         lastName: record.fields['Last Name'],
         photoConsent: record.fields['Photo Consent'] || false,
@@ -152,7 +152,7 @@ export async function POST(request: NextRequest) {
         const volunteerData = {
           eventAirtableId,
           eventName,
-          email: record.fields['Email'],
+          email: record.fields['Email'] || '',
           firstName: record.fields['First Name'],
           lastName: record.fields['Last Name'],
           photoConsent: record.fields['Photo Consent'] || false,
