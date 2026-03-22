@@ -301,7 +301,7 @@ export class DatabaseService {
         : db.select({ email: volunteers.email }).from(volunteers);
 
       const result = await query;
-      return result.map(v => v.email);
+      return result.map(v => v.email).filter(email => email !== '');
     } catch (error) {
       console.error('Error fetching volunteer emails:', error);
       throw error;
