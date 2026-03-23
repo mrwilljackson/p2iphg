@@ -1,7 +1,7 @@
 # Airtable Setup Guide for PowerHouseGames
 
-**Version:** 1.0  
-**Date:** 2026-03-03  
+**Version:** 1.1
+**Date:** 2026-03-13
 **Purpose:** Step-by-step guide to set up the Airtable base for PowerHouseGames event management
 
 ---
@@ -40,7 +40,7 @@ You'll create 4 tables. For each table:
 | Event Date | Date | Format: ISO (YYYY-MM-DD), Include time: No |
 | Location | Single line text | - |
 | Description | Long text | Enable rich text formatting |
-| Status | Single select | Options: planned, active, completed |
+| Status | Single select | Options: planned, active, completed, archived |
 
 4. Import sample data from `events-table.csv`:
    - Click **"..."** menu → **"Import data"** → **"CSV file"**

@@ -1,7 +1,7 @@
 # Airtable Base Structure for PowerHouseGames Event Management
 
-**Version:** 1.0  
-**Date:** 2026-03-03  
+**Version:** 1.1
+**Date:** 2026-03-13
 **Purpose:** Define the Airtable base structure for syncing event data before and after PowerHouseGames events
 
 ---
@@ -30,7 +30,7 @@ This Airtable base consists of **4 main tables** that sync with the NextJS appli
 | Event Date | Date | ISO 8601 format | ✅ Yes | Date of the event (YYYY-MM-DD) |
 | Location | Single line text | - | No | Venue name and address |
 | Description | Long text | - | No | Event description and details |
-| Status | Single select | planned, active, completed | ✅ Yes | Event status (only one can be 'active' at a time) |
+| Status | Single select | planned, active, completed, archived | ✅ Yes | Event status (only one can be 'active' at a time) |
 | Created At | Created time | - | Auto | When record was created |
 | Modified At | Last modified time | - | Auto | When record was last updated |
 
@@ -38,6 +38,7 @@ This Airtable base consists of **4 main tables** that sync with the NextJS appli
 - **planned** - Future events that are not yet active
 - **active** - The current active event (only one at a time)
 - **completed** - Past events that have finished
+- **archived** - Events whose participant/organisation data has been cleared via the "Clear Event Data" admin tool
 
 ---
 

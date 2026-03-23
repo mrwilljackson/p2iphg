@@ -1,7 +1,7 @@
 # Participant Counting and Reporting Logic
 
-**Version:** 3.0
-**Date:** 2026-02-23
+**Version:** 3.1
+**Date:** 2026-03-13
 **Status:** Active
 
 ## Overview
@@ -92,18 +92,20 @@ Cambridge Uni Boat Club (Educational)
 
 ---
 
-### 3. Individual Participants (No Group Affiliation)
+### 3. Individual Participants
 
 **Registration Process:**
-- Individuals register directly without selecting a group
+- Individuals register as Participant role
+- **Organisation is required** — participants select from non-Disability/Family organisations (Corporate, Sporting, Community, Educational, Other) or the virtual "Family Group" placeholder
+- The dropdown excludes Disability and Family organisations (those are reserved for the Group role)
 - No group leader involved
 
 **Counting:**
-- Count = Number of individual registrations
+- Count = Number of individual `role='Participant'` registrations
 
 **Reporting:**
 - **Use:** Actual registration count
-- **Source:** Count of `role='Participant'` registrations with no `organizationId`
+- **Source:** Count of `role='Participant'` registrations
 
 ---
 
@@ -222,6 +224,10 @@ Groups Card:
 ---
 
 ## Version History
+
+**Version 3.1 (2026-03-13):**
+- Updated individual participant section — organisation is now required for Participant role
+- Clarified that Participant dropdown excludes Disability/Family orgs (role-based filtering)
 
 **Version 3.0 (2026-02-23):**
 - Added `expected_group_size` field to organizations table

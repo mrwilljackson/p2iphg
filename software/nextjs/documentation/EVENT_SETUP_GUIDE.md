@@ -1,7 +1,7 @@
 # Event Setup Guide
 
-**Version:** 1.0  
-**Date:** 2026-02-23  
+**Version:** 1.1
+**Date:** 2026-03-13
 **Purpose:** Step-by-step instructions for setting up a new PowerHouseGames event in the system
 
 ---
@@ -161,11 +161,12 @@ Once all organizations and volunteers are added, make the event active so the pu
    - Your event status changes from `'planned'` → `'active'` (green badge)
    - All other events automatically change to `'completed'` (gray badge)
    - ⚠️ **Business Rule:** Only ONE event can be active at a time
+   - Events that have had their data cleared will show as `'archived'` (see Step 8)
 
 4. **Public Access**
    - The event is now visible on the public registration form
    - Event Admin Dashboard (PIN: 1234) can now access this event
-   - Participants can register through `/test-form`
+   - Participants can register through `/registration`
 
 ---
 
@@ -185,6 +186,10 @@ Once all organizations and volunteers are added, make the event active so the pu
 6. Registrations Collected
    ↓
 7. After Event: Change status to 'completed'
+   ↓
+8. Sync registrations to Airtable
+   ↓
+9. Clear Event Data → status changes to 'archived'
 ```
 
 ---
@@ -195,19 +200,25 @@ Once the event is active, the public registration form will:
 
 ### For Participants (Individual)
 - Show the active event name (read-only)
-- Require: Name, Surname, Email, Impairment details
+- Organisation dropdown shows **non-Disability/Family** organisations only (Corporate, Sporting, Community, Educational, Other) plus the **"Family Group"** placeholder option
+- Organisation selection is **required** (validated by Zod `superRefine`)
+- Require: Name, Surname, Email, Organisation, Impairment details
 - Optional: Photo consent, Feedback consent, Next event consent
 
 ### For Groups
-- Show dropdown of pre-registered organizations
-- Show "Family Group" option (always available)
+- Organisation dropdown shows **only Disability and Family** organisations
+- Organisation selection is **required** (validated by Zod `superRefine`)
+- No "Family Group" placeholder in Group role
 - Require: Group leader details, Group size, Disabled students count, SEN students count
 - Optional: Group leader participating checkbox
 
 ### For Volunteers
+- Organisation field is hidden
 - Check if email exists in pre-registered volunteers
 - If YES: Allow registration with consent preferences
 - If NO: Show error message (volunteer not pre-registered)
+
+> **Note:** Switching role clears the selected organisation automatically, since the dropdown options differ between roles. See `documentation/REGISTRATION_FORM_LOGIC.md` for full field-by-field reference.
 
 ---
 
@@ -241,6 +252,7 @@ For future events (status: 'planned'), you can set `expectedGroupSize` on organi
 - **'planned'**: Future event, not yet active
 - **'active'**: Current event, public can register
 - **'completed'**: Past event, no longer active
+- **'archived'**: Event data has been cleared (registrations, volunteers, organisations deleted)
 
 ### Data Validation
 - Organization names: 2-200 characters
@@ -271,6 +283,34 @@ For future events (status: 'planned'), you can set `expectedGroupSize` on organi
 
 ---
 
+---
+
+## Step 8: Clear Event Data (Post-Event Housekeeping)
+
+After the event is complete and registrations have been **synced to Airtable**, you can clear local data to keep the database tidy.
+
+1. **Navigate to P2I Admin Dashboard** → Select the completed event
+2. Click **"🗑️ Clear Event Data"**
+3. The system shows a count of records that will be deleted
+4. **Safety check:** If there are unsynced registrations (status `'pending'` or `'failed'`), the clear is blocked unless you tick the **"Force clear"** checkbox
+5. Confirm the action
+
+**What gets deleted (in FK-safe order):**
+1. All **registrations** for the event
+2. All **volunteers** for the event
+3. All **organisation contacts** linked via the event's Airtable ID
+4. All **organisations** linked through those contacts
+
+**After clearing:**
+- The event status changes to **`'archived'`**
+- The event record itself is preserved (name, date, location remain)
+- The event will not appear in the public registration form
+- Archived events are shown with a distinct badge in P2I Admin
+
+⚠️ **This action is irreversible.** Always sync to Airtable first.
+
+---
+
 ## Next Steps
 
 After event setup is complete:
@@ -279,6 +319,8 @@ After event setup is complete:
 3. Monitor registrations through Event Admin Dashboard
 4. Export data to CSV when needed
 5. After event: Change status to 'completed'
+6. Sync registrations to Airtable
+7. Clear event data (optional) → status becomes 'archived'
 
 ---
 

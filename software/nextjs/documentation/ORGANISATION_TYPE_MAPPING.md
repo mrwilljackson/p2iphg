@@ -29,6 +29,22 @@ The mapping is implemented in `app/actions/airtable-import.ts` via the `normaliz
 | Media and News | Other | Other |
 | Supplier | Other | Other |
 
+## Registration Form — Role-Based Filtering
+
+The `groupType` value also controls **which organisations appear in the registration form dropdown**, depending on the user's selected role. This filtering is implemented in `lib/helpers.ts` → `organizationsToOptions()`.
+
+| Role | Filter Rule | Organisations Shown |
+|---|---|---|
+| **Participant** | Exclude `Disability` and `Family` | Corporate, Sporting, Community, Educational, Other + virtual "Family Group" placeholder |
+| **Group** | Include **only** `Disability` and `Family` | Disability and Family organisations only |
+| **Volunteer** | Organisation field is hidden | — |
+
+- When the user switches role, the selected organisation is **cleared** automatically (the filtered lists don't overlap).
+- The "Family Group" placeholder (value `FAMILY_GROUP_PLACEHOLDER`) is a virtual option only shown for the Participant role; it triggers on-the-day family group creation.
+- Organisation selection is **required** for both Participant and Group roles (enforced via Zod `superRefine`).
+
+See `documentation/REGISTRATION_FORM_LOGIC.md` § 5.1 for the full behavioural reference.
+
 ## Counting Behaviour
 
 The 7 dashboard categories have different counting logic (see `lib/participant-counting.ts`):
