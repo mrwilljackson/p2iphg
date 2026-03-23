@@ -440,6 +440,16 @@ export class DatabaseService {
    */
   static async createRegistration(data: Omit<Registration, 'id' | 'createdAt' | 'modifiedAt'>): Promise<Registration> {
     try {
+      // Look up organisation name from organisationId if not already provided
+      let resolvedOrgName: string | null = data.organisationName || null;
+      if (!resolvedOrgName && data.organizationId) {
+        const org = await db.select({ name: organisations.name })
+          .from(organisations)
+          .where(eq(organisations.id, data.organizationId))
+          .limit(1);
+        resolvedOrgName = org[0]?.name || null;
+      }
+
       const result = await db.insert(registrations).values({
         eventId: data.eventId,
         attendeeName: data.attendeeName,
@@ -455,6 +465,7 @@ export class DatabaseService {
         disabledStudents: data.disabledStudents ?? null,
         senStudents: data.senStudents ?? null,
         groupLeaderParticipating: data.groupLeaderParticipating ?? null,
+        organisationName: resolvedOrgName,
         syncStatus: 'pending',
         airtableRecordId: null,
       }).returning();
@@ -780,6 +791,7 @@ function mapRegistrationFromDb(dbReg: any): Registration {
     disabledStudents: dbReg.disabledStudents,
     senStudents: dbReg.senStudents,
     groupLeaderParticipating: dbReg.groupLeaderParticipating,
+    organisationName: dbReg.organisationName || undefined,
     syncStatus: dbReg.syncStatus,
     airtableRecordId: dbReg.airtableRecordId,
     createdAt: dbReg.createdAt?.toISOString(),

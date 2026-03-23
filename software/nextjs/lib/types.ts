@@ -70,6 +70,7 @@ export interface Registration {
   disabledStudents?: number; // Number of disabled participants (REQUIRED for Group)
   senStudents?: number; // Number of SEN/additional learning support students (REQUIRED for Group)
   groupLeaderParticipating?: boolean; // Whether group leader is participating in games (Group role only)
+  organisationName?: string; // Organisation name stored at registration time (persisted DB column)
   syncStatus?: SyncStatus; // pending | synced | failed (optional, for offline mode)
   airtableRecordId?: string; // Airtable record ID after creation (optional)
   createdAt?: string; // ISO 8601 timestamp (optional)
