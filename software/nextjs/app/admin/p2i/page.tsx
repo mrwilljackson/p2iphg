@@ -30,8 +30,6 @@ interface RegistrationCSVRow {
   disabledStudents: string;
   senStudents: string;
   groupLeaderParticipating: string;
-  checkinTime: string;
-  checkoutTime: string;
   syncStatus: string;
   airtableRecordId: string;
   createdAt: string;
@@ -271,8 +269,6 @@ export default function P2IAdminDashboard() {
       'Disabled Students',
       'SEN Students',
       'Group Leader Participating',
-      'Check-in Time',
-      'Check-out Time',
       'Sync Status',
       'Airtable Record ID',
       'Created At',
@@ -310,8 +306,6 @@ export default function P2IAdminDashboard() {
         escapeCSV(row.disabledStudents),
         escapeCSV(row.senStudents),
         escapeCSV(row.groupLeaderParticipating),
-        escapeCSV(row.checkinTime),
-        escapeCSV(row.checkoutTime),
         escapeCSV(row.syncStatus),
         escapeCSV(row.airtableRecordId),
         escapeCSV(row.createdAt),
@@ -416,8 +410,6 @@ export default function P2IAdminDashboard() {
           disabledStudents: reg.disabledStudents?.toString() || '',
           senStudents: reg.senStudents?.toString() || '',
           groupLeaderParticipating: formatBoolean(reg.groupLeaderParticipating),
-          checkinTime: formatDate(reg.checkinTime),
-          checkoutTime: formatDate(reg.checkoutTime),
           syncStatus: reg.syncStatus || '',
           airtableRecordId: reg.airtableRecordId || '',
           createdAt: formatDate(reg.createdAt),

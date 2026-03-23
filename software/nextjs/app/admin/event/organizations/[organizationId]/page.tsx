@@ -265,7 +265,6 @@ export default function OrganizationRegistrationsPage() {
                           <th className="text-left py-3 px-4 sm:px-6 font-semibold text-gray-700">Name</th>
                           <th className="text-left py-3 px-4 sm:px-6 font-semibold text-gray-700">Role</th>
                           <th className="text-left py-3 px-4 sm:px-6 font-semibold text-gray-700">Email</th>
-                          <th className="text-center py-3 px-4 sm:px-6 font-semibold text-gray-700">Check-in</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
@@ -286,15 +285,6 @@ export default function OrganizationRegistrationsPage() {
                               )}
                             </td>
                             <td className="py-3 px-4 sm:px-6 text-gray-600">{reg.email}</td>
-                            <td className="py-3 px-4 sm:px-6 text-center">
-                              {reg.checkinTime ? (
-                                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-green-100 text-green-600 font-bold">
-                                  ✓
-                                </span>
-                              ) : (
-                                <span className="text-gray-400">-</span>
-                              )}
-                            </td>
                           </tr>
                         ))}
                       </tbody>

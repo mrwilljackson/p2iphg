@@ -71,10 +71,6 @@ function buildAirtableFields(
     if (reg.groupLeaderParticipating) fields[F.LEADER_PARTICIPATING] = true;
   }
 
-  // Timestamps
-  if (reg.checkinTime) fields[F.CHECKIN_TIME] = reg.checkinTime.toISOString();
-  if (reg.checkoutTime) fields[F.CHECKOUT_TIME] = reg.checkoutTime.toISOString();
-
   return fields;
 }
 

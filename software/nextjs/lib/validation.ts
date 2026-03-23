@@ -146,8 +146,6 @@ export const registrationFormSchema = z.object({
  */
 export const registrationSchema = registrationFormSchema.extend({
   id: z.string().uuid().optional(),
-  checkinTime: z.string().datetime().optional(),
-  checkoutTime: z.string().datetime().optional(),
   syncStatus: syncStatusSchema.optional(),
   airtableRecordId: z.string().optional(),
   createdAt: z.string().datetime().optional(),

@@ -455,8 +455,6 @@ export class DatabaseService {
         disabledStudents: data.disabledStudents ?? null,
         senStudents: data.senStudents ?? null,
         groupLeaderParticipating: data.groupLeaderParticipating ?? null,
-        checkinTime: data.checkinTime ? new Date(data.checkinTime) : null,
-        checkoutTime: data.checkoutTime ? new Date(data.checkoutTime) : null,
         syncStatus: 'pending',
         airtableRecordId: null,
       }).returning();
@@ -782,8 +780,6 @@ function mapRegistrationFromDb(dbReg: any): Registration {
     disabledStudents: dbReg.disabledStudents,
     senStudents: dbReg.senStudents,
     groupLeaderParticipating: dbReg.groupLeaderParticipating,
-    checkinTime: dbReg.checkinTime?.toISOString(),
-    checkoutTime: dbReg.checkoutTime?.toISOString(),
     syncStatus: dbReg.syncStatus,
     airtableRecordId: dbReg.airtableRecordId,
     createdAt: dbReg.createdAt?.toISOString(),

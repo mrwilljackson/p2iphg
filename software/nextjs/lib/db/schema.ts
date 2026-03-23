@@ -77,8 +77,6 @@ export const registrations = pgTable('registrations', {
   disabledStudents: integer('disabled_students'),
   senStudents: integer('sen_students'),
   groupLeaderParticipating: boolean('group_leader_participating'),
-  checkinTime: timestamp('checkin_time'),
-  checkoutTime: timestamp('checkout_time'),
   syncStatus: text('sync_status'), // 'pending' | 'synced' | 'failed'
   airtableRecordId: text('airtable_record_id'),
   createdAt: timestamp('created_at').defaultNow(),

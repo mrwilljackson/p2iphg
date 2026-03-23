@@ -70,8 +70,6 @@ export interface Registration {
   disabledStudents?: number; // Number of disabled participants (REQUIRED for Group)
   senStudents?: number; // Number of SEN/additional learning support students (REQUIRED for Group)
   groupLeaderParticipating?: boolean; // Whether group leader is participating in games (Group role only)
-  checkinTime?: string; // ISO 8601 timestamp (optional)
-  checkoutTime?: string; // ISO 8601 timestamp (optional)
   syncStatus?: SyncStatus; // pending | synced | failed (optional, for offline mode)
   airtableRecordId?: string; // Airtable record ID after creation (optional)
   createdAt?: string; // ISO 8601 timestamp (optional)
@@ -178,9 +176,6 @@ export interface CSVExportRow {
   role: RegistrationRole;
   photoConsent: string; // "Yes" | "No (Orange Wristband)"
   marketingConsent: string; // "Yes" | "No"
-  checkinTime: string; // Formatted timestamp or empty
-  checkoutTime: string; // Formatted timestamp or empty
-  attendanceDuration: string; // Formatted duration or empty
 }
 
 // ============================================================================
