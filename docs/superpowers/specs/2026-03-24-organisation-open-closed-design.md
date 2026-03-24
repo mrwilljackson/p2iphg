@@ -43,31 +43,10 @@ The Family Group placeholder is a hardcoded UI element with value `FAMILY_GROUP_
 Add `openGroup: boolean` to the `organisations` table:
 
 - **Type:** boolean, not nullable
-- **Default:** `true` (open) for new records
+- **Default:** `true` (open)
 - **Location:** `organisations` table only — not `organisationContacts`
 
-### Migration behaviour for existing records
-
-Adding the column via `npm run db:push` will set all existing records to `true` via the column default. However, existing Disability and Family organisations must be treated as closed groups. After running `db:push`, a one-off data migration script (following the pattern of `scripts/clear-database.ts`) must update existing records:
-
-```
-SET openGroup = false WHERE groupType IN ('Disability', 'Family')
-```
-
-This prevents existing Disability/Family orgs from incorrectly appearing in the Participant dropdown immediately after deploy.
-
-### Airtable re-imports of existing records
-
-When existing organisations are re-imported from Airtable, the `openGroup` field is not touched. A manually configured `openGroup: false` is preserved across re-imports. Airtable has no concept of open/closed and does not drive this field.
-
-### Airtable imports of new records
-
-When a new organisation is imported from Airtable for the first time (INSERT path in `app/actions/airtable-import.ts`), the import logic must set `openGroup` based on `groupType`:
-
-- `groupType IN ('Disability', 'Family')` → `openGroup: false`
-- All other `groupType` values → `openGroup: true` (column default)
-
-This ensures future Airtable imports of Disability/Family orgs do not incorrectly default to open.
+The column is added via `npm run db:push`. All records default to `true`. The `openGroup` flag is then set per organisation through the P2I admin CRUD pages going forward.
 
 ### `findOrCreateFamilyGroup` in `db-service.ts`
 
@@ -125,7 +104,5 @@ The `openGroup` flag is set per organisation via the P2I admin organisation CRUD
 | `lib/db-service.ts` — `createOrganization()` | Accept and write `openGroup` field |
 | `lib/db-service.ts` — `updateOrganization()` | Accept and write `openGroup` field |
 | `lib/db-service.ts` — `findOrCreateFamilyGroup()` | Set `openGroup: false` when creating a Family Group record |
-| `app/actions/airtable-import.ts` | Set `openGroup` based on `groupType` on INSERT; leave `openGroup` untouched on UPDATE |
-| `scripts/` (new one-off script) | Data migration: set `openGroup = false` for existing records where `groupType IN ('Disability', 'Family')` |
 | `docs/superpowers/plans/2026-03-23-p2i-crud-admin.md` | Add `openGroup` to `adminOrgFormSchema` and org create/edit form JSX |
 | P2I admin org CRUD pages (planned) | Add `openGroup` boolean toggle to org create and edit forms |
