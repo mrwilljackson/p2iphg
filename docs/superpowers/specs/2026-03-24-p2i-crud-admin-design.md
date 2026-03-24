@@ -6,87 +6,103 @@
 
 ## Summary
 
-Add full Create/Read/Update/Delete management of Events, Organisations, and Volunteers to the P2I admin section. This replaces the Airtable import workflow as the primary means of populating the database before an event.
+The P2I admin section provides full Create/Read/Update/Delete management of Events, Organisations, and Volunteers. The Registrations table is excluded — registrations are created by attendees via the public registration form and are not managed here.
 
 ## Context
 
-The existing data entry process requires the client to import Events, Organisations, and Volunteers from Airtable via a bulk import page. This has proven difficult to manage: Airtable field mapping is fragile, import errors are hard to diagnose, and the client must maintain two systems in sync. Manual CRUD admin pages give the client a direct, reliable way to manage records without Airtable as an intermediary.
+The previous data entry process required importing Events, Organisations, and Volunteers from Airtable via a bulk import page. This was fragile and difficult to manage. Direct CRUD admin pages give the client a simpler, more reliable way to manage records. The Airtable import page is not removed — it remains available as an alternative — but the CRUD pages become the primary workflow.
 
-## Scope
+## How It Works
 
-### In scope
-- **Events** — create, edit, delete
-- **Organisations** — create, edit, delete (includes linked contact details)
-- **Volunteers** — create, edit, delete
+The P2I admin must first select an event to administer (via the Manage Events page). All subsequent Organisations and Volunteers pages are scoped to that selected event.
 
-### Out of scope
-- **Registrations** — individual attendee registration already exists via the public `/registration` form and is not changed
-- **Removing the Airtable import** — the import page is not deleted; it remains available as an alternative data entry path for clients who prefer it
-- **Registration form UI** — no changes to form labels, layout, or public-facing behaviour beyond what the open/closed filtering change requires
+---
 
-## Key Design Decisions
+## Events
 
-### Airtable Record ID as optional sync target
+**Page:** `/admin/p2i/manage-events`
 
-Every entity (Event, Organisation, Volunteer) has an `airtableRecordId` field. In the admin forms, this is an optional input:
+The admin can view a table of all events in the system.
 
-- Records imported from Airtable already have an ID — it is preserved.
-- Records created manually leave the field blank initially — it can be filled in later if the record is ever linked to an Airtable counterpart.
-- When sync runs, records with a populated `airtableRecordId` update their Airtable counterpart; records without one create a new Airtable record and receive the ID on first sync.
+### Create
+Fields:
+- **Event name** (required)
+- **Date** (required)
+- **Location** (optional)
+- **Description** (optional)
+- **Airtable Record ID** (optional — enter if this event already exists in Airtable to preserve the sync link)
 
-This means the CRUD admin and the Airtable import can coexist without conflict.
+### Edit
+All fields above are editable after creation.
 
-### Event-first association
+### Delete
+An event can be deleted only if it has no registrations and no volunteers. If either exist, deletion is blocked with an error message.
 
-Organisations and Volunteers must be associated with an event. The P2I admin selects a current event (stored in `sessionStorage` as `administeringEventId`) before managing its organisations and volunteers. This scopes all CRUD pages to a single event at a time.
+---
 
-The link between events and organisations uses `organisations.airtableEventId = events.airtableRecordId`. For manually-created events that have no Airtable ID, `createEvent()` self-populates `airtableRecordId` with the event's own UUID as a fallback. This ensures the link works without a schema change.
+## Organisations
 
-### Two-table organisation record
+**Page:** `/admin/p2i/organisations`
 
-An organisation record spans two tables:
+The admin can view a table of all organisations linked to the currently selected event.
 
-- `organisations` — name, groupType, openGroup, imageUrl, airtableRecordId, airtableEventId
-- `organisationContacts` — contact name, email, phone, notes
+### Create
+Fields:
+- **Organisation name** (required)
+- **Open group** (required, checkbox — controls visibility in the registration form; see [open/closed spec](./2026-03-24-organisation-open-closed-design.md))
+- **Group type** (required — Family, Disability, Corporate, Sporting, Community, Educational, Other; retained for Airtable sync compatibility)
+- **Contact first name** (optional)
+- **Contact last name** (optional)
+- **Contact email** (optional)
+- **Contact phone** (optional)
+- **Notes** (optional)
+- **Airtable Record ID** (optional — enter if this organisation already exists in Airtable)
 
-They are joined via `organisationContacts.organisationId = organisations.airtableRecordId`. Create, update, and delete operations must write to both tables. If `airtableRecordId` changes on update, `organisationContacts.organisationId` is updated to match.
+### Edit
+All fields above are editable after creation.
 
-### Open/closed group flag
+### Delete
+An organisation can be deleted only if it has no registrations. If registrations exist against it, deletion is blocked with an error message.
 
-Each organisation carries an `openGroup: boolean` field (default `true`) that controls its visibility in the registration form dropdowns. This is an admin-only concept — end users see only the organisations relevant to their role. See `docs/superpowers/specs/2026-03-24-organisation-open-closed-design.md` for the full filtering spec.
+### Notes
+Each organisation record also stores a linked contact record internally. Create, edit, and delete operations update both records together — this is transparent to the admin.
 
-### No server-side auth
+---
 
-The P2I admin section has no server-side session. Access is controlled by `sessionStorage`:
-- `adminAuth === "true"` and `adminLevel === "p2i"` grants access to P2I pages
-- `administeringEventId` stores the currently selected event
+## Volunteers
 
-All CRUD pages check these values in a `useEffect` and redirect unauthenticated users to `/admin`.
+**Page:** `/admin/p2i/volunteers`
 
-## Architecture
+The admin can view a table of all volunteers linked to the currently selected event. Volunteers are identified at registration by email lookup — a volunteer record must exist before the event for this to work.
 
-All database mutations follow the existing layered pattern:
+### Create
+Fields:
+- **First name** (required)
+- **Last name** (required)
+- **Email** (required — this is the lookup key used at registration)
+- **Photo consent** (required, checkbox, defaults to yes)
+- **Feedback consent** (required, checkbox, defaults to no)
+- **Next event consent** (required, checkbox, defaults to no)
+- **Airtable Record ID** (optional — enter if this volunteer already exists in Airtable)
 
-```
-Admin page (client component)
-  → Server Action (lib/actions.ts, "use server")
-    → DatabaseService static method (lib/db-service.ts)
-      → Drizzle ORM + Neon Postgres
-```
+### Edit
+All fields above are editable after creation.
 
-Forms use React Hook Form + Zod schemas (`lib/validation.ts`). Create and edit dialogs use Shadcn `<Dialog>`. Delete uses `window.confirm`.
+### Delete
+Volunteer records can be deleted at any time. Deleting a volunteer who has already registered does not remove their registration record.
 
-## Affected Files
+---
 
-| File | Change |
-|---|---|
-| `lib/db/schema.ts` | Add `openGroup` boolean column to `organisations` table |
-| `lib/types.ts` | Add `openGroup: boolean` to `Organization` interface |
-| `lib/helpers.ts` | Replace `groupType`-based filtering with `openGroup` in `organizationsToOptions()` |
-| `lib/db-service.ts` | Add updateEvent, deleteEvent, updateOrganization, deleteOrganization, updateVolunteer, deleteVolunteer; fix createEvent UUID fallback; add openGroup to createOrganization and findOrCreateFamilyGroup |
-| `lib/actions.ts` | Add server action wrappers for all new DB methods |
-| `lib/validation.ts` | Add adminEventFormSchema, adminOrgFormSchema (with openGroup), adminVolunteerFormSchema |
-| `app/admin/p2i/manage-events/page.tsx` | Add Edit dialog and Delete button |
-| `app/admin/p2i/organisations/page.tsx` | New page — full CRUD for organisations |
-| `app/admin/p2i/volunteers/page.tsx` | New page — full CRUD for volunteers |
-| `app/admin/p2i/page.tsx` | Add nav buttons for the two new pages |
+## Airtable Record ID
+
+Every entity has an optional Airtable Record ID field. This is the mechanism that preserves the link to Airtable when syncing registrations back after an event:
+
+- If an admin enters an Airtable Record ID when creating or editing a record, that record will update its Airtable counterpart when sync runs.
+- If left blank, the record is treated as new by the sync and a new Airtable record is created on first sync.
+- Records imported via the Airtable import page already carry their ID — it is preserved automatically.
+
+## Out of Scope
+
+- **Registrations** — created by attendees via the public `/registration` form; not managed in the admin
+- **Registration form UI** — no changes to the public-facing form beyond organisation filtering (covered in the open/closed spec)
+- **Airtable import page** — not removed; remains available alongside these CRUD pages
