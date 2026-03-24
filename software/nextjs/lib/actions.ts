@@ -430,7 +430,6 @@ export async function getOrgRecords(): Promise<OrgRecord[]> {
 export async function createOrgRecord(data: {
   name: string;
   groupType: string;
-  openGroup: boolean;
   airtableRecordId?: string;
 }): Promise<OrgRecord> {
   return await DatabaseService.createOrgRecord(data);
@@ -439,7 +438,6 @@ export async function createOrgRecord(data: {
 export async function updateOrgRecord(id: string, data: {
   name?: string;
   groupType?: string;
-  openGroup?: boolean;
   airtableRecordId?: string;
 }): Promise<OrgRecord> {
   return await DatabaseService.updateOrgRecord(id, data);
@@ -460,6 +458,7 @@ export async function getGroupLeaders(eventId: string): Promise<GroupLeader[]> {
 export async function createGroupLeader(data: {
   orgId: string;
   eventId: string;
+  openGroup: boolean;
   contactFirstName?: string;
   contactLastName?: string;
   contactEmail?: string;
@@ -472,6 +471,7 @@ export async function createGroupLeader(data: {
 
 export async function updateGroupLeader(id: string, data: {
   orgId?: string;
+  openGroup?: boolean;
   contactFirstName?: string;
   contactLastName?: string;
   contactEmail?: string;

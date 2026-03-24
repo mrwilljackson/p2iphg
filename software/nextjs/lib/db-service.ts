@@ -767,14 +767,12 @@ export class DatabaseService {
   static async createOrgRecord(data: {
     name: string;
     groupType: string;
-    openGroup: boolean;
     airtableRecordId?: string;
   }): Promise<OrgRecord> {
     const localRecordId = data.airtableRecordId || `local-${randomUUID()}`;
     const [row] = await db.insert(organisations).values({
       name: data.name,
       groupType: data.groupType,
-      openGroup: data.openGroup,
       airtableRecordId: localRecordId,
     }).returning();
     return mapOrgRecord(row);
@@ -783,7 +781,6 @@ export class DatabaseService {
   static async updateOrgRecord(id: string, data: {
     name?: string;
     groupType?: string;
-    openGroup?: boolean;
     airtableRecordId?: string;
   }): Promise<OrgRecord> {
     const [current] = await db.select().from(organisations).where(eq(organisations.id, id)).limit(1);
@@ -851,6 +848,7 @@ export class DatabaseService {
   static async createGroupLeader(data: {
     orgId: string;
     eventId: string;
+    openGroup: boolean;
     contactFirstName?: string;
     contactLastName?: string;
     contactEmail?: string;
@@ -862,6 +860,10 @@ export class DatabaseService {
     const eventAirtableId = event?.airtableRecordId ?? null;
     const [org] = await db.select().from(organisations).where(eq(organisations.id, data.orgId)).limit(1);
     if (!org) throw new Error(`Organisation not found: ${data.orgId}`);
+    await db
+      .update(organisations)
+      .set({ openGroup: data.openGroup, modifiedAt: new Date() })
+      .where(eq(organisations.id, data.orgId));
     const [contact] = await db.insert(organisationContacts).values({
       organisationId: org.airtableRecordId,
       airtableEventId: eventAirtableId,
@@ -872,11 +874,13 @@ export class DatabaseService {
       notes: data.notes || null,
       airtableRecordId: data.airtableRecordId || null,
     }).returning();
-    return mapGroupLeader(org, contact);
+    const updatedOrg = { ...org, openGroup: data.openGroup };
+    return mapGroupLeader(updatedOrg, contact);
   }
 
   static async updateGroupLeader(id: string, data: {
     orgId?: string;
+    openGroup?: boolean;
     contactFirstName?: string;
     contactLastName?: string;
     contactEmail?: string;
@@ -884,12 +888,34 @@ export class DatabaseService {
     notes?: string;
     airtableRecordId?: string;
   }): Promise<GroupLeader> {
-    const { orgId, ...contactFields } = data;
+    const { orgId, openGroup, ...contactFields } = data;
     let orgAirtableId: string | null | undefined;
+    let resolvedOrgId = orgId;
     if (orgId) {
       const [org] = await db.select().from(organisations).where(eq(organisations.id, orgId)).limit(1);
       if (!org) throw new Error(`Organisation not found: ${orgId}`);
       orgAirtableId = org.airtableRecordId;
+    }
+    if (openGroup !== undefined) {
+      // Find the org linked to this contact if orgId not being changed
+      if (!resolvedOrgId) {
+        const [contact] = await db
+          .select({ organisationId: organisationContacts.organisationId })
+          .from(organisationContacts)
+          .where(eq(organisationContacts.id, id))
+          .limit(1);
+        if (contact?.organisationId) {
+          await db
+            .update(organisations)
+            .set({ openGroup, modifiedAt: new Date() })
+            .where(eq(organisations.airtableRecordId, contact.organisationId));
+        }
+      } else {
+        await db
+          .update(organisations)
+          .set({ openGroup, modifiedAt: new Date() })
+          .where(eq(organisations.id, resolvedOrgId));
+      }
     }
     await db
       .update(organisationContacts)

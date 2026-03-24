@@ -6,7 +6,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import {
@@ -21,7 +20,6 @@ const GROUP_TYPES = ['Family', 'Disability', 'Corporate', 'Sporting', 'Community
 const defaultValues: AdminOrgRecordFormData = {
   name: "",
   groupType: "Other",
-  openGroup: true,
   airtableRecordId: "",
 };
 
@@ -81,7 +79,6 @@ export default function OrganisationsPage() {
       await createOrgRecord({
         name: data.name,
         groupType: data.groupType,
-        openGroup: data.openGroup,
         airtableRecordId: data.airtableRecordId || undefined,
       });
       setIsCreateOpen(false);
@@ -99,7 +96,6 @@ export default function OrganisationsPage() {
     editForm.reset({
       name: org.name,
       groupType: org.groupType as AdminOrgRecordFormData["groupType"],
-      openGroup: org.openGroup,
       airtableRecordId: org.airtableRecordId?.startsWith("local-") ? "" : (org.airtableRecordId || ""),
     });
     setIsEditOpen(true);
@@ -112,7 +108,6 @@ export default function OrganisationsPage() {
       await updateOrgRecord(editingOrg.id, {
         name: data.name,
         groupType: data.groupType,
-        openGroup: data.openGroup,
         airtableRecordId: data.airtableRecordId || undefined,
       });
       setIsEditOpen(false);
@@ -166,14 +161,6 @@ export default function OrganisationsPage() {
             </SelectContent>
           </Select>
           <FormMessage />
-        </FormItem>
-      )} />
-      <FormField control={form.control} name="openGroup" render={({ field }) => (
-        <FormItem className="flex items-center gap-3">
-          <FormControl>
-            <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-          </FormControl>
-          <FormLabel className="mt-0!">Open group — visible to individual participants</FormLabel>
         </FormItem>
       )} />
       <FormField control={form.control} name="airtableRecordId" render={({ field }) => (

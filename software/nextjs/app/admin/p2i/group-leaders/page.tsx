@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import {
@@ -20,6 +21,7 @@ import type { GroupLeader, OrgRecord, Event } from "@/lib/types";
 
 const defaultValues: AdminGroupLeaderFormData = {
   orgId: "",
+  openGroup: true,
   contactFirstName: "",
   contactLastName: "",
   contactEmail: "",
@@ -96,6 +98,7 @@ export default function GroupLeadersPage() {
       await createGroupLeader({
         orgId: data.orgId,
         eventId,
+        openGroup: data.openGroup,
         contactFirstName: data.contactFirstName || undefined,
         contactLastName: data.contactLastName || undefined,
         contactEmail: data.contactEmail || undefined,
@@ -117,6 +120,7 @@ export default function GroupLeadersPage() {
     setEditingLeader(leader);
     editForm.reset({
       orgId: leader.orgId,
+      openGroup: leader.openGroup,
       contactFirstName: leader.contactFirstName || "",
       contactLastName: leader.contactLastName || "",
       contactEmail: leader.contactEmail || "",
@@ -134,6 +138,7 @@ export default function GroupLeadersPage() {
       setIsSaving(true);
       await updateGroupLeader(editingLeader.id, {
         orgId: data.orgId !== editingLeader.orgId ? data.orgId : undefined,
+        openGroup: data.openGroup,
         contactFirstName: data.contactFirstName || undefined,
         contactLastName: data.contactLastName || undefined,
         contactEmail: data.contactEmail || undefined,
@@ -212,6 +217,14 @@ export default function GroupLeadersPage() {
               No organisations found for this event. Add organisations first.
             </p>
           )}
+        </FormItem>
+      )} />
+      <FormField control={form.control} name="openGroup" render={({ field }) => (
+        <FormItem className="flex items-center gap-3">
+          <FormControl>
+            <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+          </FormControl>
+          <FormLabel className="mt-0!">Open group — visible to individual participants</FormLabel>
         </FormItem>
       )} />
       <div className="grid grid-cols-2 gap-3">
