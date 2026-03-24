@@ -783,9 +783,6 @@ export default function P2IAdminDashboard() {
               <Button className="w-full justify-start" variant="outline">
                 👥 Manage Volunteers
               </Button>
-              <Button className="w-full justify-start" variant="outline">
-                🏢 Manage Organizations
-              </Button>
               <Button
                 className="w-full justify-start"
                 variant="outline"
