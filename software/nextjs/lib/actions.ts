@@ -485,3 +485,24 @@ export async function updateGroupLeader(id: string, data: {
 export async function deleteGroupLeader(id: string): Promise<void> {
   return await DatabaseService.deleteGroupLeader(id);
 }
+
+// ----------------------------------------------------------------------------
+// Helper (Volunteer) CRUD
+// ----------------------------------------------------------------------------
+
+export async function updateVolunteer(id: string, data: {
+  eventId?: string;
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+  photoConsent?: boolean;
+  feedbackConsent?: boolean;
+  nextEventConsent?: boolean;
+  airtableRecordId?: string;
+}): Promise<Volunteer> {
+  return await DatabaseService.updateVolunteer(id, data);
+}
+
+export async function deleteVolunteer(id: string): Promise<void> {
+  return await DatabaseService.deleteVolunteer(id);
+}

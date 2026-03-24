@@ -93,7 +93,6 @@ export const organisations = pgTable('organisations', {
   id: uuid('id').primaryKey().defaultRandom(),
   name: text('name'),
   groupType: text('group_type'),
-  openGroup: boolean('open_group').notNull().default(true),
   imageUrl: text('image_url'),
   airtableRecordId: text('airtable_record_id'),
   airtableEventId: text('airtable_event_id'),
@@ -110,6 +109,9 @@ export const organisationContacts = pgTable('organisation_contacts', {
   id: uuid('id').primaryKey().defaultRandom(),
   organisationId: text('organisation_id'), // Airtable record ID of the organisation
   airtableEventId: text('airtable_event_id'),
+  // open_group: whether this group is visible to individual Participants at this event.
+  // Stored here (not on organisations) so the same org can be open at one event and closed at another.
+  openGroup: boolean('open_group').notNull().default(true),
   contactFirstName: text('contact_first_name'),
   contactLastName: text('contact_last_name'),
   contactEmail: text('contact_email'),

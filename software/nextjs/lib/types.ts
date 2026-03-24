@@ -118,7 +118,6 @@ export interface OrgRecord {
   id: string;
   name: string;
   groupType: string;
-  openGroup: boolean;
   airtableRecordId?: string;
   airtableEventId?: string;
   createdAt?: string;

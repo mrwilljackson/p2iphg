@@ -290,6 +290,31 @@ export const adminGroupLeaderFormSchema = z.object({
 });
 export type AdminGroupLeaderFormData = z.infer<typeof adminGroupLeaderFormSchema>;
 
+/**
+ * Admin Helper (Volunteer) Form Schema
+ * For the volunteers CRUD page (P2I admin) — referred to as "Helpers" in the UI
+ */
+export const adminHelperFormSchema = z.object({
+  eventId: z.string().min(1, "Event is required"),
+  firstName: z
+    .string()
+    .min(1, "First name is required")
+    .max(100, "First name must be at most 100 characters"),
+  lastName: z
+    .string()
+    .min(1, "Last name is required")
+    .max(100, "Last name must be at most 100 characters"),
+  email: z
+    .string()
+    .email("Please enter a valid email address")
+    .max(255, "Email must be at most 255 characters"),
+  photoConsent: z.boolean(),
+  feedbackConsent: z.boolean(),
+  nextEventConsent: z.boolean(),
+  airtableRecordId: z.string().optional().or(z.literal("")),
+});
+export type AdminHelperFormData = z.infer<typeof adminHelperFormSchema>;
+
 // ============================================================================
 // Type Inference
 // ============================================================================

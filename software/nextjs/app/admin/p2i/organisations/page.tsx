@@ -200,7 +200,7 @@ export default function OrganisationsPage() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  {["Name", "Type", "Group", "Airtable ID", "Actions"].map(h => (
+                  {["Name", "Type", "Airtable ID", "Actions"].map(h => (
                     <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{h}</th>
                   ))}
                 </tr>
@@ -210,13 +210,6 @@ export default function OrganisationsPage() {
                   <tr key={org.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3 text-sm font-medium text-gray-900">{org.name}</td>
                     <td className="px-4 py-3 text-sm text-gray-600">{org.groupType}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                        org.openGroup ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-700'
-                      }`}>
-                        {org.openGroup ? 'Open' : 'Closed'}
-                      </span>
-                    </td>
                     <td className="px-4 py-3 text-xs text-gray-400 font-mono">
                       {org.airtableRecordId?.startsWith("local-") ? "—" : (org.airtableRecordId || "—")}
                     </td>
