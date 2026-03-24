@@ -793,9 +793,9 @@ export default function P2IAdminDashboard() {
               <Button
                 className="w-full justify-start"
                 variant="outline"
-                onClick={() => router.push("/admin/p2i/organisations")}
+                onClick={() => router.push("/admin/p2i/group-leaders")}
               >
-                🏢 Manage Organisations
+                👥 Manage Group Leaders
               </Button>
 
               {/* Create New Event Dialog */}

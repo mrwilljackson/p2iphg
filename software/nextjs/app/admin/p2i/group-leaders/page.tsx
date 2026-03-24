@@ -20,7 +20,7 @@ import type { Organization, Event } from "@/lib/types";
 
 const GROUP_TYPES = ['Family', 'Disability', 'Corporate', 'Sporting', 'Community', 'Educational', 'Other'] as const;
 
-const defaultOrgValues: AdminOrgFormData = {
+const defaultValues: AdminOrgFormData = {
   name: "",
   openGroup: true,
   groupType: "Other",
@@ -32,7 +32,7 @@ const defaultOrgValues: AdminOrgFormData = {
   airtableRecordId: "",
 };
 
-export default function OrganisationsPage() {
+export default function GroupLeadersPage() {
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentEvent, setCurrentEvent] = useState<Event | null>(null);
@@ -47,12 +47,12 @@ export default function OrganisationsPage() {
 
   const createForm = useForm<AdminOrgFormData>({
     resolver: zodResolver(adminOrgFormSchema),
-    defaultValues: defaultOrgValues,
+    defaultValues,
   });
 
   const editForm = useForm<AdminOrgFormData>({
     resolver: zodResolver(adminOrgFormSchema),
-    defaultValues: defaultOrgValues,
+    defaultValues,
   });
 
   useEffect(() => {
@@ -68,7 +68,7 @@ export default function OrganisationsPage() {
   useEffect(() => {
     if (!isAuthenticated) return;
     const eventId = sessionStorage.getItem("administeringEventId");
-    if (!eventId) return; // handled by no-event UI below
+    if (!eventId) return;
     loadData(eventId);
   }, [isAuthenticated, router]);
 
@@ -107,10 +107,10 @@ export default function OrganisationsPage() {
         airtableRecordId: data.airtableRecordId || undefined,
       });
       setIsCreateOpen(false);
-      createForm.reset(defaultOrgValues);
+      createForm.reset(defaultValues);
       await loadData(eventId);
     } catch (error) {
-      alert("Failed to create organisation. " + (error instanceof Error ? error.message : ""));
+      alert("Failed to create group leader. " + (error instanceof Error ? error.message : ""));
     } finally {
       setIsSaving(false);
     }
@@ -185,7 +185,7 @@ export default function OrganisationsPage() {
         <div className="bg-white rounded-xl shadow border border-gray-200 p-10 text-center max-w-md">
           <h2 className="text-xl font-semibold text-gray-800 mb-2">No event selected</h2>
           <p className="text-gray-600 mb-6">
-            You need to select an event to administer before managing its organisations. Go to Manage Events and click <strong>Administer</strong> on the event you want to work with.
+            You need to select an event to administer before managing its group leaders. Go to Manage Events and click <strong>Administer</strong> on the event you want to work with.
           </p>
           <Button onClick={() => router.push("/admin/p2i/manage-events")}>
             Go to Manage Events
@@ -195,7 +195,7 @@ export default function OrganisationsPage() {
     );
   }
 
-  const orgFormFields = (form: ReturnType<typeof useForm<AdminOrgFormData>>) => (
+  const formFields = (form: ReturnType<typeof useForm<AdminOrgFormData>>) => (
     <div className="space-y-4">
       <FormField control={form.control} name="name" render={({ field }) => (
         <FormItem>
@@ -229,14 +229,14 @@ export default function OrganisationsPage() {
       <div className="grid grid-cols-2 gap-3">
         <FormField control={form.control} name="contactFirstName" render={({ field }) => (
           <FormItem>
-            <FormLabel>Contact First Name</FormLabel>
+            <FormLabel>Leader First Name</FormLabel>
             <FormControl><Input {...field} /></FormControl>
             <FormMessage />
           </FormItem>
         )} />
         <FormField control={form.control} name="contactLastName" render={({ field }) => (
           <FormItem>
-            <FormLabel>Contact Last Name</FormLabel>
+            <FormLabel>Leader Last Name</FormLabel>
             <FormControl><Input {...field} /></FormControl>
             <FormMessage />
           </FormItem>
@@ -244,14 +244,14 @@ export default function OrganisationsPage() {
       </div>
       <FormField control={form.control} name="contactEmail" render={({ field }) => (
         <FormItem>
-          <FormLabel>Contact Email</FormLabel>
+          <FormLabel>Leader Email</FormLabel>
           <FormControl><Input type="email" {...field} /></FormControl>
           <FormMessage />
         </FormItem>
       )} />
       <FormField control={form.control} name="contactPhone" render={({ field }) => (
         <FormItem>
-          <FormLabel>Contact Phone</FormLabel>
+          <FormLabel>Leader Phone</FormLabel>
           <FormControl><Input type="tel" {...field} /></FormControl>
           <FormMessage />
         </FormItem>
@@ -278,11 +278,11 @@ export default function OrganisationsPage() {
       <header className="bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Organisations</h1>
-            <p className="text-sm text-gray-600 mt-1">{currentEvent?.name}</p>
+            <h1 className="text-2xl font-bold text-gray-900">Group Leaders</h1>
+            <p className="text-sm text-gray-600 mt-1">{currentEvent.name}</p>
           </div>
           <div className="flex gap-2">
-            <Button onClick={() => setIsCreateOpen(true)}>+ Add Organisation</Button>
+            <Button onClick={() => setIsCreateOpen(true)}>+ Add Group Leader</Button>
             <Button variant="outline" onClick={() => router.push("/admin/p2i")}>
               ← Back to P2I Admin
             </Button>
@@ -293,14 +293,14 @@ export default function OrganisationsPage() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {orgs.length === 0 ? (
           <div className="bg-white rounded-xl shadow border border-gray-200 p-12 text-center text-gray-500">
-            No organisations yet. Click &quot;+ Add Organisation&quot; to create one.
+            No group leaders yet. Click &quot;+ Add Group Leader&quot; to create one.
           </div>
         ) : (
           <div className="bg-white rounded-xl shadow border border-gray-200 overflow-hidden">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  {["Name", "Group", "Contact", "Email", "Airtable ID", "Actions"].map(h => (
+                  {["Organisation", "Group", "Leader", "Email", "Airtable ID", "Actions"].map(h => (
                     <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{h}</th>
                   ))}
                 </tr>
@@ -345,13 +345,13 @@ export default function OrganisationsPage() {
       {/* Create Dialog */}
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>Add Organisation</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Add Group Leader</DialogTitle></DialogHeader>
           <Form {...createForm}>
             <form onSubmit={createForm.handleSubmit(handleCreate)}>
-              {orgFormFields(createForm)}
+              {formFields(createForm)}
               <DialogFooter className="mt-6">
                 <Button type="button" variant="outline" onClick={() => setIsCreateOpen(false)}>Cancel</Button>
-                <Button type="submit" disabled={isSaving}>{isSaving ? "Saving..." : "Add Organisation"}</Button>
+                <Button type="submit" disabled={isSaving}>{isSaving ? "Saving..." : "Add Group Leader"}</Button>
               </DialogFooter>
             </form>
           </Form>
@@ -361,10 +361,10 @@ export default function OrganisationsPage() {
       {/* Edit Dialog */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>Edit Organisation</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Edit Group Leader</DialogTitle></DialogHeader>
           <Form {...editForm}>
             <form onSubmit={editForm.handleSubmit(handleSaveEdit)}>
-              {orgFormFields(editForm)}
+              {formFields(editForm)}
               <DialogFooter className="mt-6">
                 <Button type="button" variant="outline" onClick={() => setIsEditOpen(false)}>Cancel</Button>
                 <Button type="submit" disabled={isSaving}>{isSaving ? "Saving..." : "Save Changes"}</Button>
