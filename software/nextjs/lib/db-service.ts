@@ -558,6 +558,7 @@ export class DatabaseService {
       const [newOrg] = await db.insert(organisations).values({
         name: data.name,
         groupType: data.groupType || 'Other',
+        openGroup: data.openGroup ?? true,
         imageUrl: data.imageUrl || null,
         airtableRecordId: localRecordId,
         airtableEventId: eventAirtableId,
@@ -634,6 +635,7 @@ export class DatabaseService {
       const [newOrg] = await db.insert(organisations).values({
         name: familyGroupName,
         groupType: 'Family',
+        openGroup: false,
         imageUrl: null,
         airtableRecordId: localRecordId,
         airtableEventId: eventAirtableId,
@@ -653,6 +655,99 @@ export class DatabaseService {
       return mapOrganisationToOrganization(newOrg, newContact, eventId);
     } catch (error) {
       console.error('Error finding or creating family group:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update an organisation and its associated contact record.
+   * Handles the two-table write (best-effort — Neon HTTP doesn't support transactions).
+   */
+  static async updateOrganization(id: string, data: {
+    name?: string;
+    groupType?: string;
+    openGroup?: boolean;
+    airtableRecordId?: string;
+    contactFirstName?: string;
+    contactLastName?: string;
+    contactEmail?: string;
+    contactPhone?: string;
+    notes?: string;
+  }): Promise<Organization> {
+    try {
+      const [current] = await db
+        .select()
+        .from(organisations)
+        .where(eq(organisations.id, id))
+        .limit(1);
+
+      if (!current) throw new Error(`Organisation not found: ${id}`);
+
+      const oldAirtableRecordId = current.airtableRecordId;
+      const newAirtableRecordId = data.airtableRecordId ?? oldAirtableRecordId;
+
+      const { contactFirstName, contactLastName, contactEmail, contactPhone, notes, airtableRecordId, ...orgFields } = data;
+      await db
+        .update(organisations)
+        .set({ ...orgFields, airtableRecordId: newAirtableRecordId, modifiedAt: new Date() })
+        .where(eq(organisations.id, id));
+
+      if (oldAirtableRecordId) {
+        await db
+          .update(organisationContacts)
+          .set({
+            organisationId: newAirtableRecordId,
+            contactFirstName: contactFirstName ?? undefined,
+            contactLastName: contactLastName ?? undefined,
+            contactEmail: contactEmail ?? undefined,
+            contactPhone: contactPhone ?? undefined,
+            notes: notes ?? undefined,
+            modifiedAt: new Date(),
+          })
+          .where(eq(organisationContacts.organisationId, oldAirtableRecordId));
+      }
+
+      const updated = await this.getOrganizationById(id);
+      if (!updated) throw new Error(`Organisation not found after update: ${id}`);
+      return updated;
+    } catch (error) {
+      console.error('Error updating organisation:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete an organisation and its contact record.
+   * Blocked if any registrations reference this organisation.
+   */
+  static async deleteOrganization(id: string): Promise<void> {
+    try {
+      const [regCount] = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(registrations)
+        .where(eq(registrations.organizationId, id));
+
+      if ((regCount?.count ?? 0) > 0) {
+        throw new Error('Cannot delete an organisation that has registrations.');
+      }
+
+      const [org] = await db
+        .select({ airtableRecordId: organisations.airtableRecordId })
+        .from(organisations)
+        .where(eq(organisations.id, id))
+        .limit(1);
+
+      if (!org) throw new Error(`Organisation not found: ${id}`);
+
+      if (org.airtableRecordId) {
+        await db
+          .delete(organisationContacts)
+          .where(eq(organisationContacts.organisationId, org.airtableRecordId));
+      }
+
+      await db.delete(organisations).where(eq(organisations.id, id));
+    } catch (error) {
+      console.error('Error deleting organisation:', error);
       throw error;
     }
   }
@@ -808,6 +903,7 @@ function mapOrganisationToOrganization(
     eventId: eventId || '', // UK table links via airtable_event_id, not a UUID event_id
     name: org.name || '',
     groupType: org.groupType || 'Other',
+    openGroup: org.openGroup ?? true,
     expectedGroupSize: contact?.expectedGroupSize ? parseInt(contact.expectedGroupSize, 10) : undefined,
     imageUrl: org.imageUrl || null,
     contactFirstName: contact?.contactFirstName || null,

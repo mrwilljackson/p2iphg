@@ -376,6 +376,30 @@ export async function clearEventData(eventId: string, force: boolean = false): P
 }
 
 /**
+ * Update an organisation and its contact details
+ */
+export async function updateOrganization(id: string, data: {
+  name?: string;
+  groupType?: string;
+  openGroup?: boolean;
+  airtableRecordId?: string;
+  contactFirstName?: string;
+  contactLastName?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  notes?: string;
+}): Promise<Organization> {
+  return await DatabaseService.updateOrganization(id, data);
+}
+
+/**
+ * Delete an organisation and its contact (blocked if registrations exist)
+ */
+export async function deleteOrganization(id: string): Promise<void> {
+  return await DatabaseService.deleteOrganization(id);
+}
+
+/**
  * Update an event's details
  */
 export async function updateEvent(id: string, data: {

@@ -227,6 +227,33 @@ export const adminEventFormSchema = z.object({
 
 export type AdminEventFormData = z.infer<typeof adminEventFormSchema>;
 
+/**
+ * Admin Organisation Form Schema
+ * Used for create and edit forms in the P2I admin section
+ */
+export const adminOrgFormSchema = z.object({
+  name: z
+    .string()
+    .min(2, "Organisation name must be at least 2 characters")
+    .max(200, "Organisation name must be at most 200 characters"),
+  openGroup: z.boolean(),
+  groupType: z.enum([
+    'Family', 'Disability', 'Corporate', 'Sporting', 'Community', 'Educational', 'Other'
+  ]),
+  contactFirstName: z.string().optional().or(z.literal("")),
+  contactLastName: z.string().optional().or(z.literal("")),
+  contactEmail: z
+    .string()
+    .email("Please enter a valid email address")
+    .optional()
+    .or(z.literal("")),
+  contactPhone: z.string().optional().or(z.literal("")),
+  notes: z.string().optional().or(z.literal("")),
+  airtableRecordId: z.string().optional().or(z.literal("")),
+});
+
+export type AdminOrgFormData = z.infer<typeof adminOrgFormSchema>;
+
 // ============================================================================
 // Type Inference
 // ============================================================================

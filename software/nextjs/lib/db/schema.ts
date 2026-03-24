@@ -93,6 +93,7 @@ export const organisations = pgTable('organisations', {
   id: uuid('id').primaryKey().defaultRandom(),
   name: text('name'),
   groupType: text('group_type'),
+  openGroup: boolean('open_group').notNull().default(true),
   imageUrl: text('image_url'),
   airtableRecordId: text('airtable_record_id'),
   airtableEventId: text('airtable_event_id'),
