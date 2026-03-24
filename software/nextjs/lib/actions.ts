@@ -423,12 +423,11 @@ export async function deleteEvent(id: string): Promise<void> {
 // Org record CRUD (organisations table only)
 // ----------------------------------------------------------------------------
 
-export async function getOrgRecords(eventId: string): Promise<OrgRecord[]> {
-  return await DatabaseService.getOrgRecords(eventId);
+export async function getOrgRecords(): Promise<OrgRecord[]> {
+  return await DatabaseService.getOrgRecords();
 }
 
 export async function createOrgRecord(data: {
-  eventId: string;
   name: string;
   groupType: string;
   openGroup: boolean;

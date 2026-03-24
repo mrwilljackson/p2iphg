@@ -75,7 +75,7 @@ export default function GroupLeadersPage() {
       const [event, leaderList, orgList] = await Promise.all([
         getEventById(eventId),
         getGroupLeaders(eventId),
-        getOrgRecords(eventId),
+        getOrgRecords(),
       ]);
       setCurrentEvent(event);
       setLeaders(leaderList);

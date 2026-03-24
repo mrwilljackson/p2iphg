@@ -757,34 +757,25 @@ export class DatabaseService {
   // Org record CRUD (organisations table only — no contact join)
   // ---------------------------------------------------------------------------
 
-  static async getOrgRecords(eventId: string): Promise<OrgRecord[]> {
-    const [event] = await db.select().from(events).where(eq(events.id, eventId)).limit(1);
-    if (!event?.airtableRecordId) return [];
-    const rows = await db
-      .select()
-      .from(organisations)
-      .where(eq(organisations.airtableEventId, event.airtableRecordId));
+  static async getOrgRecords(): Promise<OrgRecord[]> {
+    const rows = await db.select().from(organisations);
     return rows
       .map(mapOrgRecord)
       .sort((a, b) => a.name.localeCompare(b.name));
   }
 
   static async createOrgRecord(data: {
-    eventId: string;
     name: string;
     groupType: string;
     openGroup: boolean;
     airtableRecordId?: string;
   }): Promise<OrgRecord> {
-    const [event] = await db.select().from(events).where(eq(events.id, data.eventId)).limit(1);
-    const eventAirtableId = event?.airtableRecordId ?? null;
     const localRecordId = data.airtableRecordId || `local-${randomUUID()}`;
     const [row] = await db.insert(organisations).values({
       name: data.name,
       groupType: data.groupType,
       openGroup: data.openGroup,
       airtableRecordId: localRecordId,
-      airtableEventId: eventAirtableId,
     }).returning();
     return mapOrgRecord(row);
   }

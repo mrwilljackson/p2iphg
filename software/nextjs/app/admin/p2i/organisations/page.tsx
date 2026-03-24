@@ -12,11 +12,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import {
-  getOrgRecords, getEventById, createOrgRecord, updateOrgRecord, deleteOrgRecord,
-} from "@/lib/actions";
+import { getOrgRecords, createOrgRecord, updateOrgRecord, deleteOrgRecord } from "@/lib/actions";
 import { adminOrgRecordFormSchema, type AdminOrgRecordFormData } from "@/lib/validation";
-import type { OrgRecord, Event } from "@/lib/types";
+import type { OrgRecord } from "@/lib/types";
 
 const GROUP_TYPES = ['Family', 'Disability', 'Corporate', 'Sporting', 'Community', 'Educational', 'Other'] as const;
 
@@ -30,7 +28,6 @@ const defaultValues: AdminOrgRecordFormData = {
 export default function OrganisationsPage() {
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [currentEvent, setCurrentEvent] = useState<Event | null>(null);
   const [orgs, setOrgs] = useState<OrgRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -62,35 +59,26 @@ export default function OrganisationsPage() {
 
   useEffect(() => {
     if (!isAuthenticated) return;
-    const eventId = sessionStorage.getItem("administeringEventId");
-    if (!eventId) return;
-    loadData(eventId);
+    loadData();
   }, [isAuthenticated]);
 
-  const loadData = async (eventId: string) => {
+  const loadData = async () => {
     try {
       setLoading(true);
-      const [event, orgList] = await Promise.all([
-        getEventById(eventId),
-        getOrgRecords(eventId),
-      ]);
-      setCurrentEvent(event);
+      const orgList = await getOrgRecords();
       setOrgs(orgList);
     } catch (error) {
       console.error("Error loading data:", error);
-      alert("Failed to load data");
+      alert("Failed to load organisations");
     } finally {
       setLoading(false);
     }
   };
 
   const handleCreate = async (data: AdminOrgRecordFormData) => {
-    const eventId = sessionStorage.getItem("administeringEventId");
-    if (!eventId) return;
     try {
       setIsSaving(true);
       await createOrgRecord({
-        eventId,
         name: data.name,
         groupType: data.groupType,
         openGroup: data.openGroup,
@@ -98,7 +86,7 @@ export default function OrganisationsPage() {
       });
       setIsCreateOpen(false);
       createForm.reset(defaultValues);
-      await loadData(eventId);
+      await loadData();
     } catch (error) {
       alert("Failed to create organisation. " + (error instanceof Error ? error.message : ""));
     } finally {
@@ -119,7 +107,6 @@ export default function OrganisationsPage() {
 
   const handleSaveEdit = async (data: AdminOrgRecordFormData) => {
     if (!editingOrg) return;
-    const eventId = sessionStorage.getItem("administeringEventId");
     try {
       setIsSaving(true);
       await updateOrgRecord(editingOrg.id, {
@@ -129,7 +116,7 @@ export default function OrganisationsPage() {
         airtableRecordId: data.airtableRecordId || undefined,
       });
       setIsEditOpen(false);
-      if (eventId) await loadData(eventId);
+      await loadData();
     } catch (error) {
       alert("Failed to save changes. " + (error instanceof Error ? error.message : ""));
     } finally {
@@ -139,11 +126,10 @@ export default function OrganisationsPage() {
 
   const handleDelete = async (org: OrgRecord) => {
     if (!confirm(`Delete "${org.name}"? This cannot be undone.`)) return;
-    const eventId = sessionStorage.getItem("administeringEventId");
     try {
       setDeletingId(org.id);
       await deleteOrgRecord(org.id);
-      if (eventId) await loadData(eventId);
+      await loadData();
     } catch (error) {
       alert("Cannot delete: " + (error instanceof Error ? error.message : "Unknown error"));
     } finally {
@@ -155,22 +141,6 @@ export default function OrganisationsPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-gray-600">{loading ? "Loading..." : "Checking authentication..."}</p>
-      </div>
-    );
-  }
-
-  if (!currentEvent) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
-        <div className="bg-white rounded-xl shadow border border-gray-200 p-10 text-center max-w-md">
-          <h2 className="text-xl font-semibold text-gray-800 mb-2">No event selected</h2>
-          <p className="text-gray-600 mb-6">
-            You need to select an event to administer before managing its organisations. Go to Manage Events and click <strong>Administer</strong> on the event you want to work with.
-          </p>
-          <Button onClick={() => router.push("/admin/p2i/manage-events")}>
-            Go to Manage Events
-          </Button>
-        </div>
       </div>
     );
   }
@@ -222,7 +192,7 @@ export default function OrganisationsPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Organisations</h1>
-            <p className="text-sm text-gray-600 mt-1">{currentEvent.name}</p>
+            <p className="text-sm text-gray-500 mt-1">{orgs.length} organisation{orgs.length !== 1 ? "s" : ""}</p>
           </div>
           <div className="flex gap-2">
             <Button onClick={() => setIsCreateOpen(true)}>+ Add Organisation</Button>
