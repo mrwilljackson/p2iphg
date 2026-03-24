@@ -68,10 +68,7 @@ export default function OrganisationsPage() {
   useEffect(() => {
     if (!isAuthenticated) return;
     const eventId = sessionStorage.getItem("administeringEventId");
-    if (!eventId) {
-      router.push("/admin/p2i/manage-events");
-      return;
-    }
+    if (!eventId) return; // handled by no-event UI below
     loadData(eventId);
   }, [isAuthenticated, router]);
 
@@ -178,6 +175,22 @@ export default function OrganisationsPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-gray-600">{loading ? "Loading..." : "Checking authentication..."}</p>
+      </div>
+    );
+  }
+
+  if (!currentEvent) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+        <div className="bg-white rounded-xl shadow border border-gray-200 p-10 text-center max-w-md">
+          <h2 className="text-xl font-semibold text-gray-800 mb-2">No event selected</h2>
+          <p className="text-gray-600 mb-6">
+            You need to select an event to administer before managing its organisations. Go to Manage Events and click <strong>Administer</strong> on the event you want to work with.
+          </p>
+          <Button onClick={() => router.push("/admin/p2i/manage-events")}>
+            Go to Manage Events
+          </Button>
+        </div>
       </div>
     );
   }
