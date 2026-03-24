@@ -207,6 +207,27 @@ export const exportCSVRequestSchema = z.object({
 });
 
 // ============================================================================
+// Admin Form Schemas (P2I Admin CRUD)
+// ============================================================================
+
+/**
+ * Admin Event Form Schema
+ * Used for create and edit forms in the P2I admin section
+ */
+export const adminEventFormSchema = z.object({
+  name: z
+    .string()
+    .min(3, "Event name must be at least 3 characters")
+    .max(100, "Event name must be at most 100 characters"),
+  date: z.string().min(1, "Date is required"),
+  location: z.string().optional().or(z.literal("")),
+  description: z.string().optional().or(z.literal("")),
+  airtableRecordId: z.string().optional().or(z.literal("")),
+});
+
+export type AdminEventFormData = z.infer<typeof adminEventFormSchema>;
+
+// ============================================================================
 // Type Inference
 // ============================================================================
 

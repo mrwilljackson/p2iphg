@@ -16,7 +16,7 @@
 
 import { db } from './db/client';
 import { events, organisations, organisationContacts, volunteers, registrations } from './db/schema';
-import { eq, and, ilike } from 'drizzle-orm';
+import { eq, and, ilike, sql } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import { Event, Organization, Volunteer, Registration } from './types';
 import { calculateParticipantCounts, type RegistrationForCounting, type ParticipantCounts } from './participant-counting';
@@ -75,15 +75,19 @@ export class DatabaseService {
     airtableRecordId?: string;
   }): Promise<Event> {
     try {
+      const id = randomUUID();
+      const airtableRecordId = eventData.airtableRecordId || id;
+
       const result = await db
         .insert(events)
         .values({
+          id,
           name: eventData.name,
           date: eventData.date,
           location: eventData.location,
           description: eventData.description,
           status: eventData.status || 'planned',
-          airtableRecordId: eventData.airtableRecordId,
+          airtableRecordId,
         })
         .returning();
 
@@ -239,10 +243,69 @@ export class DatabaseService {
         .from(events)
         .where(eq(events.id, id))
         .limit(1);
-      
+
       return result[0] ? mapEventFromDb(result[0]) : null;
     } catch (error) {
       console.error('Error fetching event by ID:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update an event's details.
+   * If airtableRecordId is changed, organisations linked via the old ID will
+   * lose their event association — only change it if you know what you're doing.
+   */
+  static async updateEvent(id: string, data: {
+    name?: string;
+    date?: string;
+    location?: string;
+    description?: string;
+    airtableRecordId?: string;
+  }): Promise<Event> {
+    try {
+      const result = await db
+        .update(events)
+        .set({
+          ...data,
+          modifiedAt: new Date(),
+        })
+        .where(eq(events.id, id))
+        .returning();
+
+      if (!result[0]) throw new Error(`Event not found: ${id}`);
+      return mapEventFromDb(result[0]);
+    } catch (error) {
+      console.error('Error updating event:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete an event.
+   * Throws if the event has any registrations or volunteers to prevent accidental data loss.
+   */
+  static async deleteEvent(id: string): Promise<void> {
+    try {
+      const [regCount] = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(registrations)
+        .where(eq(registrations.eventId, id));
+
+      const [volCount] = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(volunteers)
+        .where(eq(volunteers.eventId, id));
+
+      if ((regCount?.count ?? 0) > 0 || (volCount?.count ?? 0) > 0) {
+        throw new Error(
+          'Cannot delete an event that has registrations or volunteers. Clear event data first.'
+        );
+      }
+
+      await db.delete(events).where(eq(events.id, id));
+    } catch (error) {
+      console.error('Error deleting event:', error);
       throw error;
     }
   }

@@ -374,3 +374,23 @@ export async function clearEventData(eventId: string, force: boolean = false): P
     },
   };
 }
+
+/**
+ * Update an event's details
+ */
+export async function updateEvent(id: string, data: {
+  name?: string;
+  date?: string;
+  location?: string;
+  description?: string;
+  airtableRecordId?: string;
+}): Promise<Event> {
+  return await DatabaseService.updateEvent(id, data);
+}
+
+/**
+ * Delete an event (blocked if registrations or volunteers exist)
+ */
+export async function deleteEvent(id: string): Promise<void> {
+  return await DatabaseService.deleteEvent(id);
+}
