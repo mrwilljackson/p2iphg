@@ -12,7 +12,7 @@ import { db } from './db/client';
 import { events, registrations, volunteers, organisations, organisationContacts } from './db/schema';
 import { eq, and, or, isNull, sql, inArray } from 'drizzle-orm';
 import { DatabaseService } from './db-service';
-import type { Event, Organization, Volunteer, Registration } from './types';
+import type { Event, Organization, OrgRecord, GroupLeader, Volunteer, Registration } from './types';
 import type { ParticipantCounts } from './participant-counting';
 
 /**
@@ -417,4 +417,72 @@ export async function updateEvent(id: string, data: {
  */
 export async function deleteEvent(id: string): Promise<void> {
   return await DatabaseService.deleteEvent(id);
+}
+
+// ----------------------------------------------------------------------------
+// Org record CRUD (organisations table only)
+// ----------------------------------------------------------------------------
+
+export async function getOrgRecords(eventId: string): Promise<OrgRecord[]> {
+  return await DatabaseService.getOrgRecords(eventId);
+}
+
+export async function createOrgRecord(data: {
+  eventId: string;
+  name: string;
+  groupType: string;
+  openGroup: boolean;
+  airtableRecordId?: string;
+}): Promise<OrgRecord> {
+  return await DatabaseService.createOrgRecord(data);
+}
+
+export async function updateOrgRecord(id: string, data: {
+  name?: string;
+  groupType?: string;
+  openGroup?: boolean;
+  airtableRecordId?: string;
+}): Promise<OrgRecord> {
+  return await DatabaseService.updateOrgRecord(id, data);
+}
+
+export async function deleteOrgRecord(id: string): Promise<void> {
+  return await DatabaseService.deleteOrgRecord(id);
+}
+
+// ----------------------------------------------------------------------------
+// Group leader CRUD (organisation_contacts table only)
+// ----------------------------------------------------------------------------
+
+export async function getGroupLeaders(eventId: string): Promise<GroupLeader[]> {
+  return await DatabaseService.getGroupLeaders(eventId);
+}
+
+export async function createGroupLeader(data: {
+  orgId: string;
+  eventId: string;
+  contactFirstName?: string;
+  contactLastName?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  notes?: string;
+  airtableRecordId?: string;
+}): Promise<GroupLeader> {
+  return await DatabaseService.createGroupLeader(data);
+}
+
+export async function updateGroupLeader(id: string, data: {
+  orgId?: string;
+  contactFirstName?: string;
+  contactLastName?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  notes?: string;
+  airtableRecordId?: string;
+}): Promise<GroupLeader> {
+  return await DatabaseService.updateGroupLeader(id, data);
+}
+
+export async function deleteGroupLeader(id: string): Promise<void> {
+  return await DatabaseService.deleteGroupLeader(id);
 }

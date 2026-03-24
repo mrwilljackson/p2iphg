@@ -110,6 +110,42 @@ export interface Organization {
 }
 
 /**
+ * OrgRecord — organisations table entity (admin view)
+ * Used by the P2I admin organisations CRUD page.
+ * Unlike Organization, this is orgs-table-only with no joined contact data.
+ */
+export interface OrgRecord {
+  id: string;
+  name: string;
+  groupType: string;
+  openGroup: boolean;
+  airtableRecordId?: string;
+  airtableEventId?: string;
+  createdAt?: string;
+  modifiedAt?: string;
+}
+
+/**
+ * GroupLeader — organisation_contacts joined with organisations (admin view)
+ * Used by the P2I admin group leaders CRUD page.
+ */
+export interface GroupLeader {
+  id: string;                      // organisation_contacts.id
+  orgId: string;                   // organisations.id (UUID)
+  organisationAirtableId: string;  // organisations.airtableRecordId (FK link field)
+  orgName: string;
+  openGroup: boolean;
+  groupType: string;
+  contactFirstName?: string;
+  contactLastName?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  notes?: string;
+  airtableRecordId?: string;       // organisation_contacts.airtableRecordId
+  airtableEventId?: string;
+}
+
+/**
  * Volunteer Entity
  * Represents a pre-registered volunteer with their details
  * V2: Added eventId to support event-specific volunteers

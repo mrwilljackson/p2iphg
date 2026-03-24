@@ -254,6 +254,42 @@ export const adminOrgFormSchema = z.object({
 
 export type AdminOrgFormData = z.infer<typeof adminOrgFormSchema>;
 
+/**
+ * Admin Org Record Form Schema
+ * For the organisations-table-only CRUD page (P2I admin)
+ */
+export const adminOrgRecordFormSchema = z.object({
+  name: z
+    .string()
+    .min(2, "Name must be at least 2 characters")
+    .max(200, "Name must be at most 200 characters"),
+  groupType: z.enum([
+    'Family', 'Disability', 'Corporate', 'Sporting', 'Community', 'Educational', 'Other'
+  ]),
+  openGroup: z.boolean(),
+  airtableRecordId: z.string().optional().or(z.literal("")),
+});
+export type AdminOrgRecordFormData = z.infer<typeof adminOrgRecordFormSchema>;
+
+/**
+ * Admin Group Leader Form Schema
+ * For the organisation_contacts CRUD page (P2I admin)
+ */
+export const adminGroupLeaderFormSchema = z.object({
+  orgId: z.string().min(1, "Please select an organisation"),
+  contactFirstName: z.string().optional().or(z.literal("")),
+  contactLastName: z.string().optional().or(z.literal("")),
+  contactEmail: z
+    .string()
+    .email("Please enter a valid email address")
+    .optional()
+    .or(z.literal("")),
+  contactPhone: z.string().optional().or(z.literal("")),
+  notes: z.string().optional().or(z.literal("")),
+  airtableRecordId: z.string().optional().or(z.literal("")),
+});
+export type AdminGroupLeaderFormData = z.infer<typeof adminGroupLeaderFormSchema>;
+
 // ============================================================================
 // Type Inference
 // ============================================================================

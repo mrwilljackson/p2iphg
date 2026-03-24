@@ -6,49 +6,47 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  getGroupLeaders, getOrgRecords, getEventById,
-  createGroupLeader, updateGroupLeader, deleteGroupLeader,
+  getOrgRecords, getEventById, createOrgRecord, updateOrgRecord, deleteOrgRecord,
 } from "@/lib/actions";
-import { adminGroupLeaderFormSchema, type AdminGroupLeaderFormData } from "@/lib/validation";
-import type { GroupLeader, OrgRecord, Event } from "@/lib/types";
+import { adminOrgRecordFormSchema, type AdminOrgRecordFormData } from "@/lib/validation";
+import type { OrgRecord, Event } from "@/lib/types";
 
-const defaultValues: AdminGroupLeaderFormData = {
-  orgId: "",
-  contactFirstName: "",
-  contactLastName: "",
-  contactEmail: "",
-  contactPhone: "",
-  notes: "",
+const GROUP_TYPES = ['Family', 'Disability', 'Corporate', 'Sporting', 'Community', 'Educational', 'Other'] as const;
+
+const defaultValues: AdminOrgRecordFormData = {
+  name: "",
+  groupType: "Other",
+  openGroup: true,
   airtableRecordId: "",
 };
 
-export default function GroupLeadersPage() {
+export default function OrganisationsPage() {
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentEvent, setCurrentEvent] = useState<Event | null>(null);
-  const [leaders, setLeaders] = useState<GroupLeader[]>([]);
   const [orgs, setOrgs] = useState<OrgRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [editingLeader, setEditingLeader] = useState<GroupLeader | null>(null);
+  const [editingOrg, setEditingOrg] = useState<OrgRecord | null>(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const createForm = useForm<AdminGroupLeaderFormData>({
-    resolver: zodResolver(adminGroupLeaderFormSchema),
+  const createForm = useForm<AdminOrgRecordFormData>({
+    resolver: zodResolver(adminOrgRecordFormSchema),
     defaultValues,
   });
 
-  const editForm = useForm<AdminGroupLeaderFormData>({
-    resolver: zodResolver(adminGroupLeaderFormSchema),
+  const editForm = useForm<AdminOrgRecordFormData>({
+    resolver: zodResolver(adminOrgRecordFormSchema),
     defaultValues,
   });
 
@@ -72,13 +70,11 @@ export default function GroupLeadersPage() {
   const loadData = async (eventId: string) => {
     try {
       setLoading(true);
-      const [event, leaderList, orgList] = await Promise.all([
+      const [event, orgList] = await Promise.all([
         getEventById(eventId),
-        getGroupLeaders(eventId),
         getOrgRecords(eventId),
       ]);
       setCurrentEvent(event);
-      setLeaders(leaderList);
       setOrgs(orgList);
     } catch (error) {
       console.error("Error loading data:", error);
@@ -88,57 +84,48 @@ export default function GroupLeadersPage() {
     }
   };
 
-  const handleCreate = async (data: AdminGroupLeaderFormData) => {
+  const handleCreate = async (data: AdminOrgRecordFormData) => {
     const eventId = sessionStorage.getItem("administeringEventId");
     if (!eventId) return;
     try {
       setIsSaving(true);
-      await createGroupLeader({
-        orgId: data.orgId,
+      await createOrgRecord({
         eventId,
-        contactFirstName: data.contactFirstName || undefined,
-        contactLastName: data.contactLastName || undefined,
-        contactEmail: data.contactEmail || undefined,
-        contactPhone: data.contactPhone || undefined,
-        notes: data.notes || undefined,
+        name: data.name,
+        groupType: data.groupType,
+        openGroup: data.openGroup,
         airtableRecordId: data.airtableRecordId || undefined,
       });
       setIsCreateOpen(false);
       createForm.reset(defaultValues);
       await loadData(eventId);
     } catch (error) {
-      alert("Failed to create group leader. " + (error instanceof Error ? error.message : ""));
+      alert("Failed to create organisation. " + (error instanceof Error ? error.message : ""));
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleOpenEdit = (leader: GroupLeader) => {
-    setEditingLeader(leader);
+  const handleOpenEdit = (org: OrgRecord) => {
+    setEditingOrg(org);
     editForm.reset({
-      orgId: leader.orgId,
-      contactFirstName: leader.contactFirstName || "",
-      contactLastName: leader.contactLastName || "",
-      contactEmail: leader.contactEmail || "",
-      contactPhone: leader.contactPhone || "",
-      notes: leader.notes || "",
-      airtableRecordId: leader.airtableRecordId?.startsWith("local-") ? "" : (leader.airtableRecordId || ""),
+      name: org.name,
+      groupType: org.groupType as AdminOrgRecordFormData["groupType"],
+      openGroup: org.openGroup,
+      airtableRecordId: org.airtableRecordId?.startsWith("local-") ? "" : (org.airtableRecordId || ""),
     });
     setIsEditOpen(true);
   };
 
-  const handleSaveEdit = async (data: AdminGroupLeaderFormData) => {
-    if (!editingLeader) return;
+  const handleSaveEdit = async (data: AdminOrgRecordFormData) => {
+    if (!editingOrg) return;
     const eventId = sessionStorage.getItem("administeringEventId");
     try {
       setIsSaving(true);
-      await updateGroupLeader(editingLeader.id, {
-        orgId: data.orgId !== editingLeader.orgId ? data.orgId : undefined,
-        contactFirstName: data.contactFirstName || undefined,
-        contactLastName: data.contactLastName || undefined,
-        contactEmail: data.contactEmail || undefined,
-        contactPhone: data.contactPhone || undefined,
-        notes: data.notes || undefined,
+      await updateOrgRecord(editingOrg.id, {
+        name: data.name,
+        groupType: data.groupType,
+        openGroup: data.openGroup,
         airtableRecordId: data.airtableRecordId || undefined,
       });
       setIsEditOpen(false);
@@ -150,13 +137,12 @@ export default function GroupLeadersPage() {
     }
   };
 
-  const handleDelete = async (leader: GroupLeader) => {
-    const name = [leader.contactFirstName, leader.contactLastName].filter(Boolean).join(" ") || leader.orgName;
-    if (!confirm(`Delete group leader "${name}"? This cannot be undone.`)) return;
+  const handleDelete = async (org: OrgRecord) => {
+    if (!confirm(`Delete "${org.name}"? This cannot be undone.`)) return;
     const eventId = sessionStorage.getItem("administeringEventId");
     try {
-      setDeletingId(leader.id);
-      await deleteGroupLeader(leader.id);
+      setDeletingId(org.id);
+      await deleteOrgRecord(org.id);
       if (eventId) await loadData(eventId);
     } catch (error) {
       alert("Cannot delete: " + (error instanceof Error ? error.message : "Unknown error"));
@@ -179,7 +165,7 @@ export default function GroupLeadersPage() {
         <div className="bg-white rounded-xl shadow border border-gray-200 p-10 text-center max-w-md">
           <h2 className="text-xl font-semibold text-gray-800 mb-2">No event selected</h2>
           <p className="text-gray-600 mb-6">
-            You need to select an event to administer before managing its group leaders. Go to Manage Events and click <strong>Administer</strong> on the event you want to work with.
+            You need to select an event to administer before managing its organisations. Go to Manage Events and click <strong>Administer</strong> on the event you want to work with.
           </p>
           <Button onClick={() => router.push("/admin/p2i/manage-events")}>
             Go to Manage Events
@@ -189,66 +175,35 @@ export default function GroupLeadersPage() {
     );
   }
 
-  const formFields = (form: ReturnType<typeof useForm<AdminGroupLeaderFormData>>) => (
+  const formFields = (form: ReturnType<typeof useForm<AdminOrgRecordFormData>>) => (
     <div className="space-y-4">
-      <FormField control={form.control} name="orgId" render={({ field }) => (
+      <FormField control={form.control} name="name" render={({ field }) => (
         <FormItem>
-          <FormLabel>Organisation *</FormLabel>
+          <FormLabel>Organisation Name *</FormLabel>
+          <FormControl><Input placeholder="e.g. Riverside FC" {...field} /></FormControl>
+          <FormMessage />
+        </FormItem>
+      )} />
+      <FormField control={form.control} name="groupType" render={({ field }) => (
+        <FormItem>
+          <FormLabel>Group Type *</FormLabel>
           <Select onValueChange={field.onChange} value={field.value}>
             <FormControl>
-              <SelectTrigger><SelectValue placeholder="Select organisation" /></SelectTrigger>
+              <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
             </FormControl>
             <SelectContent>
-              {orgs.map(org => (
-                <SelectItem key={org.id} value={org.id}>
-                  {org.name} ({org.groupType})
-                </SelectItem>
-              ))}
+              {GROUP_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
             </SelectContent>
           </Select>
           <FormMessage />
-          {orgs.length === 0 && (
-            <p className="text-xs text-amber-600 mt-1">
-              No organisations found for this event. Add organisations first.
-            </p>
-          )}
         </FormItem>
       )} />
-      <div className="grid grid-cols-2 gap-3">
-        <FormField control={form.control} name="contactFirstName" render={({ field }) => (
-          <FormItem>
-            <FormLabel>Leader First Name</FormLabel>
-            <FormControl><Input {...field} /></FormControl>
-            <FormMessage />
-          </FormItem>
-        )} />
-        <FormField control={form.control} name="contactLastName" render={({ field }) => (
-          <FormItem>
-            <FormLabel>Leader Last Name</FormLabel>
-            <FormControl><Input {...field} /></FormControl>
-            <FormMessage />
-          </FormItem>
-        )} />
-      </div>
-      <FormField control={form.control} name="contactEmail" render={({ field }) => (
-        <FormItem>
-          <FormLabel>Leader Email</FormLabel>
-          <FormControl><Input type="email" {...field} /></FormControl>
-          <FormMessage />
-        </FormItem>
-      )} />
-      <FormField control={form.control} name="contactPhone" render={({ field }) => (
-        <FormItem>
-          <FormLabel>Leader Phone</FormLabel>
-          <FormControl><Input type="tel" {...field} /></FormControl>
-          <FormMessage />
-        </FormItem>
-      )} />
-      <FormField control={form.control} name="notes" render={({ field }) => (
-        <FormItem>
-          <FormLabel>Notes</FormLabel>
-          <FormControl><Input {...field} /></FormControl>
-          <FormMessage />
+      <FormField control={form.control} name="openGroup" render={({ field }) => (
+        <FormItem className="flex items-center gap-3">
+          <FormControl>
+            <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+          </FormControl>
+          <FormLabel className="mt-0!">Open group — visible to individual participants</FormLabel>
         </FormItem>
       )} />
       <FormField control={form.control} name="airtableRecordId" render={({ field }) => (
@@ -266,14 +221,11 @@ export default function GroupLeadersPage() {
       <header className="bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Group Leaders</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Organisations</h1>
             <p className="text-sm text-gray-600 mt-1">{currentEvent.name}</p>
           </div>
           <div className="flex gap-2">
-            <Button onClick={() => setIsCreateOpen(true)}>+ Add Group Leader</Button>
-            <Button variant="outline" onClick={() => router.push("/admin/p2i/organisations")}>
-              Manage Organisations
-            </Button>
+            <Button onClick={() => setIsCreateOpen(true)}>+ Add Organisation</Button>
             <Button variant="outline" onClick={() => router.push("/admin/p2i")}>
               ← Back to P2I Admin
             </Button>
@@ -282,47 +234,44 @@ export default function GroupLeadersPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {leaders.length === 0 ? (
+        {orgs.length === 0 ? (
           <div className="bg-white rounded-xl shadow border border-gray-200 p-12 text-center text-gray-500">
-            No group leaders yet. Click &quot;+ Add Group Leader&quot; to create one.
+            No organisations yet. Click &quot;+ Add Organisation&quot; to create one.
           </div>
         ) : (
           <div className="bg-white rounded-xl shadow border border-gray-200 overflow-hidden">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  {["Organisation", "Group", "Leader", "Email", "Airtable ID", "Actions"].map(h => (
+                  {["Name", "Type", "Group", "Airtable ID", "Actions"].map(h => (
                     <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {leaders.map(leader => (
-                  <tr key={leader.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-sm font-medium text-gray-900">{leader.orgName}</td>
+                {orgs.map(org => (
+                  <tr key={org.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 text-sm font-medium text-gray-900">{org.name}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600">{org.groupType}</td>
                     <td className="px-4 py-3 text-sm text-gray-600">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                        leader.openGroup ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-700'
+                        org.openGroup ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-700'
                       }`}>
-                        {leader.openGroup ? 'Open' : 'Closed'}
+                        {org.openGroup ? 'Open' : 'Closed'}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-600">
-                      {[leader.contactFirstName, leader.contactLastName].filter(Boolean).join(" ") || "—"}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{leader.contactEmail || "—"}</td>
                     <td className="px-4 py-3 text-xs text-gray-400 font-mono">
-                      {leader.airtableRecordId?.startsWith("local-") ? "—" : (leader.airtableRecordId || "—")}
+                      {org.airtableRecordId?.startsWith("local-") ? "—" : (org.airtableRecordId || "—")}
                     </td>
                     <td className="px-4 py-3 text-sm space-x-2">
-                      <Button size="sm" variant="outline" onClick={() => handleOpenEdit(leader)}>Edit</Button>
+                      <Button size="sm" variant="outline" onClick={() => handleOpenEdit(org)}>Edit</Button>
                       <Button
                         size="sm"
                         variant="destructive"
-                        onClick={() => handleDelete(leader)}
-                        disabled={deletingId === leader.id}
+                        onClick={() => handleDelete(org)}
+                        disabled={deletingId === org.id}
                       >
-                        {deletingId === leader.id ? "Deleting..." : "Delete"}
+                        {deletingId === org.id ? "Deleting..." : "Delete"}
                       </Button>
                     </td>
                   </tr>
@@ -336,13 +285,13 @@ export default function GroupLeadersPage() {
       {/* Create Dialog */}
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>Add Group Leader</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Add Organisation</DialogTitle></DialogHeader>
           <Form {...createForm}>
             <form onSubmit={createForm.handleSubmit(handleCreate)}>
               {formFields(createForm)}
               <DialogFooter className="mt-6">
                 <Button type="button" variant="outline" onClick={() => setIsCreateOpen(false)}>Cancel</Button>
-                <Button type="submit" disabled={isSaving}>{isSaving ? "Saving..." : "Add Group Leader"}</Button>
+                <Button type="submit" disabled={isSaving}>{isSaving ? "Saving..." : "Add Organisation"}</Button>
               </DialogFooter>
             </form>
           </Form>
@@ -352,7 +301,7 @@ export default function GroupLeadersPage() {
       {/* Edit Dialog */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>Edit Group Leader</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Edit Organisation</DialogTitle></DialogHeader>
           <Form {...editForm}>
             <form onSubmit={editForm.handleSubmit(handleSaveEdit)}>
               {formFields(editForm)}
