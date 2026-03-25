@@ -44,6 +44,12 @@ export default function HelpersPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  // Import from another event
+  const [importOpen, setImportOpen] = useState(false);
+  const [importEventId, setImportEventId] = useState<string>("");
+  const [importHelpers, setImportHelpers] = useState<Volunteer[]>([]);
+  const [importLoading, setImportLoading] = useState(false);
+
   const createForm = useForm<AdminHelperFormData>({
     resolver: zodResolver(adminHelperFormSchema),
     defaultValues,
@@ -77,12 +83,20 @@ export default function HelpersPage() {
     }
   }, [selectedEventId]);
 
+  useEffect(() => {
+    if (!importEventId) { setImportHelpers([]); return; }
+    setImportLoading(true);
+    getAllVolunteers(importEventId)
+      .then(setImportHelpers)
+      .catch(() => alert("Failed to load helpers from that event"))
+      .finally(() => setImportLoading(false));
+  }, [importEventId]);
+
   const loadEvents = async () => {
     try {
       setLoading(true);
       const eventList = await getAllEvents();
       setEvents(eventList);
-      // Pre-select the administering event if set
       const adminEventId = sessionStorage.getItem("administeringEventId");
       if (adminEventId && eventList.some(e => e.id === adminEventId)) {
         setSelectedEventId(adminEventId);
@@ -122,6 +136,9 @@ export default function HelpersPage() {
       });
       setIsCreateOpen(false);
       createForm.reset(defaultValues);
+      setImportOpen(false);
+      setImportEventId("");
+      setImportHelpers([]);
       await loadHelpers(data.eventId);
     } catch (error) {
       alert("Failed to create helper. " + (error instanceof Error ? error.message : ""));
@@ -181,6 +198,22 @@ export default function HelpersPage() {
     }
   };
 
+  const handleCopyFromEvent = (source: Volunteer) => {
+    createForm.reset({
+      eventId: selectedEventId,
+      firstName: source.firstName,
+      lastName: source.lastName,
+      email: source.email,
+      photoConsent: source.photoConsent,
+      feedbackConsent: source.feedbackConsent,
+      nextEventConsent: source.nextEventConsent,
+      airtableRecordId: "",
+    });
+    setImportOpen(false);
+    setImportEventId("");
+    setImportHelpers([]);
+  };
+
   if (!isAuthenticated || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -188,6 +221,8 @@ export default function HelpersPage() {
       </div>
     );
   }
+
+  const otherEvents = events.filter(e => e.id !== selectedEventId);
 
   const consentFields = (form: ReturnType<typeof useForm<AdminHelperFormData>>) => (
     <div className="space-y-3">
@@ -290,6 +325,9 @@ export default function HelpersPage() {
           <div className="flex gap-2">
             <Button onClick={() => {
               createForm.reset({ ...defaultValues, eventId: selectedEventId });
+              setImportOpen(false);
+              setImportEventId("");
+              setImportHelpers([]);
               setIsCreateOpen(true);
             }}>
               + Add Helper
@@ -370,9 +408,65 @@ export default function HelpersPage() {
       </main>
 
       {/* Create Dialog */}
-      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+      <Dialog open={isCreateOpen} onOpenChange={(open) => {
+        setIsCreateOpen(open);
+        if (!open) { setImportOpen(false); setImportEventId(""); setImportHelpers([]); }
+      }}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Add Helper</DialogTitle></DialogHeader>
+
+          {/* Import from another event */}
+          {otherEvents.length > 0 && (
+            <div className="border border-gray-200 rounded-lg overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setImportOpen(v => !v)}
+                className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 text-sm font-medium text-gray-700 transition-colors"
+              >
+                <span>Copy details from another event</span>
+                <span className="text-gray-400 text-xs">{importOpen ? "▲" : "▼"}</span>
+              </button>
+              {importOpen && (
+                <div className="px-4 py-3 space-y-3 border-t border-gray-200">
+                  <select
+                    className="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={importEventId}
+                    onChange={e => setImportEventId(e.target.value)}
+                  >
+                    <option value="">Select an event…</option>
+                    {otherEvents.map(e => (
+                      <option key={e.id} value={e.id}>{e.name}</option>
+                    ))}
+                  </select>
+                  {importLoading && (
+                    <p className="text-xs text-gray-500">Loading helpers…</p>
+                  )}
+                  {!importLoading && importEventId && importHelpers.length === 0 && (
+                    <p className="text-xs text-gray-500">No helpers found for that event.</p>
+                  )}
+                  {importHelpers.length > 0 && (
+                    <div className="max-h-48 overflow-y-auto divide-y divide-gray-100 border border-gray-200 rounded-md">
+                      {importHelpers.map(h => (
+                        <button
+                          key={h.id}
+                          type="button"
+                          onClick={() => handleCopyFromEvent(h)}
+                          className="w-full flex items-center justify-between px-3 py-2 hover:bg-blue-50 text-left transition-colors"
+                        >
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">{h.firstName} {h.lastName}</p>
+                            <p className="text-xs text-gray-500">{h.email}</p>
+                          </div>
+                          <span className="text-xs text-blue-600 font-medium shrink-0 ml-3">Copy</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
           <Form {...createForm}>
             <form onSubmit={createForm.handleSubmit(handleCreate)}>
               {formFields(createForm, false)}

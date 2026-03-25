@@ -459,6 +459,7 @@ export async function createGroupLeader(data: {
   orgId: string;
   eventId: string;
   openGroup: boolean;
+  expectedGroupSize?: number;
   contactFirstName?: string;
   contactLastName?: string;
   contactEmail?: string;
@@ -472,6 +473,7 @@ export async function createGroupLeader(data: {
 export async function updateGroupLeader(id: string, data: {
   orgId?: string;
   openGroup?: boolean;
+  expectedGroupSize?: number | null;
   contactFirstName?: string;
   contactLastName?: string;
   contactEmail?: string;

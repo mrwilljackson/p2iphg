@@ -277,6 +277,12 @@ export type AdminOrgRecordFormData = z.infer<typeof adminOrgRecordFormSchema>;
 export const adminGroupLeaderFormSchema = z.object({
   orgId: z.string().min(1, "Please select an organisation"),
   openGroup: z.boolean(),
+  expectedGroupSize: z
+    .number()
+    .int("Must be a whole number")
+    .min(1, "Must be at least 1")
+    .optional()
+    .nullable(),
   contactFirstName: z.string().optional().or(z.literal("")),
   contactLastName: z.string().optional().or(z.literal("")),
   contactEmail: z

@@ -852,6 +852,7 @@ export class DatabaseService {
     orgId: string;
     eventId: string;
     openGroup: boolean;
+    expectedGroupSize?: number;
     contactFirstName?: string;
     contactLastName?: string;
     contactEmail?: string;
@@ -867,6 +868,7 @@ export class DatabaseService {
       organisationId: org.airtableRecordId,
       airtableEventId: eventAirtableId,
       openGroup: data.openGroup,
+      expectedGroupSize: data.expectedGroupSize != null ? String(data.expectedGroupSize) : null,
       contactFirstName: data.contactFirstName || null,
       contactLastName: data.contactLastName || null,
       contactEmail: data.contactEmail || null,
@@ -880,6 +882,7 @@ export class DatabaseService {
   static async updateGroupLeader(id: string, data: {
     orgId?: string;
     openGroup?: boolean;
+    expectedGroupSize?: number | null;
     contactFirstName?: string;
     contactLastName?: string;
     contactEmail?: string;
@@ -887,7 +890,7 @@ export class DatabaseService {
     notes?: string;
     airtableRecordId?: string;
   }): Promise<GroupLeader> {
-    const { orgId, openGroup, ...contactFields } = data;
+    const { orgId, openGroup, expectedGroupSize, ...contactFields } = data;
     let orgAirtableId: string | null | undefined;
     if (orgId) {
       const [org] = await db.select().from(organisations).where(eq(organisations.id, orgId)).limit(1);
@@ -899,6 +902,7 @@ export class DatabaseService {
       .set({
         ...(orgAirtableId !== undefined ? { organisationId: orgAirtableId } : {}),
         ...(openGroup !== undefined ? { openGroup } : {}),
+        ...(expectedGroupSize !== undefined ? { expectedGroupSize: expectedGroupSize != null ? String(expectedGroupSize) : null } : {}),
         ...contactFields,
         modifiedAt: new Date(),
       })
@@ -1105,6 +1109,7 @@ function mapGroupLeader(org: OrganisationRow, contact: OrganisationContactRow): 
     orgName: org.name ?? '',
     openGroup: contact.openGroup,
     groupType: org.groupType ?? 'Other',
+    expectedGroupSize: contact.expectedGroupSize ? parseInt(contact.expectedGroupSize, 10) : undefined,
     contactFirstName: contact.contactFirstName ?? undefined,
     contactLastName: contact.contactLastName ?? undefined,
     contactEmail: contact.contactEmail ?? undefined,

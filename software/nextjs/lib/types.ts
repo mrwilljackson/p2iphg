@@ -135,6 +135,7 @@ export interface GroupLeader {
   orgName: string;
   openGroup: boolean;
   groupType: string;
+  expectedGroupSize?: number;      // organisation_contacts.expected_group_size
   contactFirstName?: string;
   contactLastName?: string;
   contactEmail?: string;

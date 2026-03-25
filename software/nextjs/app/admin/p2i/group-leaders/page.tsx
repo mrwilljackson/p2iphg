@@ -6,14 +6,13 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  getGroupLeaders, getOrgRecords, getEventById,
+  getGroupLeaders, getOrgRecords, getEventById, getAllEvents,
   createGroupLeader, updateGroupLeader, deleteGroupLeader,
 } from "@/lib/actions";
 import { adminGroupLeaderFormSchema, type AdminGroupLeaderFormData } from "@/lib/validation";
@@ -22,6 +21,7 @@ import type { GroupLeader, OrgRecord, Event } from "@/lib/types";
 const defaultValues: AdminGroupLeaderFormData = {
   orgId: "",
   openGroup: true,
+  expectedGroupSize: null,
   contactFirstName: "",
   contactLastName: "",
   contactEmail: "",
@@ -36,6 +36,7 @@ export default function GroupLeadersPage() {
   const [currentEvent, setCurrentEvent] = useState<Event | null>(null);
   const [leaders, setLeaders] = useState<GroupLeader[]>([]);
   const [orgs, setOrgs] = useState<OrgRecord[]>([]);
+  const [allEvents, setAllEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -43,6 +44,12 @@ export default function GroupLeadersPage() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  // Import from another event
+  const [importOpen, setImportOpen] = useState(false);
+  const [importEventId, setImportEventId] = useState<string>("");
+  const [importLeaders, setImportLeaders] = useState<GroupLeader[]>([]);
+  const [importLoading, setImportLoading] = useState(false);
 
   const createForm = useForm<AdminGroupLeaderFormData>({
     resolver: zodResolver(adminGroupLeaderFormSchema),
@@ -69,7 +76,17 @@ export default function GroupLeadersPage() {
     const eventId = sessionStorage.getItem("administeringEventId");
     if (!eventId) return;
     loadData(eventId);
+    getAllEvents().then(setAllEvents).catch(() => {});
   }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (!importEventId) { setImportLeaders([]); return; }
+    setImportLoading(true);
+    getGroupLeaders(importEventId)
+      .then(setImportLeaders)
+      .catch(() => alert("Failed to load group leaders from that event"))
+      .finally(() => setImportLoading(false));
+  }, [importEventId]);
 
   const loadData = async (eventId: string) => {
     try {
@@ -99,6 +116,7 @@ export default function GroupLeadersPage() {
         orgId: data.orgId,
         eventId,
         openGroup: data.openGroup,
+        expectedGroupSize: data.expectedGroupSize ?? undefined,
         contactFirstName: data.contactFirstName || undefined,
         contactLastName: data.contactLastName || undefined,
         contactEmail: data.contactEmail || undefined,
@@ -108,6 +126,7 @@ export default function GroupLeadersPage() {
       });
       setIsCreateOpen(false);
       createForm.reset(defaultValues);
+      resetImport();
       await loadData(eventId);
     } catch (error) {
       alert("Failed to create group leader. " + (error instanceof Error ? error.message : ""));
@@ -121,6 +140,7 @@ export default function GroupLeadersPage() {
     editForm.reset({
       orgId: leader.orgId,
       openGroup: leader.openGroup,
+      expectedGroupSize: leader.expectedGroupSize ?? null,
       contactFirstName: leader.contactFirstName || "",
       contactLastName: leader.contactLastName || "",
       contactEmail: leader.contactEmail || "",
@@ -139,6 +159,7 @@ export default function GroupLeadersPage() {
       await updateGroupLeader(editingLeader.id, {
         orgId: data.orgId !== editingLeader.orgId ? data.orgId : undefined,
         openGroup: data.openGroup,
+        expectedGroupSize: data.expectedGroupSize ?? null,
         contactFirstName: data.contactFirstName || undefined,
         contactLastName: data.contactLastName || undefined,
         contactEmail: data.contactEmail || undefined,
@@ -170,6 +191,30 @@ export default function GroupLeadersPage() {
     }
   };
 
+  const handleCopyFromEvent = (source: GroupLeader) => {
+    // orgId carries across directly since organisations are event-agnostic.
+    // Only pre-fill if the org exists in the current orgs list.
+    const orgExists = orgs.some(o => o.id === source.orgId);
+    createForm.reset({
+      orgId: orgExists ? source.orgId : "",
+      openGroup: source.openGroup,
+      expectedGroupSize: source.expectedGroupSize ?? null,
+      contactFirstName: source.contactFirstName || "",
+      contactLastName: source.contactLastName || "",
+      contactEmail: source.contactEmail || "",
+      contactPhone: source.contactPhone || "",
+      notes: source.notes || "",
+      airtableRecordId: "",
+    });
+    resetImport();
+  };
+
+  const resetImport = () => {
+    setImportOpen(false);
+    setImportEventId("");
+    setImportLeaders([]);
+  };
+
   if (!isAuthenticated || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -193,6 +238,8 @@ export default function GroupLeadersPage() {
       </div>
     );
   }
+
+  const otherEvents = allEvents.filter(e => e.id !== currentEvent.id);
 
   const formFields = (form: ReturnType<typeof useForm<AdminGroupLeaderFormData>>) => (
     <div className="space-y-4">
@@ -220,11 +267,52 @@ export default function GroupLeadersPage() {
         </FormItem>
       )} />
       <FormField control={form.control} name="openGroup" render={({ field }) => (
-        <FormItem className="flex items-center gap-3">
+        <FormItem>
+          <FormLabel>Group Type</FormLabel>
           <FormControl>
-            <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+            <div className="space-y-2">
+              {[
+                { value: true, label: "Open group", description: "individuals register as participants" },
+                { value: false, label: "Closed group", description: "group leaders register only" },
+              ].map(option => (
+                <label
+                  key={String(option.value)}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg border cursor-pointer transition-colors ${
+                    field.value === option.value
+                      ? "border-blue-500 bg-blue-50"
+                      : "border-gray-200 hover:bg-gray-50"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    className="accent-blue-600"
+                    checked={field.value === option.value}
+                    onChange={() => field.onChange(option.value)}
+                  />
+                  <span className="text-sm">
+                    <span className="font-medium text-gray-900">{option.label}</span>
+                    <span className="text-gray-500"> — {option.description}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
           </FormControl>
-          <FormLabel className="mt-0!">Open group — visible to individual participants</FormLabel>
+          <FormMessage />
+        </FormItem>
+      )} />
+      <FormField control={form.control} name="expectedGroupSize" render={({ field }) => (
+        <FormItem>
+          <FormLabel>Expected Group Size</FormLabel>
+          <FormControl>
+            <Input
+              type="number"
+              min={1}
+              placeholder="e.g. 12"
+              value={field.value ?? ""}
+              onChange={e => field.onChange(e.target.value === "" ? null : parseInt(e.target.value, 10))}
+            />
+          </FormControl>
+          <FormMessage />
         </FormItem>
       )} />
       <div className="grid grid-cols-2 gap-3">
@@ -283,7 +371,13 @@ export default function GroupLeadersPage() {
             <p className="text-sm text-gray-600 mt-1">{currentEvent.name}</p>
           </div>
           <div className="flex gap-2">
-            <Button onClick={() => setIsCreateOpen(true)}>+ Add Group Leader</Button>
+            <Button onClick={() => {
+              createForm.reset(defaultValues);
+              resetImport();
+              setIsCreateOpen(true);
+            }}>
+              + Add Group Leader
+            </Button>
             <Button variant="outline" onClick={() => router.push("/admin/p2i/organisations")}>
               Manage Organisations
             </Button>
@@ -304,7 +398,7 @@ export default function GroupLeadersPage() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  {["Organisation", "Group", "Leader", "Email", "Airtable ID", "Actions"].map(h => (
+                  {["Organisation", "Group", "Exp. Size", "Leader", "Email", "Airtable ID", "Actions"].map(h => (
                     <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{h}</th>
                   ))}
                 </tr>
@@ -319,6 +413,9 @@ export default function GroupLeadersPage() {
                       }`}>
                         {leader.openGroup ? 'Open' : 'Closed'}
                       </span>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-600 text-center">
+                      {leader.expectedGroupSize ?? '—'}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-600">
                       {[leader.contactFirstName, leader.contactLastName].filter(Boolean).join(" ") || "—"}
@@ -347,9 +444,74 @@ export default function GroupLeadersPage() {
       </main>
 
       {/* Create Dialog */}
-      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+      <Dialog open={isCreateOpen} onOpenChange={(open) => {
+        setIsCreateOpen(open);
+        if (!open) resetImport();
+      }}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Add Group Leader</DialogTitle></DialogHeader>
+
+          {/* Import from another event */}
+          {otherEvents.length > 0 && (
+            <div className="border border-gray-200 rounded-lg overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setImportOpen(v => !v)}
+                className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 text-sm font-medium text-gray-700 transition-colors"
+              >
+                <span>Copy details from another event</span>
+                <span className="text-gray-400 text-xs">{importOpen ? "▲" : "▼"}</span>
+              </button>
+              {importOpen && (
+                <div className="px-4 py-3 space-y-3 border-t border-gray-200">
+                  <select
+                    className="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={importEventId}
+                    onChange={e => setImportEventId(e.target.value)}
+                  >
+                    <option value="">Select an event…</option>
+                    {otherEvents.map(e => (
+                      <option key={e.id} value={e.id}>{e.name}</option>
+                    ))}
+                  </select>
+                  {importLoading && (
+                    <p className="text-xs text-gray-500">Loading group leaders…</p>
+                  )}
+                  {!importLoading && importEventId && importLeaders.length === 0 && (
+                    <p className="text-xs text-gray-500">No group leaders found for that event.</p>
+                  )}
+                  {importLeaders.length > 0 && (
+                    <div className="max-h-48 overflow-y-auto divide-y divide-gray-100 border border-gray-200 rounded-md">
+                      {importLeaders.map(l => {
+                        const name = [l.contactFirstName, l.contactLastName].filter(Boolean).join(" ") || "—";
+                        const orgExists = orgs.some(o => o.id === l.orgId);
+                        return (
+                          <button
+                            key={l.id}
+                            type="button"
+                            onClick={() => handleCopyFromEvent(l)}
+                            className="w-full flex items-center justify-between px-3 py-2 hover:bg-blue-50 text-left transition-colors"
+                          >
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">{name}</p>
+                              <p className="text-xs text-gray-500">
+                                {l.orgName}
+                                {!orgExists && (
+                                  <span className="text-amber-600 ml-1">(org not in current event)</span>
+                                )}
+                              </p>
+                            </div>
+                            <span className="text-xs text-blue-600 font-medium shrink-0 ml-3">Copy</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
           <Form {...createForm}>
             <form onSubmit={createForm.handleSubmit(handleCreate)}>
               {formFields(createForm)}
