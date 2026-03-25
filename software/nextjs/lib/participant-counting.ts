@@ -169,15 +169,25 @@ export function calculateParticipantCounts(
   const volunteerRegistrations = registrations.filter(r => r.role === 'Volunteer');
   const participantRegistrations = registrations.filter(r => r.role === 'Participant');
   
-  // Get organization IDs for groups that track individual registrations
+  // Get organization IDs for groups that track individual registrations (i.e. open groups).
+  // Start from Group-role registrations, then extend with any open-group orgs from allOrganizations
+  // that don't yet have a Group registration — their participants must not be counted as individuals.
   const otherGroupOrgIds = new Set(
     groupRegistrations
-      .filter(r => !isExpectedOnlyGroupType(r.groupType))
+      .filter(r => r.openGroup !== false) // open groups (null treated as open)
       .map(r => r.organizationId)
       .filter(id => id != null)
   );
-  
-  // Count individual participants (no group affiliation)
+
+  if (allOrganizations) {
+    for (const org of allOrganizations) {
+      if (org.openGroup !== false) {
+        otherGroupOrgIds.add(org.id);
+      }
+    }
+  }
+
+  // Count individual participants (no group affiliation, and not affiliated with any known open group)
   const individualParticipants = participantRegistrations.filter(
     r => !r.organizationId || !otherGroupOrgIds.has(r.organizationId)
   ).length;
@@ -363,28 +373,36 @@ export function calculateParticipantCounts(
       }
 
       // Add expected participants from this organization (if expectedGroupSize is set)
-      // This is used for future events where organizations are pre-registered but haven't completed registration yet
-      // IMPORTANT: This only adds to EXPECTED count, NOT registered count (they haven't registered yet)
+      // This is used for events where organizations are pre-registered but the group leader hasn't registered yet.
+      // Closed groups: registered = 0 (members don't register individually; group leader registration is required)
+      // Open groups: registered = actual Participant registrations already captured for this org
       if (org.expectedGroupSize && org.expectedGroupSize > 0) {
         const isExpectedOnly = org.openGroup === false;
 
         if (isExpectedOnly) {
-          // Family/Disability groups: expected participants come from expectedGroupSize
-          // NOTE: This does NOT add to familyDisabilityRegistered - only to expected
           familyDisabilityExpected += org.expectedGroupSize;
+          groupDetails.push({
+            organizationId: org.id,
+            organizationName: org.name,
+            groupType: org.groupType,
+            expected: org.expectedGroupSize,
+            registered: 0,
+          });
         } else {
-          // Other groups: expected participants come from expectedGroupSize
           otherGroupsExpected += org.expectedGroupSize;
+          // Count actual participant registrations for this open group org
+          const actualRegistered = participantRegistrations.filter(
+            r => r.organizationId === org.id
+          ).length;
+          otherGroupsRegistered += actualRegistered;
+          groupDetails.push({
+            organizationId: org.id,
+            organizationName: org.name,
+            groupType: org.groupType,
+            expected: org.expectedGroupSize,
+            registered: actualRegistered,
+          });
         }
-
-        // Add to group details array for display
-        groupDetails.push({
-          organizationId: org.id,
-          organizationName: org.name,
-          groupType: org.groupType,
-          expected: org.expectedGroupSize,
-          registered: 0, // Not registered yet
-        });
       }
     }
   }
