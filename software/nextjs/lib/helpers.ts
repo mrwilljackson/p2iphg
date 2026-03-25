@@ -14,7 +14,7 @@ import type { RegistrationType } from './field-visibility-config';
  *
  * Filtering rules:
  *  - Participant: show only orgs where openGroup === true
- *  - Group:       show all orgs (open and closed)
+ *  - Group:       show only orgs where openGroup === false
  *  - Volunteer / undefined: show all (no filtering)
  *
  * Always includes "Family Group" placeholder for Participant role.
@@ -31,8 +31,10 @@ export function organizationsToOptions(
   if (role === 'Participant') {
     // Participants see only open groups
     filteredOrgs = filteredOrgs.filter(org => org.openGroup !== false);
+  } else if (role === 'Group') {
+    // Group leaders see only closed groups
+    filteredOrgs = filteredOrgs.filter(org => org.openGroup === false);
   }
-  // Group role: no filter — all orgs (open and closed) are shown
   // Volunteer / undefined: no filter
 
   // Deduplicate by organization name (keep first occurrence)
