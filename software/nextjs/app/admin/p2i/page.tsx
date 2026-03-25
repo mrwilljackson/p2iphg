@@ -769,31 +769,10 @@ export default function P2IAdminDashboard() {
             </div>
           </div>
 
-          {/* Data Management */}
+          {/* Events Management */}
           <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Data Management</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Events Management</h2>
             <div className="space-y-3">
-              <Button
-                className="w-full justify-start"
-                variant="outline"
-                onClick={handleExportCSV}
-              >
-                ⬇️ Export to CSV
-              </Button>
-              <Button className="w-full justify-start" variant="outline">
-                👥 Manage Volunteers
-              </Button>
-              <Button className="w-full justify-start" variant="outline">
-                🏢 Manage Organizations
-              </Button>
-              <Button
-                className="w-full justify-start"
-                variant="outline"
-                onClick={() => router.push("/admin/p2i/manage-events")}
-              >
-                📅 Manage Events
-              </Button>
-
               {/* Create New Event Dialog */}
               <Dialog open={isCreateEventOpen} onOpenChange={setIsCreateEventOpen}>
                 <DialogTrigger asChild>
@@ -860,6 +839,42 @@ export default function P2IAdminDashboard() {
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
+
+              <Button
+                className="w-full justify-start"
+                variant="outline"
+                onClick={() => router.push("/admin/p2i/manage-events")}
+              >
+                📅 Manage Events
+              </Button>
+              <Button
+                className="w-full justify-start"
+                variant="outline"
+                onClick={() => router.push("/admin/p2i/organisations")}
+              >
+                🏢 Manage Organisations
+              </Button>
+              <Button
+                className="w-full justify-start"
+                variant="outline"
+                onClick={() => router.push("/admin/p2i/group-leaders")}
+              >
+                👥 Manage Group Leaders
+              </Button>
+              <Button
+                className="w-full justify-start"
+                variant="outline"
+                onClick={() => router.push("/admin/p2i/helpers")}
+              >
+                👥 Manage Helpers
+              </Button>
+              <Button
+                className="w-full justify-start"
+                variant="outline"
+                onClick={handleExportCSV}
+              >
+                ⬇️ Export Registrations to CSV
+              </Button>
 
               {/* Clear Event Data Dialog */}
               <Dialog open={isClearEventOpen} onOpenChange={handleClearEventDialogOpen}>

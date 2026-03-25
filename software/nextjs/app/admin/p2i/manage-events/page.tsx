@@ -2,8 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
-import { getAllEvents, setCurrentEvent } from "@/lib/actions";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { getAllEvents, setCurrentEvent, updateEvent, deleteEvent } from "@/lib/actions";
+import { adminEventFormSchema, type AdminEventFormData } from "@/lib/validation";
 import type { Event } from "@/lib/types";
 
 export default function ManageEventsPage() {
@@ -11,6 +18,17 @@ export default function ManageEventsPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [settingCurrent, setSettingCurrent] = useState<string | null>(null);
+
+  // Edit dialog state
+  const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const editForm = useForm<AdminEventFormData>({
+    resolver: zodResolver(adminEventFormSchema),
+    defaultValues: { name: "", date: "", location: "", description: "", airtableRecordId: "" },
+  });
 
   useEffect(() => {
     loadEvents();
@@ -20,13 +38,7 @@ export default function ManageEventsPage() {
     try {
       setLoading(true);
       const allEvents = await getAllEvents();
-      
-      // Sort events by date (most recent first)
-      const sortedEvents = allEvents.sort((a, b) => {
-        return new Date(b.date).getTime() - new Date(a.date).getTime();
-      });
-      
-      setEvents(sortedEvents);
+      setEvents(allEvents.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
     } catch (error) {
       console.error("Error loading events:", error);
       alert("Failed to load events");
@@ -39,11 +51,10 @@ export default function ManageEventsPage() {
     if (!confirm("Are you sure you want to set this as the current event? This will make it the only active event visible to the public and Event Admin.")) {
       return;
     }
-
     try {
       setSettingCurrent(eventId);
       await setCurrentEvent(eventId);
-      await loadEvents(); // Reload to show updated status
+      await loadEvents();
       alert("Current event updated successfully!");
     } catch (error) {
       console.error("Error setting current event:", error);
@@ -54,21 +65,61 @@ export default function ManageEventsPage() {
   };
 
   const handleAdminister = (eventId: string) => {
-    // Store the selected event ID in session storage
-    console.log('Setting administeringEventId to:', eventId);
     sessionStorage.setItem('administeringEventId', eventId);
-    console.log('Stored value:', sessionStorage.getItem('administeringEventId'));
-    // Navigate to P2I Admin Dashboard
     router.push('/admin/p2i');
+  };
+
+  const handleEdit = (event: Event) => {
+    setEditingEvent(event);
+    editForm.reset({
+      name: event.name,
+      date: event.date,
+      location: event.location || "",
+      description: event.description || "",
+      airtableRecordId: event.airtableRecordId || "",
+    });
+    setIsEditOpen(true);
+  };
+
+  const handleSaveEdit = async (data: AdminEventFormData) => {
+    if (!editingEvent) return;
+    try {
+      setIsSaving(true);
+      await updateEvent(editingEvent.id, {
+        name: data.name,
+        date: data.date,
+        location: data.location || undefined,
+        description: data.description || undefined,
+        airtableRecordId: data.airtableRecordId || undefined,
+      });
+      setIsEditOpen(false);
+      await loadEvents();
+    } catch (error) {
+      alert("Failed to save changes. " + (error instanceof Error ? error.message : ""));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDelete = async (event: Event) => {
+    if (!confirm(`Delete "${event.name}"? This cannot be undone.`)) return;
+    try {
+      setDeletingId(event.id);
+      await deleteEvent(event.id);
+      await loadEvents();
+    } catch (error) {
+      alert("Cannot delete: " + (error instanceof Error ? error.message : "Unknown error"));
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   const formatDate = (dateString: string) => {
     try {
-      // Format as dd/mm/yyyy
       return new Date(dateString).toLocaleDateString('en-GB', {
         day: '2-digit',
         month: '2-digit',
-        year: 'numeric'
+        year: 'numeric',
       });
     } catch {
       return dateString;
@@ -95,10 +146,7 @@ export default function ManageEventsPage() {
               <h1 className="text-2xl font-bold text-gray-900">Manage Events</h1>
               <p className="text-sm text-gray-600 mt-1">View all events and set the current active event</p>
             </div>
-            <Button
-              variant="outline"
-              onClick={() => router.push("/admin/p2i")}
-            >
+            <Button variant="outline" onClick={() => router.push("/admin/p2i")}>
               ← Back to P2I Admin
             </Button>
           </div>
@@ -116,21 +164,11 @@ export default function ManageEventsPage() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Event Name
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Date
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Location
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Event Name</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -138,9 +176,7 @@ export default function ManageEventsPage() {
                   <tr key={event.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="text-sm font-medium text-gray-900">
-                          {event.name}
-                        </div>
+                        <div className="text-sm font-medium text-gray-900">{event.name}</div>
                         {event.status === 'active' && (
                           <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                             Current Event
@@ -178,6 +214,21 @@ export default function ManageEventsPage() {
                       )}
                       <Button
                         size="sm"
+                        variant="outline"
+                        onClick={() => handleEdit(event)}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => handleDelete(event)}
+                        disabled={deletingId === event.id}
+                      >
+                        {deletingId === event.id ? 'Deleting...' : 'Delete'}
+                      </Button>
+                      <Button
+                        size="sm"
                         onClick={() => handleAdminister(event.id)}
                       >
                         Administer →
@@ -190,7 +241,80 @@ export default function ManageEventsPage() {
           </div>
         )}
       </main>
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Edit Event</DialogTitle>
+          </DialogHeader>
+          <Form {...editForm}>
+            <form onSubmit={editForm.handleSubmit(handleSaveEdit)} className="space-y-4">
+              <FormField
+                control={editForm.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Event Name *</FormLabel>
+                    <FormControl><Input {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editForm.control}
+                name="date"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Date *</FormLabel>
+                    <FormControl><Input type="date" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editForm.control}
+                name="location"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Location</FormLabel>
+                    <FormControl><Input placeholder="Venue / address" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editForm.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl><Textarea rows={3} {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editForm.control}
+                name="airtableRecordId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Airtable Record ID <span className="text-gray-400 font-normal">(optional)</span></FormLabel>
+                    <FormControl><Input placeholder="recXXXXXXXXXXXXXX" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsEditOpen(false)}>Cancel</Button>
+                <Button type="submit" disabled={isSaving}>
+                  {isSaving ? "Saving..." : "Save Changes"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
-

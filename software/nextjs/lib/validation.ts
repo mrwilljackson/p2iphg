@@ -207,6 +207,121 @@ export const exportCSVRequestSchema = z.object({
 });
 
 // ============================================================================
+// Admin Form Schemas (P2I Admin CRUD)
+// ============================================================================
+
+/**
+ * Admin Event Form Schema
+ * Used for create and edit forms in the P2I admin section
+ */
+export const adminEventFormSchema = z.object({
+  name: z
+    .string()
+    .min(3, "Event name must be at least 3 characters")
+    .max(100, "Event name must be at most 100 characters"),
+  date: z.string().min(1, "Date is required"),
+  location: z.string().optional().or(z.literal("")),
+  description: z.string().optional().or(z.literal("")),
+  airtableRecordId: z.string().optional().or(z.literal("")),
+});
+
+export type AdminEventFormData = z.infer<typeof adminEventFormSchema>;
+
+/**
+ * Admin Organisation Form Schema
+ * Used for create and edit forms in the P2I admin section
+ */
+export const adminOrgFormSchema = z.object({
+  name: z
+    .string()
+    .min(2, "Organisation name must be at least 2 characters")
+    .max(200, "Organisation name must be at most 200 characters"),
+  openGroup: z.boolean(),
+  groupType: z.enum([
+    'Family', 'Disability', 'Corporate', 'Sporting', 'Community', 'Educational', 'Other'
+  ]),
+  contactFirstName: z.string().optional().or(z.literal("")),
+  contactLastName: z.string().optional().or(z.literal("")),
+  contactEmail: z
+    .string()
+    .email("Please enter a valid email address")
+    .optional()
+    .or(z.literal("")),
+  contactPhone: z.string().optional().or(z.literal("")),
+  notes: z.string().optional().or(z.literal("")),
+  airtableRecordId: z.string().optional().or(z.literal("")),
+});
+
+export type AdminOrgFormData = z.infer<typeof adminOrgFormSchema>;
+
+/**
+ * Admin Org Record Form Schema
+ * For the organisations-table-only CRUD page (P2I admin)
+ */
+export const adminOrgRecordFormSchema = z.object({
+  name: z
+    .string()
+    .min(2, "Name must be at least 2 characters")
+    .max(200, "Name must be at most 200 characters"),
+  groupType: z.enum([
+    'Family', 'Disability', 'Corporate', 'Sporting', 'Community', 'Educational', 'Other'
+  ]),
+  airtableRecordId: z.string().optional().or(z.literal("")),
+});
+export type AdminOrgRecordFormData = z.infer<typeof adminOrgRecordFormSchema>;
+
+/**
+ * Admin Group Leader Form Schema
+ * For the organisation_contacts CRUD page (P2I admin)
+ */
+export const adminGroupLeaderFormSchema = z.object({
+  orgId: z.string().min(1, "Please select an organisation"),
+  openGroup: z.boolean(),
+  expectedGroupSize: z
+    .number()
+    .int("Must be a whole number")
+    .min(1, "Must be at least 1")
+    .optional()
+    .nullable(),
+  contactFirstName: z.string().optional().or(z.literal("")),
+  contactLastName: z.string().optional().or(z.literal("")),
+  contactEmail: z
+    .string()
+    .email("Please enter a valid email address")
+    .optional()
+    .or(z.literal("")),
+  contactPhone: z.string().optional().or(z.literal("")),
+  notes: z.string().optional().or(z.literal("")),
+  airtableRecordId: z.string().optional().or(z.literal("")),
+});
+export type AdminGroupLeaderFormData = z.infer<typeof adminGroupLeaderFormSchema>;
+
+/**
+ * Admin Helper (Volunteer) Form Schema
+ * For the volunteers CRUD page (P2I admin) — referred to as "Helpers" in the UI
+ */
+export const adminHelperFormSchema = z.object({
+  eventId: z.string().min(1, "Event is required"),
+  firstName: z
+    .string()
+    .min(1, "First name is required")
+    .max(100, "First name must be at most 100 characters"),
+  lastName: z
+    .string()
+    .min(1, "Last name is required")
+    .max(100, "Last name must be at most 100 characters"),
+  email: z
+    .string()
+    .email("Please enter a valid email address")
+    .max(255, "Email must be at most 255 characters"),
+  photoConsent: z.boolean(),
+  feedbackConsent: z.boolean(),
+  nextEventConsent: z.boolean(),
+  airtableRecordId: z.string().optional().or(z.literal("")),
+});
+export type AdminHelperFormData = z.infer<typeof adminHelperFormSchema>;
+
+// ============================================================================
 // Type Inference
 // ============================================================================
 

@@ -52,27 +52,6 @@ The column is added via `npm run db:push`. All records default to `true`. The `o
 
 The `findOrCreateFamilyGroup` method hard-codes `groupType: 'Family'` when creating a Family Group org record. This method must also set `openGroup: false`, as Family groups are always closed.
 
-## Filtering Flow Diagram
-
-```mermaid
-flowchart TD
-    A([Registration form loads organisations]) --> B{Which role?}
-
-    B -->|Participant| C[Filter: openGroup === true]
-    B -->|Group| D[No filter — all orgs shown]
-    B -->|Volunteer| E[No filter — all orgs shown]
-
-    C --> F[Org list: open orgs only]
-    F --> G[Prepend Family Group placeholder\ne.g. 'Smith Family Group']
-    G --> H([Participant dropdown])
-
-    D --> I[Org list: open + closed orgs]
-    I --> J[Append 'My organisation isn't listed here!']
-    J --> K([Group dropdown])
-
-    E --> L([Volunteer dropdown])
-```
-
 ## Filtering Logic Change
 
 **File:** `lib/helpers.ts` — `organizationsToOptions()`

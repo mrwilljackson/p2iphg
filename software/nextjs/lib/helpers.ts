@@ -9,15 +9,12 @@ import type { Organization, Event } from './types';
 import type { ComboboxOption } from '@/components/ui/combobox';
 import type { RegistrationType } from './field-visibility-config';
 
-/** Group types that are considered "disability/family" for filtering */
-const DISABILITY_FAMILY_TYPES = ['Disability', 'Family'];
-
 /**
  * Convert organizations to combobox options, filtered by role.
  *
  * Filtering rules:
- *  - Participant: show only orgs that are NOT Disability or Family
- *  - Group:       show only orgs that ARE Disability or Family
+ *  - Participant: show only orgs where openGroup === true
+ *  - Group:       show all orgs (open and closed)
  *  - Volunteer / undefined: show all (no filtering)
  *
  * Always includes "Family Group" placeholder for Participant role.
@@ -30,18 +27,13 @@ export function organizationsToOptions(
   // Filter out any existing "Family Group" entries from the database
   let filteredOrgs = organizations.filter(org => org.name !== 'Family Group');
 
-  // Apply role-based groupType filtering
+  // Apply role-based filtering
   if (role === 'Participant') {
-    // Participants see orgs that are NOT Disability or Family
-    filteredOrgs = filteredOrgs.filter(
-      org => !DISABILITY_FAMILY_TYPES.includes(org.groupType || 'Other')
-    );
-  } else if (role === 'Group') {
-    // Group leaders see only Disability or Family orgs
-    filteredOrgs = filteredOrgs.filter(
-      org => DISABILITY_FAMILY_TYPES.includes(org.groupType || 'Other')
-    );
+    // Participants see only open groups
+    filteredOrgs = filteredOrgs.filter(org => org.openGroup !== false);
   }
+  // Group role: no filter — all orgs (open and closed) are shown
+  // Volunteer / undefined: no filter
 
   // Deduplicate by organization name (keep first occurrence)
   const uniqueOrgs = filteredOrgs.reduce((acc, org) => {

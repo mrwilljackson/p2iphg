@@ -120,6 +120,7 @@ export default function RegisterOrganizationPage() {
         const newOrganization = await createOrganization({
           eventId: currentEvent.id,
           name: data.organizationName,
+          openGroup: true,
           groupType: data.groupType,
         });
 
@@ -132,6 +133,7 @@ export default function RegisterOrganizationPage() {
         const newOrganization = await createOrganization({
           eventId: currentEvent.id,
           name: data.organizationName,
+          openGroup: true,
           groupType: data.groupType,
           contactFirstName: data.firstName || undefined,
           contactLastName: data.lastName || undefined,

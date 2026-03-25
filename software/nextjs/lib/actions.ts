@@ -12,7 +12,7 @@ import { db } from './db/client';
 import { events, registrations, volunteers, organisations, organisationContacts } from './db/schema';
 import { eq, and, or, isNull, sql, inArray } from 'drizzle-orm';
 import { DatabaseService } from './db-service';
-import type { Event, Organization, Volunteer, Registration } from './types';
+import type { Event, Organization, OrgRecord, GroupLeader, Volunteer, Registration } from './types';
 import type { ParticipantCounts } from './participant-counting';
 
 /**
@@ -373,4 +373,138 @@ export async function clearEventData(eventId: string, force: boolean = false): P
       organisations: orgDeleteCount,
     },
   };
+}
+
+/**
+ * Update an organisation and its contact details
+ */
+export async function updateOrganization(id: string, data: {
+  name?: string;
+  groupType?: string;
+  openGroup?: boolean;
+  airtableRecordId?: string;
+  contactFirstName?: string;
+  contactLastName?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  notes?: string;
+}): Promise<Organization> {
+  return await DatabaseService.updateOrganization(id, data);
+}
+
+/**
+ * Delete an organisation and its contact (blocked if registrations exist)
+ */
+export async function deleteOrganization(id: string): Promise<void> {
+  return await DatabaseService.deleteOrganization(id);
+}
+
+/**
+ * Update an event's details
+ */
+export async function updateEvent(id: string, data: {
+  name?: string;
+  date?: string;
+  location?: string;
+  description?: string;
+  airtableRecordId?: string;
+}): Promise<Event> {
+  return await DatabaseService.updateEvent(id, data);
+}
+
+/**
+ * Delete an event (blocked if registrations or volunteers exist)
+ */
+export async function deleteEvent(id: string): Promise<void> {
+  return await DatabaseService.deleteEvent(id);
+}
+
+// ----------------------------------------------------------------------------
+// Org record CRUD (organisations table only)
+// ----------------------------------------------------------------------------
+
+export async function getOrgRecords(): Promise<OrgRecord[]> {
+  return await DatabaseService.getOrgRecords();
+}
+
+export async function createOrgRecord(data: {
+  name: string;
+  groupType: string;
+  airtableRecordId?: string;
+}): Promise<OrgRecord> {
+  return await DatabaseService.createOrgRecord(data);
+}
+
+export async function updateOrgRecord(id: string, data: {
+  name?: string;
+  groupType?: string;
+  airtableRecordId?: string;
+}): Promise<OrgRecord> {
+  return await DatabaseService.updateOrgRecord(id, data);
+}
+
+export async function deleteOrgRecord(id: string): Promise<void> {
+  return await DatabaseService.deleteOrgRecord(id);
+}
+
+// ----------------------------------------------------------------------------
+// Group leader CRUD (organisation_contacts table only)
+// ----------------------------------------------------------------------------
+
+export async function getGroupLeaders(eventId: string): Promise<GroupLeader[]> {
+  return await DatabaseService.getGroupLeaders(eventId);
+}
+
+export async function createGroupLeader(data: {
+  orgId: string;
+  eventId: string;
+  openGroup: boolean;
+  expectedGroupSize?: number;
+  contactFirstName?: string;
+  contactLastName?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  notes?: string;
+  airtableRecordId?: string;
+}): Promise<GroupLeader> {
+  return await DatabaseService.createGroupLeader(data);
+}
+
+export async function updateGroupLeader(id: string, data: {
+  orgId?: string;
+  openGroup?: boolean;
+  expectedGroupSize?: number | null;
+  contactFirstName?: string;
+  contactLastName?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  notes?: string;
+  airtableRecordId?: string;
+}): Promise<GroupLeader> {
+  return await DatabaseService.updateGroupLeader(id, data);
+}
+
+export async function deleteGroupLeader(id: string): Promise<void> {
+  return await DatabaseService.deleteGroupLeader(id);
+}
+
+// ----------------------------------------------------------------------------
+// Helper (Volunteer) CRUD
+// ----------------------------------------------------------------------------
+
+export async function updateVolunteer(id: string, data: {
+  eventId?: string;
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+  photoConsent?: boolean;
+  feedbackConsent?: boolean;
+  nextEventConsent?: boolean;
+  airtableRecordId?: string;
+}): Promise<Volunteer> {
+  return await DatabaseService.updateVolunteer(id, data);
+}
+
+export async function deleteVolunteer(id: string): Promise<void> {
+  return await DatabaseService.deleteVolunteer(id);
 }

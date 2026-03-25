@@ -96,6 +96,7 @@ export interface Organization {
   eventId: string; // Event ID this organization is registered for
   name: string; // Organization name (REQUIRED, 2-200 chars)
   groupType?: GroupType; // Classification for reporting: Family, Disability, Corporate, Sporting, Community, Educational, Other (default: Other)
+  openGroup: boolean; // If true, visible in Participant dropdown; if false, Group role only
   expectedGroupSize?: number; // Expected number of participants (for planning before actual registration)
   imageUrl?: string; // URL to organization logo/image (optional)
   contactFirstName?: string; // Contact person first name (optional)
@@ -106,6 +107,42 @@ export interface Organization {
   airtableRecordId?: string; // Airtable record ID (optional)
   createdAt?: string; // ISO 8601 timestamp
   modifiedAt?: string; // ISO 8601 timestamp
+}
+
+/**
+ * OrgRecord — organisations table entity (admin view)
+ * Used by the P2I admin organisations CRUD page.
+ * Unlike Organization, this is orgs-table-only with no joined contact data.
+ */
+export interface OrgRecord {
+  id: string;
+  name: string;
+  groupType: string;
+  airtableRecordId?: string;
+  airtableEventId?: string;
+  createdAt?: string;
+  modifiedAt?: string;
+}
+
+/**
+ * GroupLeader — organisation_contacts joined with organisations (admin view)
+ * Used by the P2I admin group leaders CRUD page.
+ */
+export interface GroupLeader {
+  id: string;                      // organisation_contacts.id
+  orgId: string;                   // organisations.id (UUID)
+  organisationAirtableId: string;  // organisations.airtableRecordId (FK link field)
+  orgName: string;
+  openGroup: boolean;
+  groupType: string;
+  expectedGroupSize?: number;      // organisation_contacts.expected_group_size
+  contactFirstName?: string;
+  contactLastName?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  notes?: string;
+  airtableRecordId?: string;       // organisation_contacts.airtableRecordId
+  airtableEventId?: string;
 }
 
 /**
