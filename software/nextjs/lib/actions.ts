@@ -488,6 +488,15 @@ export async function deleteGroupLeader(id: string): Promise<void> {
   return await DatabaseService.deleteGroupLeader(id);
 }
 
+export async function updateGroupLeaderConsents(contactId: string, data: {
+  contactEmail?: string;
+  photoConsent?: boolean;
+  feedbackConsent?: boolean;
+  nextEventConsent?: boolean;
+}): Promise<void> {
+  return await DatabaseService.updateGroupLeaderConsents(contactId, data);
+}
+
 // ----------------------------------------------------------------------------
 // Helper (Volunteer) CRUD
 // ----------------------------------------------------------------------------

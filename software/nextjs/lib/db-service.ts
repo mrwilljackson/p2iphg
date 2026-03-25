@@ -920,6 +920,20 @@ export class DatabaseService {
     await db.delete(organisationContacts).where(eq(organisationContacts.id, id));
   }
 
+  static async updateGroupLeaderConsents(contactId: string, data: {
+    contactEmail?: string;
+    photoConsent?: boolean;
+    feedbackConsent?: boolean;
+    nextEventConsent?: boolean;
+  }): Promise<void> {
+    const updates: Record<string, unknown> = { modifiedAt: new Date() };
+    if (data.contactEmail !== undefined) updates.contactEmail = data.contactEmail;
+    if (data.photoConsent !== undefined) updates.photoConsent = data.photoConsent;
+    if (data.feedbackConsent !== undefined) updates.feedbackConsent = data.feedbackConsent;
+    if (data.nextEventConsent !== undefined) updates.nextEventConsent = data.nextEventConsent;
+    await db.update(organisationContacts).set(updates).where(eq(organisationContacts.id, contactId));
+  }
+
   static async updateVolunteer(id: string, data: {
     eventId?: string;
     email?: string;
@@ -1153,10 +1167,14 @@ function mapOrganisationToOrganization(
     openGroup: contact?.openGroup ?? true,
     expectedGroupSize: contact?.expectedGroupSize ? parseInt(contact.expectedGroupSize, 10) : undefined,
     imageUrl: org.imageUrl || null,
+    contactId: contact?.id || null,
     contactFirstName: contact?.contactFirstName || null,
     contactLastName: contact?.contactLastName || null,
     contactEmail: contact?.contactEmail || null,
     contactPhone: contact?.contactPhone || null,
+    photoConsent: contact?.photoConsent ?? true,
+    feedbackConsent: contact?.feedbackConsent ?? false,
+    nextEventConsent: contact?.nextEventConsent ?? false,
     notes: contact?.notes || null,
     airtableRecordId: org.airtableRecordId || null,
     createdAt: org.createdAt?.toISOString(),

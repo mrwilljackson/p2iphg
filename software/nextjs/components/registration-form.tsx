@@ -26,7 +26,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
-import { getCurrentEvent, getOrganizations, getAllVolunteers, createRegistration, updateVolunteer, findOrCreateFamilyGroup, getExistingGroupLeaders } from "@/lib/actions";
+import { getCurrentEvent, getOrganizations, getAllVolunteers, createRegistration, updateVolunteer, updateGroupLeaderConsents, findOrCreateFamilyGroup, getExistingGroupLeaders } from "@/lib/actions";
 import { organizationsToOptions } from "@/lib/helpers";
 import { isFieldVisible, type RegistrationType } from "@/lib/field-visibility-config";
 import type { RegistrationRole } from "@/lib/types";
@@ -125,13 +125,13 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
     checkExistingLeaders();
   }, [selectedRole, selectedOrgId, currentEvent?.id]);
 
-  // Check if selected organization is a disability group or Family Group
-  // Family Group placeholder has special ID "FAMILY_GROUP_PLACEHOLDER"
+  // Check if selected organization is a closed group (group leader registers on behalf of participants)
+  // All closed groups (openGroup === false) need group size / impairment fields
+  // Family Group placeholder is always treated as a closed group
   const selectedOrg = allOrganizations.find(org => org.id === selectedOrgId);
   const shouldShowImpairmentFields =
     selectedOrgId === "FAMILY_GROUP_PLACEHOLDER" ||
-    selectedOrg?.groupType === 'Disability' ||
-    selectedOrg?.groupType === 'Family';
+    selectedOrg?.openGroup === false;
 
   // Navigation handlers
   const handleNext = async () => {
@@ -304,6 +304,7 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
 
     try {
       let finalOrganizationId = data.organizationId;
+      let createdFamilyGroup: Organization | undefined;
 
       // Check if "Family Group" placeholder was selected
       // The placeholder has a special ID "FAMILY_GROUP_PLACEHOLDER" that's always available
@@ -311,7 +312,7 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
         // Create or find the family group organization
         console.log("Creating/finding family group for:", data.attendeeSurname);
 
-        const familyGroup = await findOrCreateFamilyGroup(
+        createdFamilyGroup = await findOrCreateFamilyGroup(
           data.eventId,
           data.attendeeSurname,
           data.email || "",
@@ -319,8 +320,8 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
           data.attendeeSurname
         );
 
-        console.log("Family group created/found:", familyGroup);
-        finalOrganizationId = familyGroup.id!;
+        console.log("Family group created/found:", createdFamilyGroup);
+        finalOrganizationId = createdFamilyGroup.id!;
       }
 
       // Save registration to database
@@ -351,6 +352,19 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
           feedbackConsent: data.feedbackConsent ?? false,
           nextEventConsent: data.nextEventConsent ?? false,
         });
+      }
+
+      // If a group leader registered, sync their updated email and consent choices back to the organisation_contacts record
+      if (data.role === "Group") {
+        const contactOrg = createdFamilyGroup ?? selectedOrg;
+        if (contactOrg?.contactId) {
+          await updateGroupLeaderConsents(contactOrg.contactId, {
+            contactEmail: data.email,
+            photoConsent: data.photoConsent,
+            feedbackConsent: data.feedbackConsent ?? false,
+            nextEventConsent: data.nextEventConsent ?? false,
+          });
+        }
       }
 
       setIsSubmitting(false);
@@ -507,10 +521,9 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
                             setShowOrganizationAlert(false);
                             field.onChange(value);
 
-                            // Pre-populate contact details for Group role
+                            // Pre-populate contact details and consent preferences for Group role
                             const selectedOrg = allOrganizations.find(org => org.id === value);
-                            if (selectedOrg && selectedOrg.contactEmail) {
-                              // Only pre-populate if organization has contact details
+                            if (selectedOrg) {
                               if (selectedOrg.contactFirstName) {
                                 form.setValue("attendeeName", selectedOrg.contactFirstName);
                               }
@@ -520,6 +533,10 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
                               if (selectedOrg.contactEmail) {
                                 form.setValue("email", selectedOrg.contactEmail);
                               }
+                              // Pre-populate saved consent preferences
+                              form.setValue("photoConsent", selectedOrg.photoConsent ?? true);
+                              form.setValue("feedbackConsent", selectedOrg.feedbackConsent ?? false);
+                              form.setValue("nextEventConsent", selectedOrg.nextEventConsent ?? false);
                             }
                           }
                         }}

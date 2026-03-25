@@ -99,10 +99,14 @@ export interface Organization {
   openGroup: boolean; // If true, visible in Participant dropdown; if false, Group role only
   expectedGroupSize?: number; // Expected number of participants (for planning before actual registration)
   imageUrl?: string; // URL to organization logo/image (optional)
+  contactId?: string; // organisation_contacts.id — used to sync consents back after registration
   contactFirstName?: string; // Contact person first name (optional)
   contactLastName?: string; // Contact person last name (optional)
   contactEmail?: string; // Contact person email (optional)
   contactPhone?: string; // Primary contact phone (optional)
+  photoConsent?: boolean; // Group leader's photo consent preference
+  feedbackConsent?: boolean; // Group leader's feedback consent preference
+  nextEventConsent?: boolean; // Group leader's next event consent preference
   notes?: string; // Additional information (optional)
   airtableRecordId?: string; // Airtable record ID (optional)
   createdAt?: string; // ISO 8601 timestamp
