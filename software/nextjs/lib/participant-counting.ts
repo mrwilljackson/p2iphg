@@ -58,6 +58,7 @@ export interface RegistrationForCounting {
   organizationId?: string | null;
   organizationName?: string | null;
   groupType?: GroupType | null;
+  openGroup?: boolean | null;
   organizationAirtableRecordId?: string | null;
 }
 
@@ -146,6 +147,7 @@ export interface OrganizationForCounting {
   id: string;
   name: string;
   groupType: GroupType | null;
+  openGroup?: boolean | null;
   airtableRecordId?: string | null;
   expectedGroupSize?: number | null; // Expected participant count for planning (before registration)
 }
@@ -208,6 +210,7 @@ export function calculateParticipantCounts(
     organizationId: string;
     organizationName: string;
     groupType: GroupType | null;
+    isClosed: boolean;
     totalGroupSize: number;
     totalDisabled: number;
     totalSen: number;
@@ -237,6 +240,7 @@ export function calculateParticipantCounts(
         organizationId: orgId,
         organizationName: group.organizationName || '',
         groupType: group.groupType || null,
+        isClosed: group.openGroup === false,
         totalGroupSize: group.groupSize || 0,
         totalDisabled: group.disabledStudents || 0,
         totalSen: group.senStudents || 0,
@@ -249,7 +253,9 @@ export function calculateParticipantCounts(
 
   // Process each aggregated organization group
   for (const [, orgGroup] of orgGroupMap) {
-    const isExpectedOnly = isExpectedOnlyGroupType(orgGroup.groupType);
+    // Closed groups (openGroup === false) use groupSize from the registration for their count.
+    // Open groups have members register individually, so use actual Participant registrations.
+    const isExpectedOnly = orgGroup.isClosed;
 
     // Expected = total group size across all leaders + number of participating leaders
     const expectedCount = orgGroup.totalGroupSize + orgGroup.participatingLeaderCount;
@@ -360,7 +366,7 @@ export function calculateParticipantCounts(
       // This is used for future events where organizations are pre-registered but haven't completed registration yet
       // IMPORTANT: This only adds to EXPECTED count, NOT registered count (they haven't registered yet)
       if (org.expectedGroupSize && org.expectedGroupSize > 0) {
-        const isExpectedOnly = isExpectedOnlyGroupType(org.groupType);
+        const isExpectedOnly = org.openGroup === false;
 
         if (isExpectedOnly) {
           // Family/Disability groups: expected participants come from expectedGroupSize

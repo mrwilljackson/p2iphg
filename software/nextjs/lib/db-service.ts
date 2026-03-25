@@ -1051,6 +1051,7 @@ export class DatabaseService {
               orgId: organisations.id,
               orgName: organisations.name,
               orgGroupType: organisations.groupType,
+              openGroup: organisationContacts.openGroup,
               contactExpectedGroupSize: organisationContacts.expectedGroupSize,
             })
             .from(organisationContacts)
@@ -1059,7 +1060,7 @@ export class DatabaseService {
         : [];
 
       // Aggregate expectedGroupSize per organisation (multiple contacts may exist per org)
-      const orgMap = new Map<string, { id: string; name: string; groupType: string | null; expectedGroupSize: number }>();
+      const orgMap = new Map<string, { id: string; name: string; groupType: string | null; openGroup: boolean | null; expectedGroupSize: number }>();
       for (const row of contactsForEvent) {
         if (!row.orgId) continue;
         const existing = orgMap.get(row.orgId);
@@ -1071,11 +1072,20 @@ export class DatabaseService {
             id: row.orgId,
             name: row.orgName || '',
             groupType: row.orgGroupType,
+            openGroup: row.openGroup,
             expectedGroupSize: contactSize,
           });
         }
       }
       const allOrgs = Array.from(orgMap.values());
+
+      // Build a lookup from org UUID → openGroup for use when mapping registrations
+      const orgOpenGroupMap = new Map<string, boolean>();
+      for (const org of allOrgs) {
+        if (org.openGroup !== null) {
+          orgOpenGroupMap.set(org.id, org.openGroup);
+        }
+      }
 
       // Convert to format expected by counting logic
       const registrationsForCounting: RegistrationForCounting[] = allRegistrations.map(r => ({
@@ -1088,6 +1098,7 @@ export class DatabaseService {
         organizationId: r.organizationId,
         organizationName: r.orgName,
         groupType: r.orgGroupType as any,
+        openGroup: r.organizationId ? (orgOpenGroupMap.get(r.organizationId) ?? null) : null,
         organizationAirtableRecordId: r.orgAirtableRecordId,
       }));
 
@@ -1095,6 +1106,7 @@ export class DatabaseService {
         id: org.id,
         name: org.name,
         groupType: org.groupType as any,
+        openGroup: org.openGroup,
         expectedGroupSize: org.expectedGroupSize > 0 ? org.expectedGroupSize : null,
       }));
 
