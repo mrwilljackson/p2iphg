@@ -465,6 +465,9 @@ export async function createGroupLeader(data: {
   contactEmail?: string;
   contactPhone?: string;
   notes?: string;
+  photoConsent?: boolean;
+  feedbackConsent?: boolean;
+  nextEventConsent?: boolean;
   airtableRecordId?: string;
 }): Promise<GroupLeader> {
   return await DatabaseService.createGroupLeader(data);
@@ -479,6 +482,9 @@ export async function updateGroupLeader(id: string, data: {
   contactEmail?: string;
   contactPhone?: string;
   notes?: string;
+  photoConsent?: boolean;
+  feedbackConsent?: boolean;
+  nextEventConsent?: boolean;
   airtableRecordId?: string;
 }): Promise<GroupLeader> {
   return await DatabaseService.updateGroupLeader(id, data);

@@ -27,6 +27,9 @@ const defaultValues: AdminGroupLeaderFormData = {
   contactEmail: "",
   contactPhone: "",
   notes: "",
+  photoConsent: true,
+  feedbackConsent: false,
+  nextEventConsent: false,
   airtableRecordId: "",
 };
 
@@ -122,6 +125,9 @@ export default function GroupLeadersPage() {
         contactEmail: data.contactEmail || undefined,
         contactPhone: data.contactPhone || undefined,
         notes: data.notes || undefined,
+        photoConsent: data.photoConsent,
+        feedbackConsent: data.feedbackConsent,
+        nextEventConsent: data.nextEventConsent,
         airtableRecordId: data.airtableRecordId || undefined,
       });
       setIsCreateOpen(false);
@@ -146,6 +152,9 @@ export default function GroupLeadersPage() {
       contactEmail: leader.contactEmail || "",
       contactPhone: leader.contactPhone || "",
       notes: leader.notes || "",
+      photoConsent: leader.photoConsent ?? true,
+      feedbackConsent: leader.feedbackConsent ?? false,
+      nextEventConsent: leader.nextEventConsent ?? false,
       airtableRecordId: leader.airtableRecordId?.startsWith("local-") ? "" : (leader.airtableRecordId || ""),
     });
     setIsEditOpen(true);
@@ -165,6 +174,9 @@ export default function GroupLeadersPage() {
         contactEmail: data.contactEmail || undefined,
         contactPhone: data.contactPhone || undefined,
         notes: data.notes || undefined,
+        photoConsent: data.photoConsent,
+        feedbackConsent: data.feedbackConsent,
+        nextEventConsent: data.nextEventConsent,
         airtableRecordId: data.airtableRecordId || undefined,
       });
       setIsEditOpen(false);
@@ -204,6 +216,9 @@ export default function GroupLeadersPage() {
       contactEmail: source.contactEmail || "",
       contactPhone: source.contactPhone || "",
       notes: source.notes || "",
+      photoConsent: source.photoConsent ?? true,
+      feedbackConsent: source.feedbackConsent ?? false,
+      nextEventConsent: source.nextEventConsent ?? false,
       airtableRecordId: "",
     });
     resetImport();
@@ -352,6 +367,35 @@ export default function GroupLeadersPage() {
           <FormMessage />
         </FormItem>
       )} />
+      <div className="space-y-2">
+        <p className="text-sm font-medium text-gray-700">Consent Preferences</p>
+        {[
+          { name: "photoConsent" as const, label: "Photo consent", description: "Leader has agreed to photos being taken" },
+          { name: "feedbackConsent" as const, label: "Feedback consent", description: "Leader has agreed to receive post-event feedback surveys" },
+          { name: "nextEventConsent" as const, label: "Next event consent", description: "Leader has agreed to receive info about future events" },
+        ].map(({ name, label, description }) => (
+          <FormField key={name} control={form.control} name={name} render={({ field }) => (
+            <FormItem>
+              <FormControl>
+                <label className={`flex items-center gap-3 px-4 py-3 rounded-lg border cursor-pointer transition-colors ${
+                  field.value ? "border-blue-500 bg-blue-50" : "border-gray-200 hover:bg-gray-50"
+                }`}>
+                  <input
+                    type="checkbox"
+                    className="accent-blue-600 w-4 h-4 shrink-0"
+                    checked={field.value}
+                    onChange={e => field.onChange(e.target.checked)}
+                  />
+                  <span className="text-sm">
+                    <span className="font-medium text-gray-900">{label}</span>
+                    <span className="text-gray-500"> — {description}</span>
+                  </span>
+                </label>
+              </FormControl>
+            </FormItem>
+          )} />
+        ))}
+      </div>
       <FormField control={form.control} name="airtableRecordId" render={({ field }) => (
         <FormItem>
           <FormLabel>Airtable Record ID <span className="text-gray-400 font-normal">(optional)</span></FormLabel>

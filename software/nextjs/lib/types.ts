@@ -145,6 +145,9 @@ export interface GroupLeader {
   contactEmail?: string;
   contactPhone?: string;
   notes?: string;
+  photoConsent?: boolean;
+  feedbackConsent?: boolean;
+  nextEventConsent?: boolean;
   airtableRecordId?: string;       // organisation_contacts.airtableRecordId
   airtableEventId?: string;
 }

@@ -858,6 +858,9 @@ export class DatabaseService {
     contactEmail?: string;
     contactPhone?: string;
     notes?: string;
+    photoConsent?: boolean;
+    feedbackConsent?: boolean;
+    nextEventConsent?: boolean;
     airtableRecordId?: string;
   }): Promise<GroupLeader> {
     const [event] = await db.select().from(events).where(eq(events.id, data.eventId)).limit(1);
@@ -874,6 +877,9 @@ export class DatabaseService {
       contactEmail: data.contactEmail || null,
       contactPhone: data.contactPhone || null,
       notes: data.notes || null,
+      photoConsent: data.photoConsent ?? true,
+      feedbackConsent: data.feedbackConsent ?? false,
+      nextEventConsent: data.nextEventConsent ?? false,
       airtableRecordId: data.airtableRecordId || null,
     }).returning();
     return mapGroupLeader(org, contact);
@@ -888,6 +894,9 @@ export class DatabaseService {
     contactEmail?: string;
     contactPhone?: string;
     notes?: string;
+    photoConsent?: boolean;
+    feedbackConsent?: boolean;
+    nextEventConsent?: boolean;
     airtableRecordId?: string;
   }): Promise<GroupLeader> {
     const { orgId, openGroup, expectedGroupSize, ...contactFields } = data;
@@ -1129,6 +1138,9 @@ function mapGroupLeader(org: OrganisationRow, contact: OrganisationContactRow): 
     contactEmail: contact.contactEmail ?? undefined,
     contactPhone: contact.contactPhone ?? undefined,
     notes: contact.notes ?? undefined,
+    photoConsent: contact.photoConsent,
+    feedbackConsent: contact.feedbackConsent,
+    nextEventConsent: contact.nextEventConsent,
     airtableRecordId: contact.airtableRecordId ?? undefined,
     airtableEventId: contact.airtableEventId ?? undefined,
   };

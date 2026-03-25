@@ -292,6 +292,9 @@ export const adminGroupLeaderFormSchema = z.object({
     .or(z.literal("")),
   contactPhone: z.string().optional().or(z.literal("")),
   notes: z.string().optional().or(z.literal("")),
+  photoConsent: z.boolean(),
+  feedbackConsent: z.boolean(),
+  nextEventConsent: z.boolean(),
   airtableRecordId: z.string().optional().or(z.literal("")),
 });
 export type AdminGroupLeaderFormData = z.infer<typeof adminGroupLeaderFormSchema>;
