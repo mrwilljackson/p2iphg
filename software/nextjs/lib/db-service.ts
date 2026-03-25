@@ -144,20 +144,32 @@ export class DatabaseService {
 
   /**
    * Get organization by ID
-   * Queries the UK organisations table with joined contact details
+   * Queries the UK organisations table with joined contact details.
+   * Pass eventId to scope the contact join to the correct event (recommended),
+   * otherwise an arbitrary contact row may be returned if the org spans multiple events.
    */
-  static async getOrganizationById(id: string): Promise<Organization | null> {
+  static async getOrganizationById(id: string, eventId?: string): Promise<Organization | null> {
     try {
+      let eventAirtableId: string | null = null;
+      if (eventId) {
+        const [evt] = await db.select().from(events).where(eq(events.id, eventId)).limit(1);
+        eventAirtableId = evt?.airtableRecordId ?? null;
+      }
+
+      const contactJoinCondition = eventAirtableId
+        ? and(
+            eq(organisations.airtableRecordId, organisationContacts.organisationId),
+            eq(organisationContacts.airtableEventId, eventAirtableId)
+          )
+        : eq(organisations.airtableRecordId, organisationContacts.organisationId);
+
       const result = await db
         .select({
           org: organisations,
           contact: organisationContacts,
         })
         .from(organisations)
-        .leftJoin(
-          organisationContacts,
-          eq(organisations.airtableRecordId, organisationContacts.organisationId)
-        )
+        .leftJoin(organisationContacts, contactJoinCondition)
         .where(eq(organisations.id, id))
         .limit(1);
 

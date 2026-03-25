@@ -163,8 +163,8 @@ export async function getExistingGroupLeaders(eventId: string, organizationId: s
   };
 }
 
-export async function getOrganizationById(id: string): Promise<Organization | null> {
-  return await DatabaseService.getOrganizationById(id);
+export async function getOrganizationById(id: string, eventId?: string): Promise<Organization | null> {
+  return await DatabaseService.getOrganizationById(id, eventId);
 }
 
 /**

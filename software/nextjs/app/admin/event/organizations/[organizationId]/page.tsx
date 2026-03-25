@@ -53,8 +53,8 @@ export default function OrganizationRegistrationsPage() {
         }
         setCurrentEvent(event);
 
-        // Get organization details
-        const org = await getOrganizationById(organizationId);
+        // Get organization details scoped to this event (ensures correct openGroup value)
+        const org = await getOrganizationById(organizationId, event.id);
         if (!org) {
           setError('Organization not found');
           return;
