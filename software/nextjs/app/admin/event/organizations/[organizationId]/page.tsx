@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Registration, Organization, Event } from '@/lib/types';
-import { getRegistrationsByOrganization, getOrganizationById, getCurrentEvent } from '@/lib/actions';
+import { getRegistrationsByOrganization, getOrganizationById, getCurrentEvent, getEventById } from '@/lib/actions';
 import { AdminEventHeader } from '@/components/admin-event-header';
 import { Button } from '@/components/ui/button';
 
@@ -42,8 +42,11 @@ export default function OrganizationRegistrationsPage() {
         setLoadingData(true);
         setError(null);
 
-        // Get active event
-        const event = await getCurrentEvent();
+        // Respect administeringEventId (set when P2I admin selects a specific event)
+        const administeringEventId = sessionStorage.getItem('administeringEventId');
+        const event = administeringEventId
+          ? await getEventById(administeringEventId)
+          : await getCurrentEvent();
         if (!event) {
           setError('No active event found');
           return;
@@ -215,7 +218,7 @@ export default function OrganizationRegistrationsPage() {
             </div>
 
             {/* Group Leader Card */}
-            {/* Show for Family/Disability groups (always) OR for other groups (only if NOT participating) */}
+            {/* Show for closed groups (always) OR open groups where leader is not participating */}
             {groupRegistration && (isClosed || !groupLeaderParticipating) && (
               <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6 mb-4">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">
