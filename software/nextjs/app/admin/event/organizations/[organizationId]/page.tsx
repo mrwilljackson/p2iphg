@@ -105,12 +105,14 @@ export default function OrganizationRegistrationsPage() {
   const groupSize = groupRegistration?.groupSize || 0;
   const expectedCount = groupSize + (groupLeaderParticipating ? 1 : 0);
 
-  // Calculate registered count
-  // Count individual participant registrations
-  // If leader is participating, add 1 to the registered count
-  const registeredCount = participantRegistrations.length + (groupLeaderParticipating ? 1 : 0);
+  // Closed groups (openGroup === false) use groupSize from the registration as their registered count —
+  // members don't register individually. Open groups count actual Participant registrations.
+  const isClosed = organization?.openGroup === false;
+  const registeredCount = isClosed
+    ? expectedCount
+    : participantRegistrations.length + (groupLeaderParticipating ? 1 : 0);
 
-  // Build list of people to display
+  // Build list of people to display (only relevant for open groups)
   // If leader is participating, include them in the participants list
   // If leader is NOT participating, show them separately
   const displayRegistrations = groupLeaderParticipating && groupRegistration
@@ -133,8 +135,8 @@ export default function OrganizationRegistrationsPage() {
               </h1>
               <p className="text-sm text-gray-600 mt-1">
                 {currentEvent?.name} - {
-                  (organization?.groupType === 'Family' || organization?.groupType === 'Disability')
-                    ? `${groupSize} confirmed participant${groupSize !== 1 ? 's' : ''}`
+                  isClosed
+                    ? `${expectedCount} confirmed participant${expectedCount !== 1 ? 's' : ''}`
                     : `${displayRegistrations.length} registered participant${displayRegistrations.length !== 1 ? 's' : ''}`
                 }
               </p>
@@ -184,11 +186,11 @@ export default function OrganizationRegistrationsPage() {
             <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6 mb-4">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Registration Summary</h2>
 
-              {/* Family/Disability Groups - Show confirmation message */}
-              {(organization?.groupType === 'Family' || organization?.groupType === 'Disability') ? (
+              {/* Closed Groups - Show confirmation message */}
+              {isClosed ? (
                 <div className="bg-blue-50 rounded-lg p-4">
                   <p className="text-gray-900">
-                    The Group Leader has confirmed attendance of <span className="font-bold">{groupSize}</span> participant{groupSize !== 1 ? 's' : ''}.
+                    The Group Leader has confirmed attendance of <span className="font-bold">{expectedCount}</span> participant{expectedCount !== 1 ? 's' : ''}{groupLeaderParticipating ? ', including themselves' : ''}.
                   </p>
                 </div>
               ) : (
@@ -214,14 +216,10 @@ export default function OrganizationRegistrationsPage() {
 
             {/* Group Leader Card */}
             {/* Show for Family/Disability groups (always) OR for other groups (only if NOT participating) */}
-            {groupRegistration && (
-              (organization?.groupType === 'Family' || organization?.groupType === 'Disability') || !groupLeaderParticipating
-            ) && (
+            {groupRegistration && (isClosed || !groupLeaderParticipating) && (
               <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6 mb-4">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                  {(organization?.groupType === 'Family' || organization?.groupType === 'Disability')
-                    ? 'Group Leader'
-                    : 'Group Leader (Not Participating)'}
+                  {isClosed ? 'Group Leader' : 'Group Leader (Not Participating)'}
                 </h2>
                 <div className="bg-gray-50 rounded-lg p-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -240,8 +238,8 @@ export default function OrganizationRegistrationsPage() {
               </div>
             )}
 
-            {/* Registrations Table - Only show for non-Family/Disability groups */}
-            {organization?.groupType !== 'Family' && organization?.groupType !== 'Disability' && (
+            {/* Registrations Table - Only show for open groups (members register individually) */}
+            {!isClosed && (
               <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
                 <div className="p-6 border-b border-gray-200">
                   <h2 className="text-lg font-semibold text-gray-900">
