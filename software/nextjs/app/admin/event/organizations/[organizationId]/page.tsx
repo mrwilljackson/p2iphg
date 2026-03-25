@@ -102,11 +102,13 @@ export default function OrganizationRegistrationsPage() {
   // Determine if group leader is participating
   const groupLeaderParticipating = groupRegistration?.groupLeaderParticipating || false;
 
-  // Calculate expected count
-  // Group Size = number of participants from organization (NOT including leader)
-  // If leader is participating, add 1 to the expected count
+  // Calculate expected count.
+  // If a group leader has registered, use groupSize from the registration (confirmed on the day).
+  // If not, fall back to expectedGroupSize from organisation_contacts (the pre-planned estimate).
   const groupSize = groupRegistration?.groupSize || 0;
-  const expectedCount = groupSize + (groupLeaderParticipating ? 1 : 0);
+  const expectedCount = groupRegistration
+    ? groupSize + (groupLeaderParticipating ? 1 : 0)
+    : (organization?.expectedGroupSize ?? 0);
 
   // Closed groups (openGroup === false) use groupSize from the registration as their registered count —
   // members don't register individually. Open groups count actual Participant registrations.
