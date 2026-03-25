@@ -17,7 +17,7 @@ import type { RegistrationType } from './field-visibility-config';
  *  - Group:       show only orgs where openGroup === false
  *  - Volunteer / undefined: show all (no filtering)
  *
- * Always includes "Family Group" placeholder for Participant role.
+ * Always includes "Family Group" placeholder for Group role.
  * Deduplicates organizations by name (keeps first occurrence).
  */
 export function organizationsToOptions(
@@ -51,8 +51,8 @@ export function organizationsToOptions(
     label: org.name,
   }));
 
-  // Add "Family Group" placeholder only for Participant role (on-the-day family registrations)
-  if (role === 'Participant' || !role) {
+  // Add "Family Group" placeholder only for Group role (on-the-day family group registrations)
+  if (role === 'Group') {
     const familyGroupOption: ComboboxOption = {
       value: 'FAMILY_GROUP_PLACEHOLDER',
       label: 'Family Group',

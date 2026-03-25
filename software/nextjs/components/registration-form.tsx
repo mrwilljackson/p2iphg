@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { registrationFormSchema } from "@/lib/validation";
-import type { RegistrationFormData, Event, Organization } from "@/lib/types";
+import type { RegistrationFormData, Event, Organization, Volunteer } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -26,7 +26,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
-import { getCurrentEvent, getOrganizations, getVolunteerEmails, getVolunteerByEmail, createRegistration, findOrCreateFamilyGroup, getExistingGroupLeaders } from "@/lib/actions";
+import { getCurrentEvent, getOrganizations, getAllVolunteers, createRegistration, updateVolunteer, findOrCreateFamilyGroup, getExistingGroupLeaders } from "@/lib/actions";
 import { organizationsToOptions } from "@/lib/helpers";
 import { isFieldVisible, type RegistrationType } from "@/lib/field-visibility-config";
 import type { RegistrationRole } from "@/lib/types";
@@ -42,7 +42,8 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
   const [isLoading, setIsLoading] = useState(true);
   const [currentEvent, setCurrentEvent] = useState<Event | null>(null);
   const [organizations, setOrganizations] = useState<ComboboxOption[]>([]);
-  const [volunteerEmails, setVolunteerEmails] = useState<string[]>([]);
+  const [volunteers, setVolunteers] = useState<Volunteer[]>([]);
+  const [selectedVolunteerId, setSelectedVolunteerId] = useState<string>("");
   const [showVolunteerAlert, setShowVolunteerAlert] = useState(false);
   const [showOrganizationAlert, setShowOrganizationAlert] = useState(false);
   const [allOrganizations, setAllOrganizations] = useState<Organization[]>([]);
@@ -88,7 +89,6 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
   // Watch the role field to show/hide conditional fields
   const selectedRole = form.watch("role") as RegistrationType;
   const attendeeSurname = form.watch("attendeeSurname");
-  const volunteerEmail = form.watch("email");
   const selectedOrgId = form.watch("organizationId");
 
   // Determine total steps based on role
@@ -205,10 +205,11 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
     return false;
   };
 
-  // Reset volunteer alert when role changes away from Volunteer
+  // Reset volunteer state when role changes away from Volunteer
   useEffect(() => {
     if (selectedRole !== "Volunteer") {
       setShowVolunteerAlert(false);
+      setSelectedVolunteerId("");
     }
   }, [selectedRole]);
 
@@ -233,7 +234,7 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
       const orgOptions = organizationsToOptions(orgs, selectedRole);
 
       // Find and update the "Family Group" option with personalized surname
-      // The organizationsToOptions helper includes "Family Group" only for Participant role
+      // The organizationsToOptions helper includes "Family Group" only for Group role
       const updatedOptions = orgOptions.map(option => {
         if (option.value === "FAMILY_GROUP_PLACEHOLDER" && attendeeSurname && attendeeSurname.trim()) {
           return {
@@ -275,17 +276,17 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
           // Pre-populate the event field
           form.setValue('eventId', event.id);
 
-          // Fetch event-specific organizations and volunteer emails
-          const [orgs, emails] = await Promise.all([
+          // Fetch event-specific organizations and volunteers
+          const [orgs, vols] = await Promise.all([
             getOrganizations(event.id),
-            getVolunteerEmails(event.id),
+            getAllVolunteers(event.id),
           ]);
 
           // Convert organizations to combobox options (filtered by role)
           setOrganizations(organizationsToOptions(orgs, selectedRole));
 
-          // Store volunteer emails
-          setVolunteerEmails(emails);
+          // Store volunteers for name picker
+          setVolunteers(vols);
         }
       } catch (error) {
         console.error('Failed to load data:', error);
@@ -341,6 +342,16 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
       });
 
       console.log("Registration saved successfully:", registration);
+
+      // If a volunteer registered, sync their updated email and consent choices back to the volunteers table
+      if (data.role === "Volunteer" && selectedVolunteerId) {
+        await updateVolunteer(selectedVolunteerId, {
+          email: data.email,
+          photoConsent: data.photoConsent,
+          feedbackConsent: data.feedbackConsent ?? false,
+          nextEventConsent: data.nextEventConsent ?? false,
+        });
+      }
 
       setIsSubmitting(false);
       setSubmitSuccess(true);
@@ -769,8 +780,51 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
           />
         )}
 
-        {/* Email - For Volunteer role only */}
-        {selectedRole === "Volunteer" && !showOrganizationAlert && isFieldVisible("email", selectedRole) && (
+        {/* Volunteer Name Selector */}
+        {selectedRole === "Volunteer" && !showOrganizationAlert && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+            <label className="text-sm font-medium sm:pt-2">Select your name:</label>
+            <Select
+              value={selectedVolunteerId}
+              onValueChange={(value) => {
+                if (value === "NOT_LISTED") {
+                  setShowVolunteerAlert(true);
+                  setSelectedVolunteerId("");
+                  form.setValue("email", "");
+                } else {
+                  setShowVolunteerAlert(false);
+                  setSelectedVolunteerId(value);
+                  const vol = volunteers.find(v => v.id === value);
+                  if (vol) {
+                    form.setValue("attendeeName", vol.firstName);
+                    form.setValue("attendeeSurname", vol.lastName);
+                    form.setValue("email", vol.email);
+                    form.setValue("photoConsent", vol.photoConsent);
+                    form.setValue("feedbackConsent", vol.feedbackConsent);
+                    form.setValue("nextEventConsent", vol.nextEventConsent);
+                  }
+                }
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select your name" />
+              </SelectTrigger>
+              <SelectContent>
+                {volunteers.map((vol) => (
+                  <SelectItem key={vol.id} value={vol.id}>
+                    {vol.firstName} {vol.lastName}
+                  </SelectItem>
+                ))}
+                <SelectItem value="NOT_LISTED" className="text-orange-600 font-medium">
+                  ⚠️ My name isn&apos;t listed here!
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        {/* Email field - shown after a volunteer is selected */}
+        {selectedRole === "Volunteer" && selectedVolunteerId && !showVolunteerAlert && (
           <FormField
             control={form.control}
             name="email"
@@ -780,43 +834,7 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
                   <FormLabel className="sm:pt-2">Your email:</FormLabel>
                   <div className="space-y-2">
                     <FormControl>
-                      <Select
-                        onValueChange={async (value) => {
-                          if (value === "NOT_LISTED") {
-                            setShowVolunteerAlert(true);
-                            field.onChange("");
-                          } else {
-                            setShowVolunteerAlert(false);
-                            field.onChange(value);
-
-                            // Pre-populate volunteer details
-                            const eventId = form.getValues("eventId");
-                            const volunteer = await getVolunteerByEmail(value, eventId);
-                            if (volunteer) {
-                              form.setValue("attendeeName", volunteer.firstName);
-                              form.setValue("attendeeSurname", volunteer.lastName);
-                              form.setValue("photoConsent", volunteer.photoConsent);
-                              form.setValue("feedbackConsent", volunteer.feedbackConsent);
-                              form.setValue("nextEventConsent", volunteer.nextEventConsent);
-                            }
-                          }
-                        }}
-                        value={field.value}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select your email" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {volunteerEmails.map((email) => (
-                            <SelectItem key={email} value={email}>
-                              {email}
-                            </SelectItem>
-                          ))}
-                          <SelectItem value="NOT_LISTED" className="text-orange-600 font-medium">
-                            ⚠️ My email isn&apos;t listed here!
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <Input type="email" {...field} value={field.value ?? ""} />
                     </FormControl>
                     <FormMessage />
                   </div>
@@ -894,8 +912,8 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
 
         {/* Email Consent - Step 2 for Participant, Step 3 for Group, Step 1 for Volunteer */}
         {!showVolunteerAlert && !showOrganizationAlert && shouldShowSection("consents") && (isFieldVisible("feedbackConsent", selectedRole) || isFieldVisible("nextEventConsent", selectedRole)) && (
-          // For volunteers, only show if an email is selected (not empty and not NOT_LISTED)
-          selectedRole !== "Volunteer" || (volunteerEmail && volunteerEmail !== "" && volunteerEmail !== "NOT_LISTED")
+          // For volunteers, only show if a volunteer has been selected from the name picker
+          selectedRole !== "Volunteer" || (selectedVolunteerId && !showVolunteerAlert)
         ) && (
           <div className="space-y-3">
             <FormLabel>Please can we contact you:</FormLabel>
@@ -1074,8 +1092,8 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
 
         {/* Photo Consent - Step 2 for Participant, Step 3 for Group, Step 1 for Volunteer */}
         {!showVolunteerAlert && !showOrganizationAlert && shouldShowSection("consents") && isFieldVisible("photoConsent", selectedRole) && (
-          // For volunteers, only show if an email is selected (not empty and not NOT_LISTED)
-          selectedRole !== "Volunteer" || (volunteerEmail && volunteerEmail !== "" && volunteerEmail !== "NOT_LISTED")
+          // For volunteers, only show if a volunteer has been selected from the name picker
+          selectedRole !== "Volunteer" || (selectedVolunteerId && !showVolunteerAlert)
         ) && (
           <FormField
             control={form.control}
