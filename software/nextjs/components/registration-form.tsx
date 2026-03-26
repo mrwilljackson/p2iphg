@@ -192,7 +192,27 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
       }
     } else if (selectedRole === "Group") {
       if (currentStep === 1) {
-        fieldsToValidate = ["organizationId", "email", "attendeeName", "attendeeSurname"];
+        // Always require org selection
+        fieldsToValidate = ["organizationId"];
+
+        // If contact picker is shown (org selected, not family group, not the not-listed sentinel, contacts not loading),
+        // also require a contact picker selection
+        if (
+          selectedOrgId &&
+          selectedOrgId !== "FAMILY_GROUP_PLACEHOLDER" &&
+          selectedOrgId !== "NOT_LISTED" &&
+          !contactsLoading
+        ) {
+          if (!selectedContactId) {
+            // Contact picker is visible but nothing selected — block advancement
+            alert("Please select your contact details or choose \"Register as a new contact\".");
+            return false;
+          }
+          // If new contact selected, also require name fields
+          if (selectedContactId === "new") {
+            fieldsToValidate = ["organizationId", "attendeeName", "attendeeSurname"];
+          }
+        }
       } else if (currentStep === 2) {
         if (additionalLeaderChoice === 'additional_leader') {
           // Additional leader only — skip group size fields (already set to 0)
