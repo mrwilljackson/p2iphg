@@ -634,7 +634,9 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
                   </p>
                 )}
 
-                <p className="text-sm font-medium text-gray-700">Please select your details:</p>
+                {orgContacts.filter(c => !c.alreadyRegistered).length > 0 && (
+                  <p className="text-sm font-medium text-gray-700">Please select your details:</p>
+                )}
 
                 {/* Known contact options — hidden if already registered */}
                 {orgContacts.filter(c => !c.alreadyRegistered).map(contact => (
@@ -649,12 +651,12 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
                       checked={selectedContactId === contact.contactId}
                       onChange={() => {
                         setSelectedContactId(contact.contactId);
-                        form.setValue('attendeeName', contact.firstName);
-                        form.setValue('attendeeSurname', contact.lastName);
-                        form.setValue('email', contact.email ?? '');
-                        form.setValue('photoConsent', contact.photoConsent);
-                        form.setValue('feedbackConsent', contact.feedbackConsent);
-                        form.setValue('nextEventConsent', contact.nextEventConsent);
+                        form.setValue('attendeeName', contact.firstName, { shouldDirty: true, shouldValidate: true });
+                        form.setValue('attendeeSurname', contact.lastName, { shouldDirty: true, shouldValidate: true });
+                        form.setValue('email', contact.email ?? '', { shouldDirty: true, shouldValidate: true });
+                        form.setValue('photoConsent', contact.photoConsent, { shouldDirty: true, shouldValidate: true });
+                        form.setValue('feedbackConsent', contact.feedbackConsent, { shouldDirty: true, shouldValidate: true });
+                        form.setValue('nextEventConsent', contact.nextEventConsent, { shouldDirty: true, shouldValidate: true });
                       }}
                       className="mt-1 accent-lime-600"
                     />
@@ -678,12 +680,12 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
                     checked={selectedContactId === 'new'}
                     onChange={() => {
                       setSelectedContactId('new');
-                      form.setValue('attendeeName', '');
-                      form.setValue('attendeeSurname', '');
-                      form.setValue('email', '');
-                      form.setValue('photoConsent', true);
-                      form.setValue('feedbackConsent', false);
-                      form.setValue('nextEventConsent', false);
+                      form.setValue('attendeeName', '', { shouldDirty: true, shouldValidate: true });
+                      form.setValue('attendeeSurname', '', { shouldDirty: true, shouldValidate: true });
+                      form.setValue('email', '', { shouldDirty: true, shouldValidate: true });
+                      form.setValue('photoConsent', true, { shouldDirty: true, shouldValidate: true });
+                      form.setValue('feedbackConsent', false, { shouldDirty: true, shouldValidate: true });
+                      form.setValue('nextEventConsent', false, { shouldDirty: true, shouldValidate: true });
                     }}
                     className="mt-1 accent-lime-600"
                   />
