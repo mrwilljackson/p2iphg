@@ -1322,7 +1322,7 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
                 <FormControl>
                   <RadioGroup
                     onValueChange={(value) => field.onChange(value === "true")}
-                    defaultValue={field.value ? "true" : "false"}
+                    value={field.value ? "true" : "false"}
                     className="flex flex-col space-y-2"
                   >
                     <label className="flex items-start space-x-2 border rounded-lg p-4 cursor-pointer hover:bg-gray-50">

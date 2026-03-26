@@ -83,13 +83,11 @@ export const registrationFormSchema = z.object({
   attendeeName: z
     .string()
     .min(2, "First name must be at least 2 characters")
-    .max(100, "First name must be at most 100 characters")
-    .regex(/^[a-zA-Z\s'-]+$/, "First name can only contain letters, spaces, hyphens, and apostrophes"),
+    .max(100, "First name must be at most 100 characters"),
   attendeeSurname: z
     .string()
     .min(2, "Last name must be at least 2 characters")
-    .max(100, "Last name must be at most 100 characters")
-    .regex(/^[a-zA-Z\s'-]+$/, "Last name can only contain letters, spaces, hyphens, and apostrophes"),
+    .max(100, "Last name must be at most 100 characters"),
   email: z
     .string()
     .email("Invalid email address")
