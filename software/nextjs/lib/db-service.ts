@@ -498,7 +498,7 @@ export class DatabaseService {
       .from(events)
       .where(eq(events.id, eventId))
       .limit(1);
-    if (!evt) return [];
+    if (!evt?.airtableRecordId) return [];
 
     // 2. Get the org's airtable record ID
     const [org] = await db.select({ airtableRecordId: organisations.airtableRecordId })
@@ -513,7 +513,7 @@ export class DatabaseService {
       .where(
         and(
           eq(organisationContacts.organisationId, org.airtableRecordId),
-          eq(organisationContacts.airtableEventId, evt.airtableRecordId ?? ''),
+          eq(organisationContacts.airtableEventId, evt.airtableRecordId),
         )
       );
     if (contacts.length === 0) return [];
