@@ -268,7 +268,7 @@ Replace the entire function (lines ~23–64) with:
  * Filtering rules:
  *  - Participant: show only orgs where openGroup === true; Individual org always last
  *  - Group:       show only orgs where openGroup === false
- *  - Volunteer / undefined: show all (no filtering)
+ *  - Volunteer / undefined: show all orgs except system-only Individual org
  *
  * Always includes "Family Group" placeholder for Group role.
  * Deduplicates organizations by name (keeps first occurrence).
