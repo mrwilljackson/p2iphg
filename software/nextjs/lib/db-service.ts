@@ -135,7 +135,23 @@ export class DatabaseService {
         }
       }
 
-      return filtered.map(r => mapOrganisationToOrganization(r.org, r.contact, eventUuid));
+      // Always append system orgs (groupType = 'Individual') regardless of event
+      const systemOrgs = await db
+        .select({ org: organisations, contact: organisationContacts })
+        .from(organisations)
+        .leftJoin(
+          organisationContacts,
+          eq(organisations.airtableRecordId, organisationContacts.organisationId)
+        )
+        .where(eq(organisations.groupType, 'Individual'));
+
+      // Avoid duplicates if Individual org somehow appears in filtered already
+      const filteredIds = new Set(filtered.map(r => r.org.id));
+      const toAppend = systemOrgs.filter(r => !filteredIds.has(r.org.id));
+
+      return [...filtered, ...toAppend].map(r =>
+        mapOrganisationToOrganization(r.org, r.contact, eventUuid)
+      );
     } catch (error) {
       console.error('Error fetching organizations:', error);
       throw error;

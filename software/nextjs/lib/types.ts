@@ -81,7 +81,7 @@ export interface Registration {
  * Group Type Classification
  * Used for reporting and analytics purposes
  */
-export type GroupType = 'Family' | 'Disability' | 'Corporate' | 'Sporting' | 'Community' | 'Educational' | 'Other';
+export type GroupType = 'Family' | 'Disability' | 'Corporate' | 'Sporting' | 'Community' | 'Educational' | 'Other' | 'Individual';
 
 /**
  * Organization Entity
