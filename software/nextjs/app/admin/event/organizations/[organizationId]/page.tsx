@@ -225,28 +225,32 @@ export default function OrganizationRegistrationsPage() {
               )}
             </div>
 
-            {/* Group Leader Cards — one per registered group leader (closed groups always; open groups show non-participating leaders) */}
-            {(isClosed ? groupRegistrations : nonParticipatingLeaders).map((reg) => (
-              <div key={reg.id} className="bg-white rounded-lg shadow-md border border-gray-200 p-6 mb-4">
+            {/* Group Leader Card — all registered leaders in one card (closed: all; open: non-participating only) */}
+            {(isClosed ? groupRegistrations : nonParticipatingLeaders).length > 0 && (
+              <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6 mb-4">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">
                   {isClosed ? 'Group Leader' : 'Group Leader (Not Participating)'}
                 </h2>
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-xs text-gray-500 mb-1">Name</p>
-                      <p className="text-sm font-medium text-gray-900">
-                        {reg.attendeeName} {reg.attendeeSurname}
-                      </p>
+                <div className="space-y-3">
+                  {(isClosed ? groupRegistrations : nonParticipatingLeaders).map((reg) => (
+                    <div key={reg.id} className="bg-gray-50 rounded-lg p-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-xs text-gray-500 mb-1">Name</p>
+                          <p className="text-sm font-medium text-gray-900">
+                            {reg.attendeeName} {reg.attendeeSurname}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 mb-1">Email</p>
+                          <p className="text-sm text-gray-600">{reg.email}</p>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-xs text-gray-500 mb-1">Email</p>
-                      <p className="text-sm text-gray-600">{reg.email}</p>
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </div>
-            ))}
+            )}
 
             {/* Missing Group Leaders — org contacts who haven't registered yet */}
             {missingContacts.length > 0 && (
