@@ -30,7 +30,9 @@ There are no automated tests. Manual verification via the dev server is the stan
 
 ## Git Workflow
 
-**Never develop directly on `master`.** All feature work, bug fixes, and refactors must start on a new branch:
+**Never develop directly on `master`.** All feature work, bug fixes, and refactors must start on a new branch.
+
+**If the user asks to build, fix, or change anything and the current branch is `master`, stop and say:** "You're on `master` — let's create a branch first. What should we call it?" Do not write any code until a branch has been created.
 
 ```bash
 git checkout -b feature/my-feature-name
