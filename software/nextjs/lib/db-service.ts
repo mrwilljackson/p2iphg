@@ -18,7 +18,7 @@ import { db } from './db/client';
 import { events, organisations, organisationContacts, volunteers, registrations } from './db/schema';
 import { eq, and, ilike, sql } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
-import { Event, Organization, OrgRecord, GroupLeader, Volunteer, Registration } from './types';
+import type { Event, Organization, OrgRecord, GroupLeader, Volunteer, Registration, OrgContactOption } from './types';
 import type { OrganisationRow, OrganisationContactRow } from './db/schema';
 import { calculateParticipantCounts, type RegistrationForCounting, type ParticipantCounts } from './participant-counting';
 
@@ -480,6 +480,70 @@ export class DatabaseService {
       console.error('Error fetching registrations by organization:', error);
       throw error;
     }
+  }
+
+  /**
+   * Get all contacts for an organisation at a specific event, with registration status.
+   * Used to populate group.contactPicker in the Group leader registration form.
+   *
+   * @param eventId  - The event UUID (local)
+   * @param orgId    - The organisation UUID (local, organisations.id)
+   */
+  static async getOrgContactsForEvent(
+    eventId: string,
+    orgId: string,
+  ): Promise<OrgContactOption[]> {
+    // 1. Get the event's airtable record ID
+    const [evt] = await db.select({ airtableRecordId: events.airtableRecordId })
+      .from(events)
+      .where(eq(events.id, eventId))
+      .limit(1);
+    if (!evt) return [];
+
+    // 2. Get the org's airtable record ID
+    const [org] = await db.select({ airtableRecordId: organisations.airtableRecordId })
+      .from(organisations)
+      .where(eq(organisations.id, orgId))
+      .limit(1);
+    if (!org?.airtableRecordId) return [];
+
+    // 3. Fetch all contacts for this org + event
+    const contacts = await db.select()
+      .from(organisationContacts)
+      .where(
+        and(
+          eq(organisationContacts.organisationId, org.airtableRecordId),
+          eq(organisationContacts.airtableEventId, evt.airtableRecordId ?? ''),
+        )
+      );
+    if (contacts.length === 0) return [];
+
+    // 4. Fetch emails of Group registrations already submitted for this event + org
+    const existingRegs = await db
+      .select({ email: registrations.email })
+      .from(registrations)
+      .where(
+        and(
+          eq(registrations.eventId, eventId),
+          eq(registrations.organizationId, orgId),
+          eq(registrations.role, 'Group'),
+        )
+      );
+    const registeredEmails = new Set(
+      existingRegs.map(r => r.email).filter((e): e is string => e != null)
+    );
+
+    // 5. Map to OrgContactOption
+    return contacts.map(c => ({
+      contactId: c.id,
+      firstName: c.contactFirstName ?? '',
+      lastName: c.contactLastName ?? '',
+      email: c.contactEmail ?? null,
+      photoConsent: c.photoConsent,
+      feedbackConsent: c.feedbackConsent,
+      nextEventConsent: c.nextEventConsent,
+      alreadyRegistered: c.contactEmail != null && registeredEmails.has(c.contactEmail),
+    }));
   }
 
   /**

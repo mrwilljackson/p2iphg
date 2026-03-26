@@ -12,7 +12,7 @@ import { db } from './db/client';
 import { events, registrations, volunteers, organisations, organisationContacts } from './db/schema';
 import { eq, and, or, isNull, sql, inArray } from 'drizzle-orm';
 import { DatabaseService } from './db-service';
-import type { Event, Organization, OrgRecord, GroupLeader, Volunteer, Registration } from './types';
+import type { Event, Organization, OrgRecord, GroupLeader, Volunteer, Registration, OrgContactOption } from './types';
 import type { ParticipantCounts } from './participant-counting';
 
 /**
@@ -137,6 +137,17 @@ export async function getRegistrationById(id: string): Promise<Registration | nu
 
 export async function getRegistrationsByOrganization(eventId: string, organizationId: string): Promise<Registration[]> {
   return await DatabaseService.getRegistrationsByOrganization(eventId, organizationId);
+}
+
+/**
+ * Get contacts for an organisation at a specific event, with registration status.
+ * Used to populate group.contactPicker in the registration form.
+ */
+export async function getOrgContactsForEvent(
+  eventId: string,
+  orgId: string,
+): Promise<OrgContactOption[]> {
+  return await DatabaseService.getOrgContactsForEvent(eventId, orgId);
 }
 
 /**
