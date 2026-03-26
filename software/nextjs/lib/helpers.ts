@@ -13,9 +13,9 @@ import type { RegistrationType } from './field-visibility-config';
  * Convert organizations to combobox options, filtered by role.
  *
  * Filtering rules:
- *  - Participant: show only orgs where openGroup === true
+ *  - Participant: show only orgs where openGroup === true; Individual org always last
  *  - Group:       show only orgs where openGroup === false
- *  - Volunteer / undefined: show all (no filtering)
+ *  - Volunteer / undefined: show all orgs except system-only Individual org
  *
  * Always includes "Family Group" placeholder for Group role.
  * Deduplicates organizations by name (keeps first occurrence).
@@ -29,13 +29,15 @@ export function organizationsToOptions(
 
   // Apply role-based filtering
   if (role === 'Participant') {
-    // Participants see only open groups
+    // Participants see only open groups (Individual org is open, so it passes through)
     filteredOrgs = filteredOrgs.filter(org => org.openGroup !== false);
   } else if (role === 'Group') {
-    // Group leaders see only closed groups
+    // Group leaders see only closed groups (Individual is open, so naturally excluded)
     filteredOrgs = filteredOrgs.filter(org => org.openGroup === false);
+  } else {
+    // Volunteer / undefined: show all real orgs, but exclude system-only Individual org
+    filteredOrgs = filteredOrgs.filter(org => org.groupType !== 'Individual');
   }
-  // Volunteer / undefined: no filter
 
   // Deduplicate by organization name (keep first occurrence)
   const uniqueOrgs = filteredOrgs.reduce((acc, org) => {
@@ -45,22 +47,23 @@ export function organizationsToOptions(
     return acc;
   }, [] as Organization[]);
 
-  // Convert organizations to options
-  const orgOptions = uniqueOrgs.map((org) => ({
-    value: org.id!,
-    label: org.name,
-  }));
+  // For Participant role, split Individual-typed orgs to the bottom
+  let mainOrgs = uniqueOrgs;
+  let individualOrgs: Organization[] = [];
+  if (role === 'Participant') {
+    individualOrgs = uniqueOrgs.filter(org => org.groupType === 'Individual');
+    mainOrgs = uniqueOrgs.filter(org => org.groupType !== 'Individual');
+  }
+
+  const toOptions = (orgs: Organization[]) =>
+    orgs.map(org => ({ value: org.id!, label: org.name }));
 
   // Add "Family Group" placeholder only for Group role (on-the-day family group registrations)
   if (role === 'Group') {
-    const familyGroupOption: ComboboxOption = {
-      value: 'FAMILY_GROUP_PLACEHOLDER',
-      label: 'Family Group',
-    };
-    return [familyGroupOption, ...orgOptions];
+    return [{ value: 'FAMILY_GROUP_PLACEHOLDER', label: 'Family Group' }, ...toOptions(mainOrgs)];
   }
 
-  return orgOptions;
+  return [...toOptions(mainOrgs), ...toOptions(individualOrgs)];
 }
 
 /**
