@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { Registration, Organization, Event } from '@/lib/types';
-import { getRegistrationsByOrganization, getOrganizationById, getCurrentEvent, getEventById } from '@/lib/actions';
+import { Registration, Organization, Event, OrgContactOption } from '@/lib/types';
+import { getRegistrationsByOrganization, getOrganizationById, getCurrentEvent, getEventById, getOrgContactsForEvent } from '@/lib/actions';
 import { AdminEventHeader } from '@/components/admin-event-header';
 import { Button } from '@/components/ui/button';
 
@@ -17,6 +17,7 @@ export default function OrganizationRegistrationsPage() {
   const [currentEvent, setCurrentEvent] = useState<Event | null>(null);
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [registrations, setRegistrations] = useState<Registration[]>([]);
+  const [orgContacts, setOrgContacts] = useState<OrgContactOption[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -64,6 +65,10 @@ export default function OrganizationRegistrationsPage() {
         // Get registrations for this organization at this event
         const regs = await getRegistrationsByOrganization(event.id!, organizationId);
         setRegistrations(regs);
+
+        // Get org contacts to identify missing group leaders
+        const contacts = await getOrgContactsForEvent(event.id!, organizationId);
+        setOrgContacts(contacts);
       } catch (err) {
         console.error('Error loading organization registrations:', err);
         setError('Failed to load organization registrations');
@@ -97,17 +102,18 @@ export default function OrganizationRegistrationsPage() {
   }
 
   const participantRegistrations = registrations.filter(r => r.role === 'Participant');
-  const groupRegistration = registrations.find(r => r.role === 'Group');
+  const groupRegistrations = registrations.filter(r => r.role === 'Group');
 
-  // Determine if group leader is participating
-  const groupLeaderParticipating = groupRegistration?.groupLeaderParticipating || false;
+  // Split group registrations into participating / non-participating leaders
+  const participatingLeaders = groupRegistrations.filter(r => r.groupLeaderParticipating === true);
+  const nonParticipatingLeaders = groupRegistrations.filter(r => !r.groupLeaderParticipating);
 
   // Calculate expected count.
-  // If a group leader has registered, use groupSize from the registration (confirmed on the day).
+  // If any group leader has registered, sum their groupSize values (confirmed on the day).
   // If not, fall back to expectedGroupSize from organisation_contacts (the pre-planned estimate).
-  const groupSize = groupRegistration?.groupSize || 0;
-  const expectedCount = groupRegistration
-    ? groupSize + (groupLeaderParticipating ? 1 : 0)
+  const totalGroupSize = groupRegistrations.reduce((sum, r) => sum + (r.groupSize || 0), 0);
+  const expectedCount = groupRegistrations.length > 0
+    ? totalGroupSize + participatingLeaders.length
     : (organization?.expectedGroupSize ?? 0);
 
   // Closed groups (openGroup === false) use groupSize from the registration as their registered count —
@@ -115,14 +121,14 @@ export default function OrganizationRegistrationsPage() {
   const isClosed = organization?.openGroup === false;
   const registeredCount = isClosed
     ? expectedCount
-    : participantRegistrations.length + (groupLeaderParticipating ? 1 : 0);
+    : participantRegistrations.length + participatingLeaders.length;
 
-  // Build list of people to display (only relevant for open groups)
-  // If leader is participating, include them in the participants list
-  // If leader is NOT participating, show them separately
-  const displayRegistrations = groupLeaderParticipating && groupRegistration
-    ? [groupRegistration, ...participantRegistrations]
-    : participantRegistrations;
+  // Build list of people to display in the participants table (only relevant for open groups).
+  // Participating leaders are shown inline with participants; non-participating leaders get their own card.
+  const displayRegistrations = [...participatingLeaders, ...participantRegistrations];
+
+  // Org contacts who haven't registered yet (potential missing group leaders)
+  const missingContacts = orgContacts.filter(c => !c.alreadyRegistered);
 
   return (
     <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100">
@@ -195,7 +201,7 @@ export default function OrganizationRegistrationsPage() {
               {isClosed ? (
                 <div className="bg-blue-50 rounded-lg p-4">
                   <p className="text-gray-900">
-                    The Group Leader has confirmed attendance of <span className="font-bold">{expectedCount}</span> participant{expectedCount !== 1 ? 's' : ''}{groupLeaderParticipating ? ', including themselves' : ''}.
+                    The Group Leader has confirmed attendance of <span className="font-bold">{expectedCount}</span> participant{expectedCount !== 1 ? 's' : ''}{participatingLeaders.length > 0 ? ', including themselves' : ''}.
                   </p>
                 </div>
               ) : (
@@ -219,10 +225,9 @@ export default function OrganizationRegistrationsPage() {
               )}
             </div>
 
-            {/* Group Leader Card */}
-            {/* Show for closed groups (always) OR open groups where leader is not participating */}
-            {groupRegistration && (isClosed || !groupLeaderParticipating) && (
-              <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6 mb-4">
+            {/* Group Leader Cards — one per registered group leader (closed groups always; open groups show non-participating leaders) */}
+            {(isClosed ? groupRegistrations : nonParticipatingLeaders).map((reg) => (
+              <div key={reg.id} className="bg-white rounded-lg shadow-md border border-gray-200 p-6 mb-4">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">
                   {isClosed ? 'Group Leader' : 'Group Leader (Not Participating)'}
                 </h2>
@@ -231,14 +236,42 @@ export default function OrganizationRegistrationsPage() {
                     <div>
                       <p className="text-xs text-gray-500 mb-1">Name</p>
                       <p className="text-sm font-medium text-gray-900">
-                        {groupRegistration.attendeeName} {groupRegistration.attendeeSurname}
+                        {reg.attendeeName} {reg.attendeeSurname}
                       </p>
                     </div>
                     <div>
                       <p className="text-xs text-gray-500 mb-1">Email</p>
-                      <p className="text-sm text-gray-600">{groupRegistration.email}</p>
+                      <p className="text-sm text-gray-600">{reg.email}</p>
                     </div>
                   </div>
+                </div>
+              </div>
+            ))}
+
+            {/* Missing Group Leaders — org contacts who haven't registered yet */}
+            {missingContacts.length > 0 && (
+              <div className="bg-white rounded-lg shadow-md border border-amber-200 p-6 mb-4">
+                <h2 className="text-lg font-semibold text-gray-900 mb-1">
+                  Missing Group Leader{missingContacts.length !== 1 ? 's' : ''}
+                </h2>
+                <p className="text-sm text-gray-500 mb-4">
+                  Pre-registered contact{missingContacts.length !== 1 ? 's' : ''} who {missingContacts.length !== 1 ? 'have' : 'has'} not yet checked in on the day.
+                </p>
+                <div className="space-y-3">
+                  {missingContacts.map((contact) => (
+                    <div key={contact.contactId} className="flex items-center gap-3 bg-amber-50 border border-amber-100 rounded-lg px-4 py-3">
+                      <div className="text-amber-500 text-lg">⚠</div>
+                      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-1">
+                        <p className="text-sm font-medium text-gray-900">
+                          {contact.firstName} {contact.lastName}
+                        </p>
+                        <p className="text-sm text-gray-500">{contact.email ?? '—'}</p>
+                      </div>
+                      <span className="text-xs font-medium text-amber-700 bg-amber-100 px-2 py-1 rounded-full whitespace-nowrap">
+                        Not registered
+                      </span>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
@@ -248,7 +281,7 @@ export default function OrganizationRegistrationsPage() {
               <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
                 <div className="p-6 border-b border-gray-200">
                   <h2 className="text-lg font-semibold text-gray-900">
-                    {groupLeaderParticipating ? 'Registered Participants (Including Leader)' : 'Registered Participants'} ({displayRegistrations.length})
+                    {participatingLeaders.length > 0 ? 'Registered Participants (Including Leader)' : 'Registered Participants'} ({displayRegistrations.length})
                   </h2>
                 </div>
 
