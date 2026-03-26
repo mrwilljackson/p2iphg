@@ -113,7 +113,7 @@ export const registrationFormSchema = z.object({
   groupSize: z
     .number()
     .int("Must be a whole number")
-    .min(1, "Group size must be at least 1")
+    .min(0, "Group size cannot be negative")
     .max(999, "Group size must be at most 999")
     .optional(),
   disabledStudents: z
