@@ -153,6 +153,21 @@ export interface GroupLeader {
 }
 
 /**
+ * A contact option for the Group leader contact picker.
+ * Returned by getOrgContactsForEvent — one entry per organisation_contacts row.
+ */
+export interface OrgContactOption {
+  contactId: string;        // organisation_contacts.id (UUID)
+  firstName: string;
+  lastName: string;
+  email: string | null;
+  photoConsent: boolean;
+  feedbackConsent: boolean;
+  nextEventConsent: boolean;
+  alreadyRegistered: boolean; // true if email matches an existing Group reg for this event + org
+}
+
+/**
  * Volunteer Entity
  * Represents a pre-registered volunteer with their details
  * V2: Added eventId to support event-specific volunteers
