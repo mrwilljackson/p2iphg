@@ -133,25 +133,32 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
 
   // Fetch contacts for group.contactPicker when org is selected in Group role
   useEffect(() => {
+    let cancelled = false;
     async function fetchOrgContacts() {
       if (selectedRole !== 'Group' || !selectedOrgId || selectedOrgId === 'FAMILY_GROUP_PLACEHOLDER' || selectedOrgId === 'NOT_LISTED' || !currentEvent?.id) {
         setOrgContacts([]);
         setSelectedContactId(null);
+        setContactsLoading(false);
         return;
       }
       try {
         setContactsLoading(true);
         const contacts = await getOrgContactsForEvent(currentEvent.id, selectedOrgId);
-        setOrgContacts(contacts);
-        setSelectedContactId(null); // reset selection when org changes
+        if (!cancelled) {
+          setOrgContacts(contacts);
+          setSelectedContactId(null);
+        }
       } catch (err) {
-        console.error('Error fetching org contacts:', err);
-        setOrgContacts([]);
+        if (!cancelled) {
+          console.error('Error fetching org contacts:', err);
+          setOrgContacts([]);
+        }
       } finally {
-        setContactsLoading(false);
+        if (!cancelled) setContactsLoading(false);
       }
     }
     fetchOrgContacts();
+    return () => { cancelled = true; };
   }, [selectedOrgId, selectedRole, currentEvent?.id]);
 
   // Check if selected organization is a closed group (group leader registers on behalf of participants)
