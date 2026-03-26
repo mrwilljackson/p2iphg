@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { registrationFormSchema } from "@/lib/validation";
-import type { RegistrationFormData, Event, Organization, Volunteer } from "@/lib/types";
+import type { RegistrationFormData, Event, Organization, Volunteer, OrgContactOption } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -26,7 +26,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
-import { getCurrentEvent, getOrganizations, getAllVolunteers, createRegistration, updateVolunteer, updateGroupLeaderConsents, findOrCreateFamilyGroup, getExistingGroupLeaders } from "@/lib/actions";
+import { getCurrentEvent, getOrganizations, getAllVolunteers, createRegistration, updateVolunteer, updateGroupLeaderConsents, findOrCreateFamilyGroup, getExistingGroupLeaders, getOrgContactsForEvent } from "@/lib/actions";
 import { organizationsToOptions } from "@/lib/helpers";
 import { isFieldVisible, type RegistrationType } from "@/lib/field-visibility-config";
 import type { RegistrationRole } from "@/lib/types";
@@ -47,6 +47,12 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
   const [showVolunteerAlert, setShowVolunteerAlert] = useState(false);
   const [showOrganizationAlert, setShowOrganizationAlert] = useState(false);
   const [allOrganizations, setAllOrganizations] = useState<Organization[]>([]);
+
+  // Group contact picker state
+  const [orgContacts, setOrgContacts] = useState<OrgContactOption[]>([]);
+  const [contactsLoading, setContactsLoading] = useState(false);
+  // 'new' = new contact option; contactId string = known contact; null = none selected
+  const [selectedContactId, setSelectedContactId] = useState<string | 'new' | null>(null);
 
   // Multi-leader detection state
   const [existingLeaderInfo, setExistingLeaderInfo] = useState<{
@@ -124,6 +130,29 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
     }
     checkExistingLeaders();
   }, [selectedRole, selectedOrgId, currentEvent?.id]);
+
+  // Fetch contacts for group.contactPicker when org is selected in Group role
+  useEffect(() => {
+    async function fetchOrgContacts() {
+      if (selectedRole !== 'Group' || !selectedOrgId || selectedOrgId === 'FAMILY_GROUP_PLACEHOLDER' || selectedOrgId === 'NOT_LISTED' || !currentEvent?.id) {
+        setOrgContacts([]);
+        setSelectedContactId(null);
+        return;
+      }
+      try {
+        setContactsLoading(true);
+        const contacts = await getOrgContactsForEvent(currentEvent.id, selectedOrgId);
+        setOrgContacts(contacts);
+        setSelectedContactId(null); // reset selection when org changes
+      } catch (err) {
+        console.error('Error fetching org contacts:', err);
+        setOrgContacts([]);
+      } finally {
+        setContactsLoading(false);
+      }
+    }
+    fetchOrgContacts();
+  }, [selectedOrgId, selectedRole, currentEvent?.id]);
 
   // Check if selected organization is a closed group (group leader registers on behalf of participants)
   // All closed groups (openGroup === false) need group size / impairment fields
@@ -218,6 +247,8 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
   useEffect(() => {
     if (selectedRole !== "Group") {
       setShowOrganizationAlert(false);
+      setOrgContacts([]);
+      setSelectedContactId(null);
     }
     form.setValue("organizationId", "");
   }, [selectedRole, form]);
