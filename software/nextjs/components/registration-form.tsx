@@ -414,9 +414,16 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
 
       // If a group leader registered, sync their updated email and consent choices back to the organisation_contacts record
       if (data.role === "Group") {
-        const contactOrg = createdFamilyGroup ?? selectedOrg;
-        if (contactOrg?.contactId) {
-          await updateGroupLeaderConsents(contactOrg.contactId, {
+        // Determine which contactId to sync consents to:
+        // - Family Group (created on submit): use contactId from newly created org
+        // - Known contact from picker: use selectedContactId directly
+        // - New contact from picker: no contactId — skip consent sync
+        const contactId =
+          createdFamilyGroup?.contactId ??
+          (selectedContactId !== 'new' && selectedContactId ? selectedContactId : null);
+
+        if (contactId) {
+          await updateGroupLeaderConsents(contactId, {
             contactEmail: data.email,
             photoConsent: data.photoConsent,
             feedbackConsent: data.feedbackConsent ?? false,
@@ -431,6 +438,8 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
       // Reset form after 3 seconds
       setTimeout(() => {
         form.reset();
+        setSelectedContactId(null);
+        setOrgContacts([]);
         setSubmitSuccess(false);
         // Reload the page to get fresh data
         window.location.reload();
