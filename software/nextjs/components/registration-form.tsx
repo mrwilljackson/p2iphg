@@ -602,7 +602,7 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
             )}
 
             {/* Email - Right */}
-            {isFieldVisible("email", selectedRole) && (
+            {isFieldVisible("email", selectedRole) && !(selectedRole === 'Group' && currentStep === 1) && (
               <FormField
                 control={form.control}
                 name="email"
@@ -616,6 +616,128 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
                   </FormItem>
                 )}
               />
+            )}
+          </div>
+        )}
+
+        {/* GROUP_CONTACT_PICKER — Group Step 1, after org selected */}
+        {selectedRole === 'Group' && shouldShowSection('organizationEmail') && selectedOrgId && selectedOrgId !== 'FAMILY_GROUP_PLACEHOLDER' && selectedOrgId !== 'NOT_LISTED' && !showOrganizationAlert && (
+          <div className="mt-4">
+            {contactsLoading ? (
+              <p className="text-sm text-gray-500">Loading contacts...</p>
+            ) : (
+              <div className="space-y-2">
+                {/* Note when all known contacts have already registered */}
+                {orgContacts.length > 0 && orgContacts.every(c => c.alreadyRegistered) && (
+                  <p className="text-sm text-blue-600 mb-2">
+                    ℹ️ All registered contacts for this organisation have already checked in.
+                  </p>
+                )}
+
+                <p className="text-sm font-medium text-gray-700">Please select your details:</p>
+
+                {/* Known contact options — hidden if already registered */}
+                {orgContacts.filter(c => !c.alreadyRegistered).map(contact => (
+                  <label
+                    key={contact.contactId}
+                    className={`flex items-start space-x-3 border rounded-lg p-4 cursor-pointer hover:bg-gray-50 ${selectedContactId === contact.contactId ? 'border-lime-500 bg-lime-50' : 'border-gray-200'}`}
+                  >
+                    <input
+                      type="radio"
+                      name="contactPicker"
+                      value={contact.contactId}
+                      checked={selectedContactId === contact.contactId}
+                      onChange={() => {
+                        setSelectedContactId(contact.contactId);
+                        form.setValue('attendeeName', contact.firstName);
+                        form.setValue('attendeeSurname', contact.lastName);
+                        form.setValue('email', contact.email ?? '');
+                        form.setValue('photoConsent', contact.photoConsent);
+                        form.setValue('feedbackConsent', contact.feedbackConsent);
+                        form.setValue('nextEventConsent', contact.nextEventConsent);
+                      }}
+                      className="mt-1 accent-lime-600"
+                    />
+                    <div className="flex-1">
+                      <p className="font-medium text-gray-900">{contact.firstName} {contact.lastName}</p>
+                      {contact.email && (
+                        <p className="text-sm text-gray-500">{contact.email}</p>
+                      )}
+                    </div>
+                  </label>
+                ))}
+
+                {/* New contact option — always last */}
+                <label
+                  className={`flex items-start space-x-3 border rounded-lg p-4 cursor-pointer hover:bg-gray-50 ${selectedContactId === 'new' ? 'border-lime-500 bg-lime-50' : 'border-gray-200'}`}
+                >
+                  <input
+                    type="radio"
+                    name="contactPicker"
+                    value="new"
+                    checked={selectedContactId === 'new'}
+                    onChange={() => {
+                      setSelectedContactId('new');
+                      form.setValue('attendeeName', '');
+                      form.setValue('attendeeSurname', '');
+                      form.setValue('email', '');
+                      form.setValue('photoConsent', true);
+                      form.setValue('feedbackConsent', false);
+                      form.setValue('nextEventConsent', false);
+                    }}
+                    className="mt-1 accent-lime-600"
+                  />
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-900">Register as a new contact</p>
+                    {selectedContactId === 'new' && (
+                      <div className="mt-3 space-y-3">
+                        {/* inline identity.firstName */}
+                        <FormField
+                          control={form.control}
+                          name="attendeeName"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>First name *</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Enter first name" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        {/* inline identity.lastName */}
+                        <FormField
+                          control={form.control}
+                          name="attendeeSurname"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Last name *</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Enter last name" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        {/* inline identity.email */}
+                        <FormField
+                          control={form.control}
+                          name="email"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Email</FormLabel>
+                              <FormControl>
+                                <Input type="email" placeholder="your.email@example.com" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </label>
+              </div>
             )}
           </div>
         )}
@@ -668,7 +790,7 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
         )}
 
         {/* First Name and Last Name - Side by Side */}
-        {!showOrganizationAlert && shouldShowSection("personalDetails") && (isFieldVisible("attendeeName", selectedRole) || isFieldVisible("attendeeSurname", selectedRole)) && (
+        {!showOrganizationAlert && shouldShowSection("personalDetails") && (isFieldVisible("attendeeName", selectedRole) || isFieldVisible("attendeeSurname", selectedRole)) && !(selectedRole === 'Group' && currentStep === 1) && (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* First Name */}
