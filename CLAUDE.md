@@ -38,6 +38,18 @@ git checkout -b feature/my-feature-name
 
 `master` is the stable baseline. Branches are merged back to `master` only once manually verified via the dev server.
 
+## Feature Development Process
+
+For every new feature or fix, always produce two lists before writing any code:
+
+**1. Implementation task list** — the steps required to build the feature, broken into small discrete tasks (one concern per task, each ending with a commit).
+
+**2. Verification checklist** — a simple numbered list of manual steps the user can follow in the browser to confirm the feature works and that existing functionality has not broken. This must cover:
+- The new behaviour being tested
+- Any existing flows that touch the same area (regression checks)
+
+Present both lists to the user for review before starting implementation.
+
 ## Architecture Overview
 
 Next.js 16 App Router application. The data lifecycle is:
