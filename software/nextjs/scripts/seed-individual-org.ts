@@ -14,7 +14,7 @@ import * as dotenv from 'dotenv';
 import { resolve } from 'path';
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import * as schema from '../lib/db/schema';
 
 dotenv.config({ path: resolve(__dirname, '../.env.local') });
@@ -32,7 +32,10 @@ async function seedIndividualOrg() {
   const existing = await db
     .select()
     .from(schema.organisations)
-    .where(eq(schema.organisations.groupType, 'Individual'))
+    .where(and(
+      eq(schema.organisations.groupType, 'Individual'),
+      eq(schema.organisations.name, 'Individual'),
+    ))
     .limit(1);
 
   if (existing.length > 0) {

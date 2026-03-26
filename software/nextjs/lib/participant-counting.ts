@@ -307,6 +307,8 @@ export function calculateParticipantCounts(
       case 'Educational':
         educationalGroupsCount++;
         break;
+      case 'Individual':
+        break;
       default:
         otherGroupsCount++;
     }
@@ -369,6 +371,8 @@ export function calculateParticipantCounts(
           break;
         case 'Other':
           otherGroupsCount++;
+          break;
+        case 'Individual':
           break;
       }
 
