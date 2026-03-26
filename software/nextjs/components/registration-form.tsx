@@ -589,21 +589,25 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
                             field.onChange(value);
 
                             // Pre-populate contact details and consent preferences for Group role
-                            const selectedOrg = allOrganizations.find(org => org.id === value);
-                            if (selectedOrg) {
-                              if (selectedOrg.contactFirstName) {
-                                form.setValue("attendeeName", selectedOrg.contactFirstName);
+                            // Only for FAMILY_GROUP_PLACEHOLDER (no contact picker for family groups).
+                            // For all other orgs the contact picker handles identity — skip pre-population here.
+                            if (value === 'FAMILY_GROUP_PLACEHOLDER') {
+                              const selectedOrg = allOrganizations.find(org => org.id === value);
+                              if (selectedOrg) {
+                                if (selectedOrg.contactFirstName) {
+                                  form.setValue("attendeeName", selectedOrg.contactFirstName);
+                                }
+                                if (selectedOrg.contactLastName) {
+                                  form.setValue("attendeeSurname", selectedOrg.contactLastName);
+                                }
+                                if (selectedOrg.contactEmail) {
+                                  form.setValue("email", selectedOrg.contactEmail);
+                                }
+                                // Pre-populate saved consent preferences
+                                form.setValue("photoConsent", selectedOrg.photoConsent ?? true);
+                                form.setValue("feedbackConsent", selectedOrg.feedbackConsent ?? false);
+                                form.setValue("nextEventConsent", selectedOrg.nextEventConsent ?? false);
                               }
-                              if (selectedOrg.contactLastName) {
-                                form.setValue("attendeeSurname", selectedOrg.contactLastName);
-                              }
-                              if (selectedOrg.contactEmail) {
-                                form.setValue("email", selectedOrg.contactEmail);
-                              }
-                              // Pre-populate saved consent preferences
-                              form.setValue("photoConsent", selectedOrg.photoConsent ?? true);
-                              form.setValue("feedbackConsent", selectedOrg.feedbackConsent ?? false);
-                              form.setValue("nextEventConsent", selectedOrg.nextEventConsent ?? false);
                             }
                           }
                         }}
@@ -660,6 +664,11 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
                 {orgContacts.length > 0 && orgContacts.every(c => c.alreadyRegistered) && (
                   <p className="text-sm text-blue-600 mb-2">
                     ℹ️ All registered contacts for this organisation have already checked in.
+                  </p>
+                )}
+                {orgContacts.length === 0 && (
+                  <p className="text-sm text-gray-500 mb-2">
+                    No pre-registered contacts found for this organisation.
                   </p>
                 )}
 
