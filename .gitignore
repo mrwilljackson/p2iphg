@@ -104,3 +104,6 @@ exports/*.csv
 reports/*.csv
 
 software/nextjs/build-result.txt
+
+# Git worktrees
+.worktrees/
