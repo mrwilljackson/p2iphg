@@ -1276,16 +1276,34 @@ export class DatabaseService {
     const feedbackConsentCount = regs.filter(r => r.feedbackConsent === true).length;
     const nextEventConsentCount = regs.filter(r => r.nextEventConsent === true).length;
 
-    // Org breakdown by organisationName snapshot, using same open/closed headcount rules
+    // Build org name lookup from organizationId → org name via the organisations table
+    const allOrgUuids = [...new Set(
+      regs.map(r => r.organizationId).filter((id): id is string => id != null)
+    )];
+    const orgNameMap = new Map<string, string>();
+    if (allOrgUuids.length > 0) {
+      const orgNameRows = await db
+        .select({ id: organisations.id, name: organisations.name })
+        .from(organisations)
+        .where(inArray(organisations.id, allOrgUuids));
+      for (const row of orgNameRows) {
+        const name = row.name?.toLowerCase() === 'individual' ? 'Individual Participants' : (row.name ?? 'Unknown organisation');
+        orgNameMap.set(row.id, name);
+      }
+    }
+
+    // Org breakdown using joined org names, with open/closed headcount rules
     const orgHeadcountMap = new Map<string, number>();
 
     for (const reg of participantRegs) {
-      const orgName = reg.organisationName ?? 'No organisation';
+      const orgName = (reg.organizationId ? orgNameMap.get(reg.organizationId) : null)
+        ?? reg.organisationName ?? 'No organisation';
       orgHeadcountMap.set(orgName, (orgHeadcountMap.get(orgName) ?? 0) + 1);
     }
 
     for (const reg of groupRegs) {
-      const orgName = reg.organisationName ?? 'No organisation';
+      const orgName = (reg.organizationId ? orgNameMap.get(reg.organizationId) : null)
+        ?? reg.organisationName ?? 'No organisation';
       const isOpen = reg.organizationId
         ? (openGroupMap.get(reg.organizationId) ?? true)
         : true;
@@ -1385,10 +1403,31 @@ export class DatabaseService {
         eventSequenceNumber,
         adminNotes: adminNotes ?? null,
       })
+      .onConflictDoUpdate({
+        target: eventSummaries.eventId,
+        set: {
+          eventName: event.name,
+          eventDate: event.date,
+          eventLocation: event.location ?? null,
+          eventDescription: event.description ?? null,
+          eventAirtableRecordId: event.airtableRecordId ?? null,
+          participantCount: preview.participantCount,
+          volunteerCount: preview.volunteerCount,
+          groupCount: preview.groupCount,
+          totalHeadcount: preview.totalHeadcount,
+          photoConsentCount: preview.photoConsentCount,
+          feedbackConsentCount: preview.feedbackConsentCount,
+          nextEventConsentCount: preview.nextEventConsentCount,
+          orgBreakdown: JSON.stringify(preview.orgBreakdown),
+          eventSequenceNumber,
+          adminNotes: adminNotes ?? null,
+          createdAt: new Date(),
+        },
+      })
       .returning();
 
     const row = inserted[0];
-    if (!row) throw new Error('Failed to insert event summary');
+    if (!row) throw new Error('Failed to save event summary');
 
     // Step 2: Archive the event
     await db

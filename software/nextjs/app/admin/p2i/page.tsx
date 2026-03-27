@@ -710,20 +710,16 @@ export default function P2IAdminDashboard() {
                     <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 space-y-2 text-sm">
                       <h4 className="font-semibold text-gray-900 mb-2">Registration Counts</h4>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Participants</span>
+                        <span className="text-gray-600">Total Participants</span>
                         <span className="font-medium">{summaryPreview.participantCount}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Volunteers</span>
+                        <span className="text-gray-600">Total Helpers</span>
                         <span className="font-medium">{summaryPreview.volunteerCount}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Group leaders</span>
+                        <span className="text-gray-600">Total Group Leaders</span>
                         <span className="font-medium">{summaryPreview.groupCount} <span className="text-gray-400 font-normal">({summaryPreview.participatingLeaderCount} participating)</span></span>
-                      </div>
-                      <div className="flex justify-between border-t border-gray-200 pt-2 font-semibold">
-                        <span className="text-gray-900">Total headcount</span>
-                        <span>{summaryPreview.totalHeadcount}</span>
                       </div>
                     </div>
 
