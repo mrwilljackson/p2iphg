@@ -702,6 +702,16 @@ export default function P2IAdminDashboard() {
                   </DialogDescription>
                 </DialogHeader>
 
+                {currentEvent && (
+                  <div className="bg-white border border-gray-200 rounded-lg p-3 text-sm">
+                    <p className="font-semibold text-gray-900">{currentEvent.name}</p>
+                    <p className="text-gray-500">
+                      {new Date(currentEvent.date).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                      {currentEvent.location ? ` — ${currentEvent.location}` : ''}
+                    </p>
+                  </div>
+                )}
+
                 {isSummaryPreviewLoading ? (
                   <div className="py-8 text-center text-gray-500">Loading summary data...</div>
                 ) : summaryPreview ? (
@@ -720,23 +730,6 @@ export default function P2IAdminDashboard() {
                       <div className="flex justify-between">
                         <span className="text-gray-600">Total Group Leaders</span>
                         <span className="font-medium">{summaryPreview.groupCount} <span className="text-gray-400 font-normal">({summaryPreview.participatingLeaderCount} participating)</span></span>
-                      </div>
-                    </div>
-
-                    {/* Consent counts */}
-                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 space-y-2 text-sm">
-                      <h4 className="font-semibold text-gray-900 mb-2">Consent</h4>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Photo consent</span>
-                        <span className="font-medium">{summaryPreview.photoConsentCount}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Feedback consent</span>
-                        <span className="font-medium">{summaryPreview.feedbackConsentCount}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Next event consent</span>
-                        <span className="font-medium">{summaryPreview.nextEventConsentCount}</span>
                       </div>
                     </div>
 
@@ -777,6 +770,23 @@ export default function P2IAdminDashboard() {
                           onChange={(e) => setSummaryNotes(e.target.value)}
                           placeholder="Any notes about this event..."
                         />
+                      </div>
+                    </div>
+
+                    {/* Consent counts */}
+                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 space-y-2 text-sm">
+                      <h4 className="font-semibold text-gray-900 mb-2">Consent</h4>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Photo consent</span>
+                        <span className="font-medium">{summaryPreview.photoConsentCount}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Feedback consent</span>
+                        <span className="font-medium">{summaryPreview.feedbackConsentCount}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Next event consent</span>
+                        <span className="font-medium">{summaryPreview.nextEventConsentCount}</span>
                       </div>
                     </div>
 
