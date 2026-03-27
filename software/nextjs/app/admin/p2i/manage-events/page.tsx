@@ -160,84 +160,173 @@ export default function ManageEventsPage() {
             <p className="text-gray-600 text-lg">No events found in the database.</p>
           </div>
         ) : (
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Event Name</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {events.map((event) => (
-                  <tr key={event.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="text-sm font-medium text-gray-900">{event.name}</div>
-                        {event.status === 'active' && (
-                          <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            Current Event
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{formatDate(event.date)}</div>
-                    </td>
-                    <td className="px-6 py-4 max-w-xs">
-                      <div className="text-sm text-gray-900 truncate">{event.location || '-'}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        event.status === 'active'
-                          ? 'bg-green-100 text-green-800'
-                          : event.status === 'completed'
-                          ? 'bg-gray-100 text-gray-800'
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {event.status.charAt(0).toUpperCase() + event.status.slice(1)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                      {event.status !== 'active' && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleSetCurrent(event.id)}
-                          disabled={settingCurrent !== null}
-                        >
-                          {settingCurrent === event.id ? 'Setting...' : 'Set as Current'}
-                        </Button>
-                      )}
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleEdit(event)}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => handleDelete(event)}
-                        disabled={deletingId === event.id}
-                      >
-                        {deletingId === event.id ? 'Deleting...' : 'Delete'}
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={() => handleAdminister(event.id)}
-                      >
-                        Administer →
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="space-y-8">
+            {/* Section: Active / Planned */}
+            {(() => {
+              const activePlanned = events.filter(e => e.status === 'active' || e.status === 'planned');
+              return (
+                <section>
+                  <h2 className="text-lg font-semibold text-gray-800 mb-3">Active / Planned</h2>
+                  {activePlanned.length === 0 ? (
+                    <p className="text-sm text-gray-500">No active or planned events.</p>
+                  ) : (
+                    <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Event Name</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {activePlanned.map((event) => (
+                            <tr key={event.id} className="hover:bg-gray-50">
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="flex items-center">
+                                  <div className="text-sm font-medium text-gray-900">{event.name}</div>
+                                  {event.status === 'active' && (
+                                    <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                      Current Event
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="text-sm text-gray-900">{formatDate(event.date)}</div>
+                              </td>
+                              <td className="px-6 py-4 max-w-xs">
+                                <div className="text-sm text-gray-900 truncate">{event.location || '-'}</div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                  event.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
+                                }`}>
+                                  {event.status.charAt(0).toUpperCase() + event.status.slice(1)}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                                {event.status !== 'active' && (
+                                  <Button size="sm" variant="outline" onClick={() => handleSetCurrent(event.id)} disabled={settingCurrent !== null}>
+                                    {settingCurrent === event.id ? 'Setting...' : 'Set as Current'}
+                                  </Button>
+                                )}
+                                <Button size="sm" variant="outline" onClick={() => handleEdit(event)}>Edit</Button>
+                                <Button size="sm" variant="destructive" onClick={() => handleDelete(event)} disabled={deletingId === event.id}>
+                                  {deletingId === event.id ? 'Deleting...' : 'Delete'}
+                                </Button>
+                                <Button size="sm" onClick={() => handleAdminister(event.id)}>Administer →</Button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </section>
+              );
+            })()}
+
+            {/* Section: Completed */}
+            {(() => {
+              const completed = events.filter(e => e.status === 'completed');
+              return (
+                <section>
+                  <h2 className="text-lg font-semibold text-gray-800 mb-3">Completed</h2>
+                  {completed.length === 0 ? (
+                    <p className="text-sm text-gray-500">No completed events.</p>
+                  ) : (
+                    <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Event Name</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {completed.map((event) => (
+                            <tr key={event.id} className="hover:bg-gray-50">
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="text-sm font-medium text-gray-900">{event.name}</div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="text-sm text-gray-900">{formatDate(event.date)}</div>
+                              </td>
+                              <td className="px-6 py-4 max-w-xs">
+                                <div className="text-sm text-gray-900 truncate">{event.location || '-'}</div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                  Completed
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                                <Button size="sm" variant="outline" onClick={() => handleSetCurrent(event.id)} disabled={settingCurrent !== null}>
+                                  {settingCurrent === event.id ? 'Setting...' : 'Set as Current'}
+                                </Button>
+                                <Button size="sm" variant="outline" onClick={() => handleEdit(event)}>Edit</Button>
+                                <Button size="sm" variant="destructive" onClick={() => handleDelete(event)} disabled={deletingId === event.id}>
+                                  {deletingId === event.id ? 'Deleting...' : 'Delete'}
+                                </Button>
+                                <Button size="sm" onClick={() => handleAdminister(event.id)}>Administer →</Button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </section>
+              );
+            })()}
+
+            {/* Section: Archived */}
+            {(() => {
+              const archived = events.filter(e => e.status === 'archived');
+              return (
+                <section>
+                  <h2 className="text-lg font-semibold text-gray-500 mb-3">Archived</h2>
+                  {archived.length === 0 ? (
+                    <p className="text-sm text-gray-400">No archived events.</p>
+                  ) : (
+                    <div className="bg-white rounded-xl shadow border border-gray-100 overflow-hidden opacity-75">
+                      <table className="min-w-full divide-y divide-gray-100">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Event Name</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Date</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-100">
+                          {archived.map((event) => (
+                            <tr key={event.id}>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="text-sm font-medium text-gray-500">{event.name}</div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="text-sm text-gray-400">{formatDate(event.date)}</div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500">
+                                  Archived
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </section>
+              );
+            })()}
           </div>
         )}
       </main>

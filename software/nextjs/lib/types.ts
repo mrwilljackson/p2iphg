@@ -265,3 +265,38 @@ export interface ApiErrorResponse {
  */
 export type ApiResponse<T = unknown> = ApiSuccessResponse<T> | ApiErrorResponse;
 
+// ============================================================================
+// Event Summary Types
+// ============================================================================
+
+/**
+ * Read-only preview of computed event counts (returned before saving).
+ */
+export interface EventSummaryPreview {
+  participantCount: number;
+  volunteerCount: number;
+  groupCount: number;
+  participatingLeaderCount: number;
+  totalHeadcount: number;
+  photoConsentCount: number;
+  feedbackConsentCount: number;
+  nextEventConsentCount: number;
+  orgBreakdown: { orgName: string; headcount: number }[];
+}
+
+/**
+ * Saved event summary — persisted snapshot plus admin-entered fields.
+ */
+export interface EventSummary extends EventSummaryPreview {
+  id: string;
+  eventId: string;
+  eventName: string;
+  eventDate: string;
+  eventLocation: string | null;
+  eventDescription: string | null;
+  eventAirtableRecordId: string | null;
+  eventSequenceNumber: number;
+  adminNotes: string | null;
+  createdAt: string;
+}
+

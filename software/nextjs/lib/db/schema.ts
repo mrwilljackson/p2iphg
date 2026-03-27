@@ -30,7 +30,7 @@ export const events = pgTable('events', {
   date: text('date').notNull(), // ISO 8601 date string
   location: text('location'),
   description: text('description'),
-  status: text('status').notNull(), // 'planned' | 'active' | 'completed'
+  status: text('status').notNull(), // 'planned' | 'active' | 'completed' | 'archived'
   airtableRecordId: text('airtable_record_id'),
   createdAt: timestamp('created_at').defaultNow(),
   modifiedAt: timestamp('modified_at').defaultNow(),
@@ -126,6 +126,35 @@ export const organisationContacts = pgTable('organisation_contacts', {
   createdAt: timestamp('created_at'),
   modifiedAt: timestamp('modified_at'),
 });
+
+/**
+ * Event Summaries Table
+ * Point-in-time snapshot generated when a P2I admin archives a completed event.
+ * Stores computed registration counts plus admin-entered sequence number and notes.
+ */
+export const eventSummaries = pgTable('event_summaries', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  eventId: uuid('event_id').notNull().unique().references(() => events.id),
+  eventName: text('event_name').notNull(),
+  eventDate: text('event_date').notNull(),
+  eventLocation: text('event_location'),
+  eventDescription: text('event_description'),
+  eventAirtableRecordId: text('event_airtable_record_id'),
+  participantCount: integer('participant_count').notNull().default(0),
+  volunteerCount: integer('volunteer_count').notNull().default(0),
+  groupCount: integer('group_count').notNull().default(0),
+  totalHeadcount: integer('total_headcount').notNull().default(0),
+  photoConsentCount: integer('photo_consent_count').notNull().default(0),
+  feedbackConsentCount: integer('feedback_consent_count').notNull().default(0),
+  nextEventConsentCount: integer('next_event_consent_count').notNull().default(0),
+  orgBreakdown: text('org_breakdown').notNull().default('[]'),
+  eventSequenceNumber: integer('event_sequence_number').notNull(),
+  adminNotes: text('admin_notes'),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+export type EventSummaryRow = typeof eventSummaries.$inferSelect;
+export type NewEventSummaryRow = typeof eventSummaries.$inferInsert;
 
 // Export types for TypeScript
 export type Event = typeof events.$inferSelect;

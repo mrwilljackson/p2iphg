@@ -15,10 +15,10 @@
  */
 
 import { db } from './db/client';
-import { events, organisations, organisationContacts, volunteers, registrations } from './db/schema';
-import { eq, and, ilike, sql } from 'drizzle-orm';
+import { events, organisations, organisationContacts, volunteers, registrations, eventSummaries } from './db/schema';
+import { eq, and, ilike, sql, inArray } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
-import type { Event, Organization, OrgRecord, GroupLeader, Volunteer, Registration, OrgContactOption } from './types';
+import type { Event, Organization, OrgRecord, GroupLeader, Volunteer, Registration, OrgContactOption, EventSummaryPreview, EventSummary } from './types';
 import type { OrganisationRow, OrganisationContactRow } from './db/schema';
 import { calculateParticipantCounts, type RegistrationForCounting, type ParticipantCounts } from './participant-counting';
 
@@ -1208,6 +1208,215 @@ export class DatabaseService {
       console.error('Error fetching registration counts:', error);
       throw error;
     }
+  }
+
+  /**
+   * Compute summary counts for an event without writing to the DB.
+   * Uses open/closed group logic: closed groups count groupSize + leader;
+   * open groups count leader only if participating.
+   */
+  private static async computeSummaryData(
+    eventId: string,
+    event: { id: string; airtableRecordId?: string },
+  ): Promise<EventSummaryPreview> {
+    // Fetch all registrations for this event
+    const regs = await db
+      .select()
+      .from(registrations)
+      .where(eq(registrations.eventId, eventId));
+
+    const groupRegs = regs.filter(r => r.role === 'Group');
+    const participantRegs = regs.filter(r => r.role === 'Participant');
+
+    // Build openGroup lookup: organisations.id (UUID) → isOpen (boolean)
+    const openGroupMap = new Map<string, boolean>();
+    const orgUuids = [...new Set(
+      groupRegs.map(r => r.organizationId).filter((id): id is string => id != null)
+    )];
+
+    if (orgUuids.length > 0 && event.airtableRecordId) {
+      const orgRows = await db
+        .select({ orgId: organisations.id, openGroup: organisationContacts.openGroup })
+        .from(organisations)
+        .leftJoin(
+          organisationContacts,
+          and(
+            eq(organisationContacts.organisationId, organisations.airtableRecordId),
+            eq(organisationContacts.airtableEventId, event.airtableRecordId),
+          ),
+        )
+        .where(inArray(organisations.id, orgUuids));
+
+      for (const row of orgRows) {
+        openGroupMap.set(row.orgId, row.openGroup !== false);
+      }
+    }
+
+    // Role counts
+    const volunteerCount = regs.filter(r => r.role === 'Volunteer').length;
+    const groupCount = groupRegs.length;
+
+    // Participant count: individual registrations + closed group members (groupSize)
+    let participantCount = participantRegs.length;
+    for (const reg of groupRegs) {
+      const isOpen = reg.organizationId
+        ? (openGroupMap.get(reg.organizationId) ?? true)
+        : true;
+      if (!isOpen) {
+        participantCount += reg.groupSize ?? 0;
+      }
+    }
+
+    // Headcount: participants + group leaders who are participating
+    const participatingLeaderCount = groupRegs.filter(r => r.groupLeaderParticipating === true).length;
+    const totalHeadcount = participantCount + participatingLeaderCount;
+
+    // Consent counts (across all roles)
+    const photoConsentCount = regs.filter(r => r.photoConsent === true).length;
+    const feedbackConsentCount = regs.filter(r => r.feedbackConsent === true).length;
+    const nextEventConsentCount = regs.filter(r => r.nextEventConsent === true).length;
+
+    // Org breakdown by organisationName snapshot, using same open/closed headcount rules
+    const orgHeadcountMap = new Map<string, number>();
+
+    for (const reg of participantRegs) {
+      const orgName = reg.organisationName ?? 'No organisation';
+      orgHeadcountMap.set(orgName, (orgHeadcountMap.get(orgName) ?? 0) + 1);
+    }
+
+    for (const reg of groupRegs) {
+      const orgName = reg.organisationName ?? 'No organisation';
+      const isOpen = reg.organizationId
+        ? (openGroupMap.get(reg.organizationId) ?? true)
+        : true;
+      let contribution = 0;
+      if (!isOpen) {
+        contribution += reg.groupSize ?? 0;
+        if (reg.groupLeaderParticipating === true) contribution += 1;
+      } else {
+        if (reg.groupLeaderParticipating === true) contribution += 1;
+      }
+      if (contribution > 0) {
+        orgHeadcountMap.set(orgName, (orgHeadcountMap.get(orgName) ?? 0) + contribution);
+      }
+    }
+
+    const orgBreakdown = [...orgHeadcountMap.entries()]
+      .map(([orgName, headcount]) => ({ orgName, headcount }))
+      .sort((a, b) => b.headcount - a.headcount);
+
+    return {
+      participantCount,
+      volunteerCount,
+      groupCount,
+      participatingLeaderCount,
+      totalHeadcount,
+      photoConsentCount,
+      feedbackConsentCount,
+      nextEventConsentCount,
+      orgBreakdown,
+    };
+  }
+
+  /**
+   * Compute and return event summary counts without writing anything to the DB.
+   * Used by the modal to show a preview before the admin confirms.
+   * Throws if the event is not found or not status='completed'.
+   */
+  static async previewEventSummary(eventId: string): Promise<EventSummaryPreview> {
+    const eventRows = await db.select().from(events).where(eq(events.id, eventId)).limit(1);
+    const event = eventRows[0];
+    if (!event) throw new Error(`Event not found: ${eventId}`);
+    if (event.status !== 'completed') {
+      throw new Error(`Event is not completed (status: ${event.status})`);
+    }
+    return DatabaseService.computeSummaryData(eventId, {
+      id: event.id,
+      airtableRecordId: event.airtableRecordId ?? undefined,
+    });
+  }
+
+  /**
+   * Generate and persist an event summary, then set the event status to 'archived'.
+   *
+   * Atomicity note: Neon HTTP client has no transaction support. Steps run sequentially:
+   * 1. Insert summary row
+   * 2. Update event status to 'archived'
+   * If step 2 fails, the summary row exists but the event remains 'completed'.
+   * This is the preferred failure mode — it is recoverable by retrying.
+   *
+   * Throws if the event is not found or not status='completed'.
+   */
+  static async generateEventSummary(
+    eventId: string,
+    eventSequenceNumber: number,
+    adminNotes: string | null,
+  ): Promise<EventSummary> {
+    const eventRows = await db.select().from(events).where(eq(events.id, eventId)).limit(1);
+    const event = eventRows[0];
+    if (!event) throw new Error(`Event not found: ${eventId}`);
+    if (event.status !== 'completed') {
+      throw new Error(`Event is not completed (status: ${event.status})`);
+    }
+
+    const preview = await DatabaseService.computeSummaryData(eventId, {
+      id: event.id,
+      airtableRecordId: event.airtableRecordId ?? undefined,
+    });
+
+    // Step 1: Insert summary row
+    const inserted = await db
+      .insert(eventSummaries)
+      .values({
+        eventId,
+        eventName: event.name,
+        eventDate: event.date,
+        eventLocation: event.location ?? null,
+        eventDescription: event.description ?? null,
+        eventAirtableRecordId: event.airtableRecordId ?? null,
+        participantCount: preview.participantCount,
+        volunteerCount: preview.volunteerCount,
+        groupCount: preview.groupCount,
+        totalHeadcount: preview.totalHeadcount,
+        photoConsentCount: preview.photoConsentCount,
+        feedbackConsentCount: preview.feedbackConsentCount,
+        nextEventConsentCount: preview.nextEventConsentCount,
+        orgBreakdown: JSON.stringify(preview.orgBreakdown),
+        eventSequenceNumber,
+        adminNotes: adminNotes ?? null,
+      })
+      .returning();
+
+    const row = inserted[0];
+    if (!row) throw new Error('Failed to insert event summary');
+
+    // Step 2: Archive the event
+    await db
+      .update(events)
+      .set({ status: 'archived' })
+      .where(eq(events.id, eventId));
+
+    return {
+      id: row.id,
+      eventId: row.eventId,
+      eventName: row.eventName,
+      eventDate: row.eventDate,
+      eventLocation: row.eventLocation,
+      eventDescription: row.eventDescription,
+      eventAirtableRecordId: row.eventAirtableRecordId,
+      participantCount: row.participantCount,
+      volunteerCount: row.volunteerCount,
+      groupCount: row.groupCount,
+      participatingLeaderCount: preview.participatingLeaderCount,
+      totalHeadcount: row.totalHeadcount,
+      photoConsentCount: row.photoConsentCount,
+      feedbackConsentCount: row.feedbackConsentCount,
+      nextEventConsentCount: row.nextEventConsentCount,
+      orgBreakdown: JSON.parse(row.orgBreakdown) as { orgName: string; headcount: number }[],
+      eventSequenceNumber: row.eventSequenceNumber,
+      adminNotes: row.adminNotes,
+      createdAt: row.createdAt?.toISOString() ?? new Date().toISOString(),
+    };
   }
 }
 

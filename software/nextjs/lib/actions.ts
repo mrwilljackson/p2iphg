@@ -12,7 +12,7 @@ import { db } from './db/client';
 import { events, registrations, volunteers, organisations, organisationContacts } from './db/schema';
 import { eq, and, or, isNull, sql, inArray } from 'drizzle-orm';
 import { DatabaseService } from './db-service';
-import type { Event, Organization, OrgRecord, GroupLeader, Volunteer, Registration, OrgContactOption } from './types';
+import type { Event, Organization, OrgRecord, GroupLeader, Volunteer, Registration, OrgContactOption, EventSummaryPreview, EventSummary } from './types';
 import type { ParticipantCounts } from './participant-counting';
 
 /**
@@ -533,4 +533,23 @@ export async function updateVolunteer(id: string, data: {
 
 export async function deleteVolunteer(id: string): Promise<void> {
   return await DatabaseService.deleteVolunteer(id);
+}
+
+/**
+ * Compute and return event summary counts without writing to DB.
+ * Used by the Generate Summary modal to show a preview before the admin confirms.
+ */
+export async function previewEventSummary(eventId: string): Promise<EventSummaryPreview> {
+  return await DatabaseService.previewEventSummary(eventId);
+}
+
+/**
+ * Generate and persist an event summary, then archive the event.
+ */
+export async function generateEventSummary(
+  eventId: string,
+  sequenceNumber: number,
+  notes: string | null,
+): Promise<EventSummary> {
+  return await DatabaseService.generateEventSummary(eventId, sequenceNumber, notes);
 }

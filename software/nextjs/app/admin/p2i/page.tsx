@@ -7,9 +7,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getCurrentEvent, getEventById, getRegistrationCountsByRole, getAllRegistrations, getOrganizations, getAllVolunteers, createEvent, markEventCompleted, getEventDataCounts, clearEventData } from "@/lib/actions";
+import { Textarea } from "@/components/ui/textarea";
+import { getCurrentEvent, getEventById, getRegistrationCountsByRole, getAllRegistrations, getOrganizations, getAllVolunteers, createEvent, markEventCompleted, getEventDataCounts, clearEventData, previewEventSummary, generateEventSummary } from "@/lib/actions";
 import { syncRegistrationsToAirtable } from "@/app/actions/airtable-sync";
-import type { Event, Registration, Organization, Volunteer } from "@/lib/types";
+import type { Event, Registration, Organization, Volunteer, EventSummaryPreview } from "@/lib/types";
 import type { ParticipantCounts } from "@/lib/participant-counting";
 
 interface RegistrationCSVRow {
@@ -70,6 +71,14 @@ export default function P2IAdminDashboard() {
   } | null>(null);
   const [isClearEventLoading, setIsClearEventLoading] = useState(false);
   const [forceClearUnsynced, setForceClearUnsynced] = useState(false);
+
+  // Generate Summary Dialog State
+  const [isGenerateSummaryOpen, setIsGenerateSummaryOpen] = useState(false);
+  const [summaryPreview, setSummaryPreview] = useState<EventSummaryPreview | null>(null);
+  const [isSummaryPreviewLoading, setIsSummaryPreviewLoading] = useState(false);
+  const [summarySequenceNumber, setSummarySequenceNumber] = useState("");
+  const [summaryNotes, setSummaryNotes] = useState("");
+  const [isArchiving, setIsArchiving] = useState(false);
 
   const [counts, setCounts] = useState<ParticipantCounts>({
     individualParticipants: 0,
@@ -498,6 +507,47 @@ export default function P2IAdminDashboard() {
     }
   };
 
+  const handleGenerateSummaryOpen = async (open: boolean) => {
+    setIsGenerateSummaryOpen(open);
+    if (!open) {
+      setSummaryPreview(null);
+      setSummarySequenceNumber("");
+      setSummaryNotes("");
+      return;
+    }
+    if (currentEvent) {
+      setIsSummaryPreviewLoading(true);
+      try {
+        const preview = await previewEventSummary(currentEvent.id);
+        setSummaryPreview(preview);
+      } catch (error) {
+        console.error("Failed to load summary preview:", error);
+        alert("Failed to load event summary. " + (error instanceof Error ? error.message : ""));
+        setIsGenerateSummaryOpen(false);
+      } finally {
+        setIsSummaryPreviewLoading(false);
+      }
+    }
+  };
+
+  const handleArchiveEvent = async () => {
+    if (!currentEvent) return;
+    const seqNum = parseInt(summarySequenceNumber, 10);
+    if (isNaN(seqNum)) return;
+    try {
+      setIsArchiving(true);
+      await generateEventSummary(currentEvent.id, seqNum, summaryNotes.trim() || null);
+      setIsGenerateSummaryOpen(false);
+      // Reload the page to reflect the new archived status
+      window.location.reload();
+    } catch (error) {
+      console.error("Failed to archive event:", error);
+      alert("Failed to archive event. " + (error instanceof Error ? error.message : ""));
+    } finally {
+      setIsArchiving(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -563,6 +613,8 @@ export default function P2IAdminDashboard() {
                 ? 'bg-blue-100 text-blue-800'
                 : currentEvent?.status === 'completed'
                 ? 'bg-gray-100 text-gray-800'
+                : currentEvent?.status === 'archived'
+                ? 'bg-gray-100 text-gray-600'
                 : 'bg-red-100 text-red-800'
             }`}>
               {currentEvent?.status ? currentEvent.status.charAt(0).toUpperCase() + currentEvent.status.slice(1) : 'Unknown'}
@@ -621,6 +673,148 @@ export default function P2IAdminDashboard() {
             >
               {isMarkingCompleted ? '⏳ Updating...' : '✅ Mark as Completed'}
             </Button>
+          </div>
+        )}
+
+        {/* Generate Summary Banner — shown for completed events */}
+        {currentEvent && currentEvent.status === 'completed' && (
+          <div className="bg-blue-50 border border-blue-300 rounded-lg p-4 mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <span className="text-2xl">📋</span>
+              <div>
+                <p className="font-semibold text-blue-800">This event is completed</p>
+                <p className="text-sm text-blue-700">
+                  Generate a summary snapshot to archive this event. Registration data will not be deleted.
+                </p>
+              </div>
+            </div>
+            <Dialog open={isGenerateSummaryOpen} onOpenChange={handleGenerateSummaryOpen}>
+              <DialogTrigger asChild>
+                <Button className="bg-blue-600 hover:bg-blue-700 text-white shrink-0">
+                  📋 Generate Summary
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[540px] max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Generate Event Summary</DialogTitle>
+                  <DialogDescription>
+                    Review the computed counts below, then enter a sequence number and optional notes before archiving.
+                  </DialogDescription>
+                </DialogHeader>
+
+                {isSummaryPreviewLoading ? (
+                  <div className="py-8 text-center text-gray-500">Loading summary data...</div>
+                ) : summaryPreview ? (
+                  <div className="space-y-4 py-2">
+                    {/* Registration counts */}
+                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 space-y-2 text-sm">
+                      <h4 className="font-semibold text-gray-900 mb-2">Registration Counts</h4>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Participants</span>
+                        <span className="font-medium">{summaryPreview.participantCount}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Volunteers</span>
+                        <span className="font-medium">{summaryPreview.volunteerCount}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Group leaders</span>
+                        <span className="font-medium">{summaryPreview.groupCount} <span className="text-gray-400 font-normal">({summaryPreview.participatingLeaderCount} participating)</span></span>
+                      </div>
+                      <div className="flex justify-between border-t border-gray-200 pt-2 font-semibold">
+                        <span className="text-gray-900">Total headcount</span>
+                        <span>{summaryPreview.totalHeadcount}</span>
+                      </div>
+                    </div>
+
+                    {/* Consent counts */}
+                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 space-y-2 text-sm">
+                      <h4 className="font-semibold text-gray-900 mb-2">Consent</h4>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Photo consent</span>
+                        <span className="font-medium">{summaryPreview.photoConsentCount}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Feedback consent</span>
+                        <span className="font-medium">{summaryPreview.feedbackConsentCount}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Next event consent</span>
+                        <span className="font-medium">{summaryPreview.nextEventConsentCount}</span>
+                      </div>
+                    </div>
+
+                    {/* Org breakdown */}
+                    {summaryPreview.orgBreakdown.length > 0 && (
+                      <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 text-sm">
+                        <h4 className="font-semibold text-gray-900 mb-2">Organisation Breakdown</h4>
+                        <div className="space-y-1">
+                          {summaryPreview.orgBreakdown.map(({ orgName, headcount }) => (
+                            <div key={orgName} className="flex justify-between">
+                              <span className="text-gray-600 truncate mr-4">{orgName}</span>
+                              <span className="font-medium shrink-0">{headcount}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Admin input */}
+                    <div className="space-y-3">
+                      <div className="grid gap-1.5">
+                        <Label htmlFor="seq-number">Event sequence number *</Label>
+                        <Input
+                          id="seq-number"
+                          type="number"
+                          min="1"
+                          value={summarySequenceNumber}
+                          onChange={(e) => setSummarySequenceNumber(e.target.value)}
+                          placeholder="e.g. 42"
+                        />
+                      </div>
+                      <div className="grid gap-1.5">
+                        <Label htmlFor="admin-notes">Notes <span className="text-gray-400 font-normal">(optional)</span></Label>
+                        <Textarea
+                          id="admin-notes"
+                          rows={3}
+                          value={summaryNotes}
+                          onChange={(e) => setSummaryNotes(e.target.value)}
+                          placeholder="Any notes about this event..."
+                        />
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">
+                      This will mark the event as archived. Registration data will not be deleted.
+                    </p>
+                  </div>
+                ) : null}
+
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsGenerateSummaryOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleArchiveEvent}
+                    disabled={!summaryPreview || !summarySequenceNumber.trim() || isNaN(parseInt(summarySequenceNumber, 10)) || isArchiving}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    {isArchiving ? "Archiving..." : "Archive this event"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+        )}
+
+        {/* Archived Event Banner */}
+        {currentEvent && currentEvent.status === 'archived' && (
+          <div className="bg-gray-50 border border-gray-300 rounded-lg p-4 mb-8 flex items-center gap-3">
+            <span className="text-2xl">🗂️</span>
+            <div>
+              <p className="font-semibold text-gray-700">This event is archived</p>
+              <p className="text-sm text-gray-500">A summary has been saved. No further actions are available.</p>
+            </div>
           </div>
         )}
 
