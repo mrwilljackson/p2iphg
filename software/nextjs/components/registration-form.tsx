@@ -284,6 +284,7 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
   useEffect(() => {
     const updateOrganizations = async () => {
       const eventId = form.getValues("eventId");
+      if (!eventId) return;
       const [orgs, fullyRegisteredOrgIds] = await Promise.all([
         getOrganizations(eventId),
         getFullyRegisteredOrgIds(eventId),
