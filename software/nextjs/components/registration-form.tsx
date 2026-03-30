@@ -26,7 +26,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
-import { getCurrentEvent, getOrganizations, getAllVolunteers, createRegistration, updateVolunteer, updateGroupLeaderConsents, findOrCreateFamilyGroup, getExistingGroupLeaders, getOrgContactsForEvent } from "@/lib/actions";
+import { getCurrentEvent, getOrganizations, getAllVolunteers, getVolunteerRegistrationEmails, createRegistration, updateVolunteer, updateGroupLeaderConsents, findOrCreateFamilyGroup, getExistingGroupLeaders, getOrgContactsForEvent } from "@/lib/actions";
 import { organizationsToOptions } from "@/lib/helpers";
 import { isFieldVisible, type RegistrationType } from "@/lib/field-visibility-config";
 import type { RegistrationRole } from "@/lib/types";
@@ -334,17 +334,19 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
           // Pre-populate the event field
           form.setValue('eventId', event.id);
 
-          // Fetch event-specific organizations and volunteers
-          const [orgs, vols] = await Promise.all([
+          // Fetch event-specific organizations, volunteers, and already-registered volunteer emails
+          const [orgs, vols, registeredEmails] = await Promise.all([
             getOrganizations(event.id),
             getAllVolunteers(event.id),
+            getVolunteerRegistrationEmails(event.id),
           ]);
 
           // Convert organizations to combobox options (filtered by role)
           setOrganizations(organizationsToOptions(orgs, selectedRole));
 
-          // Store volunteers for name picker
-          setVolunteers(vols);
+          // Store volunteers for name picker, excluding those who have already registered
+          const registeredEmailSet = new Set(registeredEmails.map(e => e.toLowerCase()));
+          setVolunteers(vols.filter(v => !registeredEmailSet.has(v.email.toLowerCase())));
         }
       } catch (error) {
         console.error('Failed to load data:', error);

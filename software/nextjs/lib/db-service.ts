@@ -500,6 +500,31 @@ export class DatabaseService {
   }
 
   /**
+   * Get emails of all Volunteer-role registrations for an event.
+   * Used to filter already-registered volunteers from the name picker.
+   */
+  static async getVolunteerRegistrationEmails(eventId: string): Promise<string[]> {
+    try {
+      const result = await db
+        .select({ email: registrations.email })
+        .from(registrations)
+        .where(
+          and(
+            eq(registrations.eventId, eventId),
+            eq(registrations.role, 'Volunteer')
+          )
+        );
+
+      return result
+        .map(row => row.email)
+        .filter((email): email is string => email !== null);
+    } catch (error) {
+      console.error('Error fetching volunteer registration emails:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Get all contacts for an organisation at a specific event, with registration status.
    * Used to populate group.contactPicker in the Group leader registration form.
    *
