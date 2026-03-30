@@ -26,7 +26,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
-import { getCurrentEvent, getOrganizations, getAllVolunteers, getVolunteerRegistrationEmails, createRegistration, updateVolunteer, updateGroupLeaderConsents, findOrCreateFamilyGroup, getExistingGroupLeaders, getOrgContactsForEvent } from "@/lib/actions";
+import { getCurrentEvent, getOrganizations, getAllVolunteers, getVolunteerRegistrationEmails, getFullyRegisteredOrgIds, createRegistration, updateVolunteer, updateGroupLeaderConsents, findOrCreateFamilyGroup, getExistingGroupLeaders, getOrgContactsForEvent } from "@/lib/actions";
 import { organizationsToOptions } from "@/lib/helpers";
 import { isFieldVisible, type RegistrationType } from "@/lib/field-visibility-config";
 import type { RegistrationRole } from "@/lib/types";
@@ -284,12 +284,18 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
   useEffect(() => {
     const updateOrganizations = async () => {
       const eventId = form.getValues("eventId");
-      const orgs = await getOrganizations(eventId);
+      const [orgs, fullyRegisteredOrgIds] = await Promise.all([
+        getOrganizations(eventId),
+        getFullyRegisteredOrgIds(eventId),
+      ]);
 
       // Store full organization objects for later reference
       setAllOrganizations(orgs);
 
-      const orgOptions = organizationsToOptions(orgs, selectedRole);
+      // Filter out orgs where all pre-registered leaders have already registered
+      const availableOrgs = orgs.filter(org => !fullyRegisteredOrgIds.includes(org.id!));
+
+      const orgOptions = organizationsToOptions(availableOrgs, selectedRole);
 
       // Find and update the "Family Group" option with personalized surname
       // The organizationsToOptions helper includes "Family Group" only for Group role
@@ -334,15 +340,19 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
           // Pre-populate the event field
           form.setValue('eventId', event.id);
 
-          // Fetch event-specific organizations, volunteers, and already-registered volunteer emails
-          const [orgs, vols, registeredEmails] = await Promise.all([
+          // Fetch event-specific organizations, volunteers, and registration state
+          const [orgs, vols, registeredEmails, fullyRegisteredOrgIds] = await Promise.all([
             getOrganizations(event.id),
             getAllVolunteers(event.id),
             getVolunteerRegistrationEmails(event.id),
+            getFullyRegisteredOrgIds(event.id),
           ]);
 
+          // Filter out orgs where all pre-registered leaders have already registered
+          const availableOrgs = orgs.filter(org => !fullyRegisteredOrgIds.includes(org.id!));
+
           // Convert organizations to combobox options (filtered by role)
-          setOrganizations(organizationsToOptions(orgs, selectedRole));
+          setOrganizations(organizationsToOptions(availableOrgs, selectedRole));
 
           // Store volunteers for name picker, excluding those who have already registered
           const registeredEmailSet = new Set(registeredEmails.map(e => e.toLowerCase()));

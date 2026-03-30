@@ -189,6 +189,10 @@ export async function getVolunteerRegistrationEmails(eventId: string): Promise<s
   return await DatabaseService.getVolunteerRegistrationEmails(eventId);
 }
 
+export async function getFullyRegisteredOrgIds(eventId: string): Promise<string[]> {
+  return await DatabaseService.getFullyRegisteredOrgIds(eventId);
+}
+
 /**
  * Get registration counts by role for a specific event
  * Returns detailed counts including group breakdowns and participant totals

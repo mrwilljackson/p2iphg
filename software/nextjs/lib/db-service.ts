@@ -525,6 +525,103 @@ export class DatabaseService {
   }
 
   /**
+   * Get local org IDs of closed-group organisations where every pre-registered
+   * contact has already submitted a Group-role registration (matched by email).
+   * Used to hide fully-registered orgs from the Group leader dropdown.
+   */
+  static async getFullyRegisteredOrgIds(eventId: string): Promise<string[]> {
+    try {
+      // 1. Get the event's airtable record ID
+      const [evt] = await db.select({ airtableRecordId: events.airtableRecordId })
+        .from(events)
+        .where(eq(events.id, eventId))
+        .limit(1);
+      if (!evt?.airtableRecordId) return [];
+
+      // 2. Get all closed-group orgs for this event
+      const closedOrgs = await db.select({
+        id: organisations.id,
+        airtableRecordId: organisations.airtableRecordId,
+      })
+        .from(organisations)
+        .innerJoin(
+          organisationContacts,
+          and(
+            eq(organisationContacts.organisationId, organisations.airtableRecordId),
+            eq(organisationContacts.airtableEventId, evt.airtableRecordId),
+            eq(organisationContacts.openGroup, false),
+          )
+        )
+        .where(eq(organisations.airtableEventId, evt.airtableRecordId));
+
+      if (closedOrgs.length === 0) return [];
+
+      // 3. Deduplicate org IDs (multiple contacts per org produce multiple rows)
+      const uniqueOrgs = [...new Map(closedOrgs.map(o => [o.id, o.airtableRecordId])).entries()]
+        .map(([id, airtableRecordId]) => ({ id, airtableRecordId }));
+
+      // 4. For each org, count total contacts and registered contacts
+      const fullyRegisteredIds: string[] = [];
+
+      for (const org of uniqueOrgs) {
+        if (!org.airtableRecordId) continue;
+
+        // Count total contacts for this org + event
+        const [{ count: totalContacts }] = await db
+          .select({ count: sql<number>`count(*)` })
+          .from(organisationContacts)
+          .where(
+            and(
+              eq(organisationContacts.organisationId, org.airtableRecordId),
+              eq(organisationContacts.airtableEventId, evt.airtableRecordId),
+            )
+          );
+
+        // Get emails of all contacts
+        const contactEmails = await db
+          .select({ email: organisationContacts.contactEmail })
+          .from(organisationContacts)
+          .where(
+            and(
+              eq(organisationContacts.organisationId, org.airtableRecordId),
+              eq(organisationContacts.airtableEventId, evt.airtableRecordId),
+            )
+          );
+        const emails = contactEmails
+          .map(c => c.email)
+          .filter((e): e is string => e != null);
+
+        if (emails.length === 0) continue;
+
+        // Count Group registrations for this org whose email matches a contact
+        const groupRegs = await db
+          .select({ email: registrations.email })
+          .from(registrations)
+          .where(
+            and(
+              eq(registrations.eventId, eventId),
+              eq(registrations.organizationId, org.id),
+              eq(registrations.role, 'Group'),
+            )
+          );
+        const registeredEmails = new Set(
+          groupRegs.map(r => r.email).filter((e): e is string => e != null)
+        );
+
+        const allRegistered = emails.every(email => registeredEmails.has(email));
+        if (allRegistered && Number(totalContacts) > 0) {
+          fullyRegisteredIds.push(org.id);
+        }
+      }
+
+      return fullyRegisteredIds;
+    } catch (error) {
+      console.error('Error fetching fully registered org IDs:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Get all contacts for an organisation at a specific event, with registration status.
    * Used to populate group.contactPicker in the Group leader registration form.
    *
