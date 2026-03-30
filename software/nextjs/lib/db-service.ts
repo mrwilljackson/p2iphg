@@ -538,7 +538,7 @@ export class DatabaseService {
         .limit(1);
       if (!evt?.airtableRecordId) return [];
 
-      // 2. Get all closed-group orgs for this event
+      // 2. Get all closed-group orgs for this event (scoped via contact's airtableEventId)
       const closedOrgs = await db.select({
         id: organisations.id,
         airtableRecordId: organisations.airtableRecordId,
@@ -551,8 +551,7 @@ export class DatabaseService {
             eq(organisationContacts.airtableEventId, evt.airtableRecordId),
             eq(organisationContacts.openGroup, false),
           )
-        )
-        .where(eq(organisations.airtableEventId, evt.airtableRecordId));
+        );
 
       if (closedOrgs.length === 0) return [];
 
@@ -588,7 +587,7 @@ export class DatabaseService {
             )
           );
         const emails = contactEmails
-          .map(c => c.email)
+          .map(c => c.email?.toLowerCase())
           .filter((e): e is string => e != null);
 
         if (emails.length === 0) continue;
@@ -605,7 +604,7 @@ export class DatabaseService {
             )
           );
         const registeredEmails = new Set(
-          groupRegs.map(r => r.email).filter((e): e is string => e != null)
+          groupRegs.map(r => r.email?.toLowerCase()).filter((e): e is string => e != null)
         );
 
         const allRegistered = emails.every(email => registeredEmails.has(email));
