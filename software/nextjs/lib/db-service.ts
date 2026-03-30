@@ -207,13 +207,14 @@ export class DatabaseService {
    */
   static async setCurrentEvent(eventId: string): Promise<Event> {
     try {
-      // First, set all events to 'completed'
+      // Deactivate the currently active event (if any)
       await db
         .update(events)
         .set({
           status: 'completed',
           modifiedAt: new Date()
-        });
+        })
+        .where(eq(events.status, 'active'));
 
       // Then set the specified event to 'active'
       const result = await db
