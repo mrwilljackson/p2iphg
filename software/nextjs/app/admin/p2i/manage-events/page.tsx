@@ -154,6 +154,12 @@ export default function ManageEventsPage() {
                 Manage Organisations
               </Button>
               <Button
+                onClick={() => router.push("/admin/p2i/helpers")}
+                variant="outline"
+              >
+                Manage Helpers
+              </Button>
+              <Button
                 onClick={() => {
                   sessionStorage.removeItem("adminAuth");
                   sessionStorage.removeItem("adminLevel");
