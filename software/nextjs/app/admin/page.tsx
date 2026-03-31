@@ -13,7 +13,7 @@ export default function AdminRedirect() {
 
     if (adminAuth === "true") {
       if (adminLevel === "p2i") {
-        router.push("/admin/p2i");
+        router.push("/admin/p2i/manage-events");
       } else if (adminLevel === "event") {
         router.push("/admin/event");
       } else {
