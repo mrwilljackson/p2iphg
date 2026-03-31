@@ -193,6 +193,10 @@ export async function getFullyRegisteredOrgIds(eventId: string): Promise<string[
   return await DatabaseService.getFullyRegisteredOrgIds(eventId);
 }
 
+export async function getEventSummary(eventId: string) {
+  return await DatabaseService.getEventSummary(eventId);
+}
+
 /**
  * Get registration counts by role for a specific event
  * Returns detailed counts including group breakdowns and participant totals

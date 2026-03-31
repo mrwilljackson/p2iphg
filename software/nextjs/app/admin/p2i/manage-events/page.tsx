@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { getAllEvents, setCurrentEvent, updateEvent, deleteEvent, createEvent, previewEventSummary, generateEventSummary } from "@/lib/actions";
+import { getAllEvents, setCurrentEvent, updateEvent, deleteEvent, createEvent, previewEventSummary, generateEventSummary, getEventSummary } from "@/lib/actions";
 import { Label } from "@/components/ui/label";
 import { P2iAdminNav } from "@/components/p2i-admin-nav";
 import { adminEventFormSchema, type AdminEventFormData } from "@/lib/validation";
@@ -43,6 +43,24 @@ export default function ManageEventsPage() {
   const [summarySequenceNumber, setSummarySequenceNumber] = useState("");
   const [summaryNotes, setSummaryNotes] = useState("");
   const [isArchiving, setIsArchiving] = useState(false);
+
+  // View Summary dialog state
+  const [viewSummaryData, setViewSummaryData] = useState<{
+    eventName: string;
+    eventDate: string;
+    eventLocation: string | null;
+    participantCount: number;
+    volunteerCount: number;
+    groupCount: number;
+    totalHeadcount: number;
+    photoConsentCount: number;
+    feedbackConsentCount: number;
+    nextEventConsentCount: number;
+    orgBreakdown: { orgName: string; headcount: number }[];
+    eventSequenceNumber: number;
+    adminNotes: string | null;
+  } | null>(null);
+  const [isViewSummaryLoading, setIsViewSummaryLoading] = useState(false);
 
   const editForm = useForm<AdminEventFormData>({
     resolver: zodResolver(adminEventFormSchema),
@@ -127,6 +145,23 @@ export default function ManageEventsPage() {
       alert("Failed to archive event. " + (error instanceof Error ? error.message : ""));
     } finally {
       setIsArchiving(false);
+    }
+  };
+
+  const handleViewSummary = async (eventId: string) => {
+    setIsViewSummaryLoading(true);
+    try {
+      const summary = await getEventSummary(eventId);
+      if (summary) {
+        setViewSummaryData(summary);
+      } else {
+        alert("No summary found for this event.");
+      }
+    } catch (error) {
+      console.error("Failed to load event summary:", error);
+      alert("Failed to load event summary.");
+    } finally {
+      setIsViewSummaryLoading(false);
     }
   };
 
@@ -438,6 +473,7 @@ export default function ManageEventsPage() {
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Event Name</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Date</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Status</th>
+                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">Actions</th>
                           </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-100">
@@ -453,6 +489,11 @@ export default function ManageEventsPage() {
                                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500">
                                   Archived
                                 </span>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <Button size="sm" variant="outline" onClick={() => handleViewSummary(event.id)} disabled={isViewSummaryLoading}>
+                                  Event Summary
+                                </Button>
                               </td>
                             </tr>
                           ))}
@@ -651,6 +692,91 @@ export default function ManageEventsPage() {
               className="bg-blue-600 hover:bg-blue-700 text-white"
             >
               {isArchiving ? "Archiving..." : "Archive this event"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Event Summary Dialog */}
+      <Dialog open={viewSummaryData !== null} onOpenChange={(open) => { if (!open) setViewSummaryData(null); }}>
+        <DialogContent className="sm:max-w-[540px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Event Summary</DialogTitle>
+          </DialogHeader>
+
+          {viewSummaryData && (
+            <div className="space-y-4">
+              <div className="bg-white border border-gray-200 rounded-lg p-3 text-sm">
+                <p className="font-semibold text-gray-900">{viewSummaryData.eventName}</p>
+                <p className="text-gray-500">
+                  {new Date(viewSummaryData.eventDate).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                  {viewSummaryData.eventLocation ? ` — ${viewSummaryData.eventLocation}` : ''}
+                </p>
+                <p className="text-xs text-gray-400 mt-1">Event #{viewSummaryData.eventSequenceNumber}</p>
+              </div>
+
+              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 space-y-2 text-sm">
+                <h4 className="font-semibold text-gray-900 mb-2">Registration Counts</h4>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Total Participants</span>
+                  <span className="font-medium">{viewSummaryData.participantCount}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Total Helpers</span>
+                  <span className="font-medium">{viewSummaryData.volunteerCount}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Total Group Leaders</span>
+                  <span className="font-medium">{viewSummaryData.groupCount}</span>
+                </div>
+                <div className="border-t border-gray-200 pt-2 mt-2 flex justify-between font-semibold">
+                  <span>Total Headcount</span>
+                  <span>{viewSummaryData.totalHeadcount}</span>
+                </div>
+              </div>
+
+              {viewSummaryData.orgBreakdown.length > 0 && (
+                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 text-sm">
+                  <h4 className="font-semibold text-gray-900 mb-2">Organisation Breakdown</h4>
+                  <div className="space-y-1">
+                    {viewSummaryData.orgBreakdown.map(({ orgName, headcount }) => (
+                      <div key={orgName} className="flex justify-between">
+                        <span className="text-gray-600 truncate mr-4">{orgName}</span>
+                        <span className="font-medium shrink-0">{headcount}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 space-y-2 text-sm">
+                <h4 className="font-semibold text-gray-900 mb-2">Consent</h4>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Photo consent</span>
+                  <span className="font-medium">{viewSummaryData.photoConsentCount}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Feedback consent</span>
+                  <span className="font-medium">{viewSummaryData.feedbackConsentCount}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Next event consent</span>
+                  <span className="font-medium">{viewSummaryData.nextEventConsentCount}</span>
+                </div>
+              </div>
+
+              {viewSummaryData.adminNotes && (
+                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 text-sm">
+                  <h4 className="font-semibold text-gray-900 mb-2">Notes</h4>
+                  <p className="text-gray-600 whitespace-pre-wrap">{viewSummaryData.adminNotes}</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewSummaryData(null)}>
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -1622,6 +1622,38 @@ export class DatabaseService {
       createdAt: row.createdAt?.toISOString() ?? new Date().toISOString(),
     };
   }
+  /**
+   * Get the stored event summary for an archived event.
+   */
+  static async getEventSummary(eventId: string) {
+    const [row] = await db
+      .select()
+      .from(eventSummaries)
+      .where(eq(eventSummaries.eventId, eventId))
+      .limit(1);
+
+    if (!row) return null;
+
+    return {
+      id: row.id,
+      eventId: row.eventId,
+      eventName: row.eventName,
+      eventDate: row.eventDate,
+      eventLocation: row.eventLocation,
+      eventDescription: row.eventDescription,
+      participantCount: row.participantCount,
+      volunteerCount: row.volunteerCount,
+      groupCount: row.groupCount,
+      totalHeadcount: row.totalHeadcount,
+      photoConsentCount: row.photoConsentCount,
+      feedbackConsentCount: row.feedbackConsentCount,
+      nextEventConsentCount: row.nextEventConsentCount,
+      orgBreakdown: JSON.parse(row.orgBreakdown) as { orgName: string; headcount: number }[],
+      eventSequenceNumber: row.eventSequenceNumber,
+      adminNotes: row.adminNotes,
+      createdAt: row.createdAt?.toISOString() ?? null,
+    };
+  }
 }
 
 /**
