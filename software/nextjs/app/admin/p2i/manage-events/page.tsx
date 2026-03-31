@@ -265,7 +265,7 @@ export default function ManageEventsPage() {
               <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
                 P2I Admin Dashboard - Manage Events
                 <HelpTip title="Manage Events">
-                  This page shows all events in the system. You can create new events, set one as the current active event, edit details, or generate summaries for completed events.
+                  Use this to view all events in the system, create new events, set one as the current active event, edit details, or generate summaries for completed events.
                 </HelpTip>
               </h1>
               <p className="text-sm text-gray-600 mt-1">View all events and set the current active event</p>
@@ -280,7 +280,7 @@ export default function ManageEventsPage() {
         <div className="mb-6 flex items-center gap-2">
           <Button onClick={() => setIsCreateOpen(true)}>+ Add New Event</Button>
           <HelpTip title="Add New Event">
-            Create a new event with a name, date, location, and description. New events start with &apos;planned&apos; status. Use &apos;Set as Current&apos; to make one active for registrations.
+            Use this to create a new event with a name, date, location, and description. New events start with &apos;planned&apos; status. Use &apos;Set as Current&apos; to make one active for registrations.
           </HelpTip>
         </div>
 
