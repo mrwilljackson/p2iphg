@@ -26,7 +26,7 @@ export function HelpTip({ title, children }: HelpTipProps) {
           ?
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-72 border-blue-200 bg-blue-50">
+      <PopoverContent className="w-72 border-2 border-blue-300 bg-blue-50">
         <PopoverHeader>
           <PopoverTitle>{title}</PopoverTitle>
           <PopoverDescription>{children}</PopoverDescription>
