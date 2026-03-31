@@ -573,13 +573,21 @@ export default function P2IAdminDashboard() {
               <h1 className="text-2xl font-bold text-gray-900">P2I Admin Dashboard - Event Options</h1>
               <p className="text-sm text-gray-600 mt-1">Power2Inspire System Administration</p>
             </div>
-            <Button
-              onClick={handleLogout}
-              variant="outline"
-              className="text-red-600 hover:text-red-700 hover:bg-red-50"
-            >
-              Log out
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={() => router.push("/admin/p2i/manage-events")}
+                variant="outline"
+              >
+                Manage Events
+              </Button>
+              <Button
+                onClick={handleLogout}
+                variant="outline"
+                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              >
+                Log out
+              </Button>
+            </div>
           </div>
         </div>
       </header>
