@@ -195,11 +195,14 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
         // Always require org selection
         fieldsToValidate = ["organizationId"];
 
+        // Family Group shows name/email fields directly on step 1 — validate them
+        if (selectedOrgId === "FAMILY_GROUP_PLACEHOLDER") {
+          fieldsToValidate = ["organizationId", "attendeeName", "attendeeSurname"];
+        }
         // If contact picker is shown (org selected, not family group, not the not-listed sentinel, contacts not loading),
         // also require a contact picker selection
-        if (
+        else if (
           selectedOrgId &&
-          selectedOrgId !== "FAMILY_GROUP_PLACEHOLDER" &&
           selectedOrgId !== "NOT_LISTED" &&
           !contactsLoading
         ) {
@@ -647,8 +650,8 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
               />
             )}
 
-            {/* Email - Right */}
-            {isFieldVisible("email", selectedRole) && !(selectedRole === 'Group' && currentStep === 1) && (
+            {/* Email - Right (shown on step 1 for Family Group, otherwise step 2+) */}
+            {isFieldVisible("email", selectedRole) && !(selectedRole === 'Group' && currentStep === 1 && selectedOrgId !== 'FAMILY_GROUP_PLACEHOLDER') && (
               <FormField
                 control={form.control}
                 name="email"
@@ -843,8 +846,8 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
           </div>
         )}
 
-        {/* First Name and Last Name - Side by Side */}
-        {!showOrganizationAlert && shouldShowSection("personalDetails") && (isFieldVisible("attendeeName", selectedRole) || isFieldVisible("attendeeSurname", selectedRole)) && !(selectedRole === 'Group' && currentStep === 1) && (
+        {/* First Name and Last Name - Side by Side (shown on step 1 for Family Group, otherwise step 2+) */}
+        {!showOrganizationAlert && shouldShowSection("personalDetails") && (isFieldVisible("attendeeName", selectedRole) || isFieldVisible("attendeeSurname", selectedRole)) && !(selectedRole === 'Group' && currentStep === 1 && selectedOrgId !== 'FAMILY_GROUP_PLACEHOLDER') && (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* First Name */}
