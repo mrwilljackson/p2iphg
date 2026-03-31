@@ -183,9 +183,6 @@ export default function OrganisationsPage() {
           </div>
           <div className="flex gap-2">
             <Button onClick={() => setIsCreateOpen(true)}>+ Add Organisation</Button>
-            <Button variant="outline" onClick={() => router.push("/admin/p2i")}>
-              ← Back to P2I Admin
-            </Button>
           </div>
         </div>
       </header>

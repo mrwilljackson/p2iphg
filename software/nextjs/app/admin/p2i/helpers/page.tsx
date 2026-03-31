@@ -332,9 +332,6 @@ export default function HelpersPage() {
             }}>
               + Add Helper
             </Button>
-            <Button variant="outline" onClick={() => router.push("/admin/p2i")}>
-              ← Back to P2I Admin
-            </Button>
           </div>
         </div>
       </header>
