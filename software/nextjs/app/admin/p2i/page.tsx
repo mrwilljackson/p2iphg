@@ -1044,7 +1044,13 @@ export default function P2IAdminDashboard() {
               >
                 ⬇️ Export Registrations to CSV
               </Button>
+            </div>
+          </div>
 
+          {/* System Integration */}
+          <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">System Integration</h2>
+            <div className="space-y-3">
               {/* Clear Event Data Dialog */}
               <Dialog open={isClearEventOpen} onOpenChange={handleClearEventDialogOpen}>
                 <DialogTrigger asChild>
@@ -1228,46 +1234,6 @@ export default function P2IAdminDashboard() {
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
-            </div>
-          </div>
-
-          {/* System Integration */}
-          <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">System Integration</h2>
-            <div className="space-y-3">
-              <Button
-                className="w-full justify-start"
-                variant="outline"
-                onClick={handleExportCSV}
-              >
-                ⬇️ Export to CSV
-              </Button>
-              <Button
-                className="w-full justify-start"
-                variant="outline"
-                onClick={handleSyncToAirtable}
-                disabled={isSyncing}
-              >
-                {isSyncing ? "⏳ Syncing..." : "🔄 Sync Registrations to Airtable"}
-              </Button>
-              {syncMessage && (
-                <div className={`p-3 rounded-md text-sm ${
-                  syncMessage.includes("❌")
-                    ? "bg-red-50 border border-red-200 text-red-800"
-                    : syncMessage.includes("⚠️")
-                    ? "bg-yellow-50 border border-yellow-200 text-yellow-800"
-                    : "bg-green-50 border border-green-200 text-green-800"
-                }`}>
-                  {syncMessage}
-                </div>
-              )}
-              <Button
-                className="w-full justify-start"
-                variant="outline"
-                onClick={() => router.push("/admin/p2i/airtable-import")}
-              >
-                ⬇️ Import from Airtable
-              </Button>
             </div>
           </div>
         </div>
