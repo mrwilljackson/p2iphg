@@ -317,7 +317,7 @@ export default function HelpersPage() {
       <header className="bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Helpers</h1>
+            <h1 className="text-2xl font-bold text-gray-900">P2I Admin Dashboard - Helpers</h1>
             {selectedEvent && (
               <p className="text-sm text-gray-600 mt-1">{selectedEvent.name}</p>
             )}

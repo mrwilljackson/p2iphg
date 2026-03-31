@@ -517,7 +517,7 @@ export default function AirtableImportPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Airtable Import</h1>
+              <h1 className="text-2xl font-bold text-gray-900">P2I Admin Dashboard - Airtable Import</h1>
               <p className="text-sm text-gray-600 mt-1">Import data from Airtable to Neon Database</p>
             </div>
             <Button

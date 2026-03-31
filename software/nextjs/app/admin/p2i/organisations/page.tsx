@@ -178,7 +178,7 @@ export default function OrganisationsPage() {
       <header className="bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Organisations</h1>
+            <h1 className="text-2xl font-bold text-gray-900">P2I Admin Dashboard - Organisations</h1>
             <p className="text-sm text-gray-500 mt-1">{orgs.length} organisation{orgs.length !== 1 ? "s" : ""}</p>
           </div>
           <div className="flex gap-2">
