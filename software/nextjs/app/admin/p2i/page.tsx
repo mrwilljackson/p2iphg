@@ -45,7 +45,6 @@ export default function P2IAdminDashboard() {
   const [currentEvent, setCurrentEvent] = useState<Event | null>(null);
   const [volunteers, setVolunteers] = useState<Volunteer[]>([]);
   const [volunteerRegistrations, setVolunteerRegistrations] = useState<Registration[]>([]);
-  const [eventOrganizations, setEventOrganizations] = useState<Organization[]>([]);
 
   // Create Event Dialog State
   const [isCreateEventOpen, setIsCreateEventOpen] = useState(false);
@@ -158,14 +157,6 @@ export default function P2IAdminDashboard() {
             setVolunteers(allVolunteers);
           } catch (volErr) {
             console.error('P2I Admin - Error loading volunteers:', volErr);
-          }
-
-          try {
-            // Fetch all organizations for this event
-            const allOrgs = await getOrganizations(event.id);
-            setEventOrganizations(allOrgs);
-          } catch (orgErr) {
-            console.error('P2I Admin - Error loading organizations:', orgErr);
           }
 
           try {
@@ -844,28 +835,42 @@ export default function P2IAdminDashboard() {
                     <div className="text-sm text-blue-600">+ {counts.groups.walkIns} walk-in{counts.groups.walkIns !== 1 ? 's' : ''}</div>
                   )}
                 </div>
-                <div className="text-xs text-gray-500 mt-2 space-y-1 pt-2 border-t border-gray-200">
-                  {(() => {
-                    // Deduplicate orgs by name and aggregate expected group sizes
-                    const orgMap = new Map<string, number>();
-                    eventOrganizations
-                      .filter(org => org.openGroup === false && org.name !== 'Family Group')
-                      .forEach(org => {
-                        const existing = orgMap.get(org.name) || 0;
-                        orgMap.set(org.name, existing + (org.expectedGroupSize || 0));
-                      });
-                    const entries = [...orgMap.entries()].sort((a, b) => a[0].localeCompare(b[0]));
-                    if (entries.length === 0) {
-                      return <p className="text-gray-400">No organisations for this event</p>;
-                    }
-                    return entries.map(([name, expected]) => (
-                      <div key={name} className="flex justify-between">
-                        <span>{name}</span>
-                        <span>{expected} expected</span>
-                      </div>
-                    ));
-                  })()}
-                </div>
+                {counts.groupDetails.length > 0 && (
+                  <div className="mt-2 pt-2 border-t border-gray-200">
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full text-xs">
+                        <thead>
+                          <tr className="border-b border-gray-200">
+                            <th className="text-left py-1 px-2 font-semibold text-gray-700">Group Name</th>
+                            <th className="text-center py-1 px-2 font-semibold text-gray-700">Expected</th>
+                            <th className="text-center py-1 px-2 font-semibold text-gray-700">Registered</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {counts.groupDetails.map((group) => {
+                            const hasLowRegistration = group.expected > group.registered;
+                            return (
+                              <tr
+                                key={group.organizationId}
+                                className={`border-b border-gray-100 ${hasLowRegistration ? 'bg-yellow-50' : ''}`}
+                              >
+                                <td className={`py-1 px-2 font-bold text-gray-900 ${hasLowRegistration ? 'border-l-4 border-yellow-400' : ''}`}>
+                                  {group.organizationName}
+                                </td>
+                                <td className="py-1 px-2 text-center text-gray-600">
+                                  {group.expected}
+                                </td>
+                                <td className="py-1 px-2 text-center text-gray-600">
+                                  {group.registered}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="text-4xl ml-4">👨‍👩‍👧‍👦</div>
             </div>
