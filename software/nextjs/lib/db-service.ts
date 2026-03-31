@@ -16,7 +16,7 @@
 
 import { db } from './db/client';
 import { events, organisations, organisationContacts, volunteers, registrations, eventSummaries } from './db/schema';
-import { eq, and, ilike, sql, inArray } from 'drizzle-orm';
+import { eq, ne, and, ilike, sql, inArray } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import type { Event, Organization, OrgRecord, GroupLeader, Volunteer, Registration, OrgContactOption, EventSummaryPreview, EventSummary } from './types';
 import type { OrganisationRow, OrganisationContactRow } from './db/schema';
@@ -1018,7 +1018,7 @@ export class DatabaseService {
   // ---------------------------------------------------------------------------
 
   static async getOrgRecords(): Promise<OrgRecord[]> {
-    const rows = await db.select().from(organisations);
+    const rows = await db.select().from(organisations).where(ne(organisations.groupType, 'Family'));
     return rows
       .map(mapOrgRecord)
       .sort((a, b) => a.name.localeCompare(b.name));
