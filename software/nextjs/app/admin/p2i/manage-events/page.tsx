@@ -7,13 +7,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { getAllEvents, setCurrentEvent, updateEvent, deleteEvent, createEvent } from "@/lib/actions";
+import { getAllEvents, setCurrentEvent, updateEvent, deleteEvent, createEvent, previewEventSummary, generateEventSummary } from "@/lib/actions";
 import { Label } from "@/components/ui/label";
 import { P2iAdminNav } from "@/components/p2i-admin-nav";
 import { adminEventFormSchema, type AdminEventFormData } from "@/lib/validation";
-import type { Event } from "@/lib/types";
+import type { Event, EventSummaryPreview } from "@/lib/types";
 
 export default function ManageEventsPage() {
   const router = useRouter();
@@ -34,6 +34,15 @@ export default function ManageEventsPage() {
   const [newEventDate, setNewEventDate] = useState("");
   const [newEventLocation, setNewEventLocation] = useState("");
   const [newEventDescription, setNewEventDescription] = useState("");
+
+  // Generate Summary dialog state
+  const [summaryEventId, setSummaryEventId] = useState<string | null>(null);
+  const [summaryEvent, setSummaryEvent] = useState<Event | null>(null);
+  const [summaryPreview, setSummaryPreview] = useState<EventSummaryPreview | null>(null);
+  const [isSummaryPreviewLoading, setIsSummaryPreviewLoading] = useState(false);
+  const [summarySequenceNumber, setSummarySequenceNumber] = useState("");
+  const [summaryNotes, setSummaryNotes] = useState("");
+  const [isArchiving, setIsArchiving] = useState(false);
 
   const editForm = useForm<AdminEventFormData>({
     resolver: zodResolver(adminEventFormSchema),
@@ -82,6 +91,42 @@ export default function ManageEventsPage() {
       alert("Failed to create event. Please try again.");
     } finally {
       setIsCreating(false);
+    }
+  };
+
+  const handleOpenSummary = async (event: Event) => {
+    setSummaryEventId(event.id);
+    setSummaryEvent(event);
+    setSummaryPreview(null);
+    setSummarySequenceNumber("");
+    setSummaryNotes("");
+    setIsSummaryPreviewLoading(true);
+    try {
+      const preview = await previewEventSummary(event.id);
+      setSummaryPreview(preview);
+    } catch (error) {
+      console.error("Failed to load summary preview:", error);
+      alert("Failed to load event summary. " + (error instanceof Error ? error.message : ""));
+      setSummaryEventId(null);
+    } finally {
+      setIsSummaryPreviewLoading(false);
+    }
+  };
+
+  const handleArchiveEvent = async () => {
+    if (!summaryEventId) return;
+    const seqNum = parseInt(summarySequenceNumber, 10);
+    if (isNaN(seqNum)) return;
+    try {
+      setIsArchiving(true);
+      await generateEventSummary(summaryEventId, seqNum, summaryNotes.trim() || null);
+      setSummaryEventId(null);
+      await loadEvents();
+    } catch (error) {
+      console.error("Failed to archive event:", error);
+      alert("Failed to archive event. " + (error instanceof Error ? error.message : ""));
+    } finally {
+      setIsArchiving(false);
     }
   };
 
@@ -362,8 +407,8 @@ export default function ManageEventsPage() {
                                 </span>
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                                <Button size="sm" variant="destructive" onClick={() => handleDelete(event)} disabled={deletingId === event.id}>
-                                  {deletingId === event.id ? 'Deleting...' : 'Delete'}
+                                <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white" onClick={() => handleOpenSummary(event)}>
+                                  Generate Summary
                                 </Button>
                                 <Button size="sm" onClick={() => handleAdminister(event.id)}>Review →</Button>
                               </td>
@@ -493,6 +538,121 @@ export default function ManageEventsPage() {
               </DialogFooter>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Generate Summary Dialog */}
+      <Dialog open={summaryEventId !== null} onOpenChange={(open) => { if (!open) setSummaryEventId(null); }}>
+        <DialogContent className="sm:max-w-[540px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Generate Event Summary</DialogTitle>
+            <DialogDescription>
+              Review the computed counts below, then enter a sequence number and optional notes before archiving.
+            </DialogDescription>
+          </DialogHeader>
+
+          {summaryEvent && (
+            <div className="bg-white border border-gray-200 rounded-lg p-3 text-sm">
+              <p className="font-semibold text-gray-900">{summaryEvent.name}</p>
+              <p className="text-gray-500">
+                {new Date(summaryEvent.date).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                {summaryEvent.location ? ` — ${summaryEvent.location}` : ''}
+              </p>
+            </div>
+          )}
+
+          {isSummaryPreviewLoading ? (
+            <div className="py-8 text-center text-gray-500">Loading summary data...</div>
+          ) : summaryPreview ? (
+            <div className="space-y-4 py-2">
+              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 space-y-2 text-sm">
+                <h4 className="font-semibold text-gray-900 mb-2">Registration Counts</h4>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Total Participants</span>
+                  <span className="font-medium">{summaryPreview.participantCount}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Total Helpers</span>
+                  <span className="font-medium">{summaryPreview.volunteerCount}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Total Group Leaders</span>
+                  <span className="font-medium">{summaryPreview.groupCount} <span className="text-gray-400 font-normal">({summaryPreview.participatingLeaderCount} participating)</span></span>
+                </div>
+              </div>
+
+              {summaryPreview.orgBreakdown.length > 0 && (
+                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 text-sm">
+                  <h4 className="font-semibold text-gray-900 mb-2">Organisation Breakdown</h4>
+                  <div className="space-y-1">
+                    {summaryPreview.orgBreakdown.map(({ orgName, headcount }) => (
+                      <div key={orgName} className="flex justify-between">
+                        <span className="text-gray-600 truncate mr-4">{orgName}</span>
+                        <span className="font-medium shrink-0">{headcount}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-3">
+                <div className="grid gap-1.5">
+                  <Label htmlFor="seq-number">Event sequence number *</Label>
+                  <Input
+                    id="seq-number"
+                    type="number"
+                    min="1"
+                    value={summarySequenceNumber}
+                    onChange={(e) => setSummarySequenceNumber(e.target.value)}
+                    placeholder="e.g. 42"
+                  />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label htmlFor="admin-notes">Notes <span className="text-gray-400 font-normal">(optional)</span></Label>
+                  <Textarea
+                    id="admin-notes"
+                    rows={3}
+                    value={summaryNotes}
+                    onChange={(e) => setSummaryNotes(e.target.value)}
+                    placeholder="Any notes about this event..."
+                  />
+                </div>
+              </div>
+
+              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 space-y-2 text-sm">
+                <h4 className="font-semibold text-gray-900 mb-2">Consent</h4>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Photo consent</span>
+                  <span className="font-medium">{summaryPreview.photoConsentCount}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Feedback consent</span>
+                  <span className="font-medium">{summaryPreview.feedbackConsentCount}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Next event consent</span>
+                  <span className="font-medium">{summaryPreview.nextEventConsentCount}</span>
+                </div>
+              </div>
+
+              <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">
+                This will mark the event as archived. Registration data will not be deleted.
+              </p>
+            </div>
+          ) : null}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSummaryEventId(null)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleArchiveEvent}
+              disabled={!summaryPreview || !summarySequenceNumber.trim() || isNaN(parseInt(summarySequenceNumber, 10)) || isArchiving}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              {isArchiving ? "Archiving..." : "Archive this event"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
