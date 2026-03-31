@@ -46,7 +46,7 @@ export function AdminLoginModal({ open, onOpenChange }: AdminLoginModalProps) {
       sessionStorage.setItem("adminLevel", "p2i");
       onOpenChange(false);
       setPin("");
-      router.push("/admin/p2i");
+      router.push("/admin/p2i/manage-events");
     } else {
       setError("Invalid PIN code. Please try again.");
     }
