@@ -12,6 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { getAllEvents, setCurrentEvent, updateEvent, deleteEvent, createEvent, previewEventSummary, generateEventSummary, getEventSummary } from "@/lib/actions";
 import { Label } from "@/components/ui/label";
 import { P2iAdminNav } from "@/components/p2i-admin-nav";
+import { HelpTip } from "@/components/help-tip";
 import { adminEventFormSchema, type AdminEventFormData } from "@/lib/validation";
 import type { Event, EventSummaryPreview } from "@/lib/types";
 
@@ -261,7 +262,12 @@ export default function ManageEventsPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">P2I Admin Dashboard - Manage Events</h1>
+              <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                P2I Admin Dashboard - Manage Events
+                <HelpTip title="Manage Events">
+                  This page shows all events in the system. You can create new events, set one as the current active event, edit details, or generate summaries for completed events.
+                </HelpTip>
+              </h1>
               <p className="text-sm text-gray-600 mt-1">View all events and set the current active event</p>
             </div>
             <P2iAdminNav currentPath="/admin/p2i/manage-events" />
@@ -271,8 +277,11 @@ export default function ManageEventsPage() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        <div className="mb-6">
+        <div className="mb-6 flex items-center gap-2">
           <Button onClick={() => setIsCreateOpen(true)}>+ Add New Event</Button>
+          <HelpTip title="Add New Event">
+            Create a new event with a name, date, location, and description. New events start with &apos;planned&apos; status. Use &apos;Set as Current&apos; to make one active for registrations.
+          </HelpTip>
         </div>
 
         {/* Create Event Dialog */}
