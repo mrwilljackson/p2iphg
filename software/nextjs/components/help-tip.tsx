@@ -9,8 +9,9 @@ import {
   PopoverTitle,
   PopoverDescription,
 } from "@/components/ui/popover";
+import { helpTips } from "@/lib/help-tips";
 
-// P2I logo brand colours — each entry is [border, background tint, icon bg, icon hover bg, icon text, icon hover text]
+// P2I logo brand colours
 const p2iColours = [
   { border: "border-purple-500",  bg: "bg-purple-50",  iconBg: "bg-purple-100",  iconHover: "hover:bg-purple-200", iconText: "text-purple-600",  iconTextHover: "hover:text-purple-800", iconBorder: "border-purple-400" },
   { border: "border-blue-500",    bg: "bg-blue-50",    iconBg: "bg-blue-100",    iconHover: "hover:bg-blue-200",   iconText: "text-blue-600",    iconTextHover: "hover:text-blue-800",   iconBorder: "border-blue-400" },
@@ -21,15 +22,22 @@ const p2iColours = [
 ];
 
 interface HelpTipProps {
-  title: string;
-  children: React.ReactNode;
+  tipKey: string;
 }
 
-export function HelpTip({ title, children }: HelpTipProps) {
+export function HelpTip({ tipKey }: HelpTipProps) {
+  const tip = helpTips[tipKey];
   const colour = useMemo(
     () => p2iColours[Math.floor(Math.random() * p2iColours.length)],
     []
   );
+
+  if (!tip) {
+    if (process.env.NODE_ENV === "development") {
+      console.warn(`HelpTip: unknown key "${tipKey}"`);
+    }
+    return null;
+  }
 
   return (
     <Popover>
@@ -37,15 +45,15 @@ export function HelpTip({ title, children }: HelpTipProps) {
         <button
           type="button"
           className={`inline-flex items-center justify-center w-5 h-5 rounded-full border text-xs font-bold cursor-pointer transition-colors ${colour.iconBg} ${colour.iconHover} ${colour.iconText} ${colour.iconTextHover} ${colour.iconBorder}`}
-          aria-label={`Help: ${title}`}
+          aria-label={`Help: ${tip.title}`}
         >
           ?
         </button>
       </PopoverTrigger>
       <PopoverContent className={`w-72 border-2 ${colour.border} ${colour.bg}`}>
         <PopoverHeader>
-          <PopoverTitle>{title}</PopoverTitle>
-          <PopoverDescription>{children}</PopoverDescription>
+          <PopoverTitle>{tip.title}</PopoverTitle>
+          <PopoverDescription>{tip.text}</PopoverDescription>
         </PopoverHeader>
       </PopoverContent>
     </Popover>
