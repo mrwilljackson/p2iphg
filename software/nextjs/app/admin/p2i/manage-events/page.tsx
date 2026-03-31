@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { getAllEvents, setCurrentEvent, updateEvent, deleteEvent } from "@/lib/actions";
+import { getAllEvents, setCurrentEvent, updateEvent, deleteEvent, createEvent } from "@/lib/actions";
+import { Label } from "@/components/ui/label";
 import { adminEventFormSchema, type AdminEventFormData } from "@/lib/validation";
 import type { Event } from "@/lib/types";
 
@@ -24,6 +25,14 @@ export default function ManageEventsPage() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  // Create event dialog state
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [newEventName, setNewEventName] = useState("");
+  const [newEventDate, setNewEventDate] = useState("");
+  const [newEventLocation, setNewEventLocation] = useState("");
+  const [newEventDescription, setNewEventDescription] = useState("");
 
   const editForm = useForm<AdminEventFormData>({
     resolver: zodResolver(adminEventFormSchema),
@@ -44,6 +53,34 @@ export default function ManageEventsPage() {
       alert("Failed to load events");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCreateEvent = async () => {
+    if (!newEventName || !newEventDate) {
+      alert("Please fill in Event Name and Date");
+      return;
+    }
+    setIsCreating(true);
+    try {
+      await createEvent({
+        name: newEventName,
+        date: newEventDate,
+        location: newEventLocation || undefined,
+        description: newEventDescription || undefined,
+        status: 'planned',
+      });
+      setNewEventName("");
+      setNewEventDate("");
+      setNewEventLocation("");
+      setNewEventDescription("");
+      setIsCreateOpen(false);
+      await loadEvents();
+    } catch (error) {
+      console.error("Error creating event:", error);
+      alert("Failed to create event. Please try again.");
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -178,6 +215,65 @@ export default function ManageEventsPage() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <div className="mb-6">
+          <Button onClick={() => setIsCreateOpen(true)}>+ Add New Event</Button>
+        </div>
+
+        {/* Create Event Dialog */}
+        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+          <DialogContent className="sm:max-w-[525px]">
+            <DialogHeader>
+              <DialogTitle>Create New Event</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="new-event-name">Event Name *</Label>
+                <Input
+                  id="new-event-name"
+                  value={newEventName}
+                  onChange={(e) => setNewEventName(e.target.value)}
+                  placeholder="e.g., Manchester Arena 2026"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="new-event-date">Event Date *</Label>
+                <Input
+                  id="new-event-date"
+                  type="date"
+                  value={newEventDate}
+                  onChange={(e) => setNewEventDate(e.target.value)}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="new-event-location">Location</Label>
+                <Input
+                  id="new-event-location"
+                  value={newEventLocation}
+                  onChange={(e) => setNewEventLocation(e.target.value)}
+                  placeholder="e.g., Manchester Arena"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="new-event-description">Description</Label>
+                <Input
+                  id="new-event-description"
+                  value={newEventDescription}
+                  onChange={(e) => setNewEventDescription(e.target.value)}
+                  placeholder="Event details..."
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsCreateOpen(false)} disabled={isCreating}>
+                Cancel
+              </Button>
+              <Button onClick={handleCreateEvent} disabled={isCreating}>
+                {isCreating ? "Creating..." : "Create Event"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         {events.length === 0 ? (
           <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-12 text-center">
             <p className="text-gray-600 text-lg">No events found in the database.</p>
