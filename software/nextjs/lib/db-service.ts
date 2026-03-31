@@ -759,6 +759,7 @@ export class DatabaseService {
 
             if (matchingContact) {
               resolvedRole = 'Group';
+              data = { ...data, groupLeaderParticipating: true };
             }
           }
         }
