@@ -728,6 +728,42 @@ export class DatabaseService {
         resolvedOrgName = org[0]?.name || null;
       }
 
+      // If a Participant's email matches a pre-registered group leader (organisation_contacts)
+      // for their org, store the registration as a Group leader instead
+      let resolvedRole = data.role;
+      if (data.role === 'Participant' && data.email && data.organizationId) {
+        // Look up the org's airtable record ID for matching against contacts
+        const [org] = await db.select({ airtableRecordId: organisations.airtableRecordId })
+          .from(organisations)
+          .where(eq(organisations.id, data.organizationId))
+          .limit(1);
+
+        if (org?.airtableRecordId) {
+          // Look up the event's airtable record ID
+          const [evt] = await db.select({ airtableRecordId: events.airtableRecordId })
+            .from(events)
+            .where(eq(events.id, data.eventId))
+            .limit(1);
+
+          if (evt?.airtableRecordId) {
+            const [matchingContact] = await db.select({ id: organisationContacts.id })
+              .from(organisationContacts)
+              .where(
+                and(
+                  eq(organisationContacts.organisationId, org.airtableRecordId),
+                  eq(organisationContacts.airtableEventId, evt.airtableRecordId),
+                  sql`lower(${organisationContacts.contactEmail}) = lower(${data.email})`,
+                )
+              )
+              .limit(1);
+
+            if (matchingContact) {
+              resolvedRole = 'Group';
+            }
+          }
+        }
+      }
+
       const result = await db.insert(registrations).values({
         eventId: data.eventId,
         attendeeName: data.attendeeName,
@@ -735,7 +771,7 @@ export class DatabaseService {
         email: data.email || null,
         organizationId: data.organizationId || null,
         impairment: data.impairment || null,
-        role: data.role,
+        role: resolvedRole,
         photoConsent: data.photoConsent,
         feedbackConsent: data.feedbackConsent ?? null,
         nextEventConsent: data.nextEventConsent ?? null,
