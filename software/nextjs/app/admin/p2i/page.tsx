@@ -45,6 +45,8 @@ export default function P2IAdminDashboard() {
   const [currentEvent, setCurrentEvent] = useState<Event | null>(null);
   const [volunteers, setVolunteers] = useState<Volunteer[]>([]);
   const [volunteerRegistrations, setVolunteerRegistrations] = useState<Registration[]>([]);
+  const [groupRegistrations, setGroupRegistrations] = useState<Registration[]>([]);
+  const [eventOrganizations, setEventOrganizations] = useState<Organization[]>([]);
 
   // Create Event Dialog State
   const [isCreateEventOpen, setIsCreateEventOpen] = useState(false);
@@ -165,6 +167,12 @@ export default function P2IAdminDashboard() {
             console.log('P2I Admin - All registrations loaded:', allRegistrations.length);
             const volRegistrations = allRegistrations.filter(r => r.role === 'Volunteer');
             setVolunteerRegistrations(volRegistrations);
+            const grpRegistrations = allRegistrations.filter(r => r.role === 'Group');
+            setGroupRegistrations(grpRegistrations);
+
+            // Fetch organizations for open/closed status lookup
+            const allOrgs = await getOrganizations(event.id);
+            setEventOrganizations(allOrgs);
           } catch (regErr) {
             console.error('P2I Admin - Error loading registrations:', regErr);
           }
@@ -822,6 +830,48 @@ export default function P2IAdminDashboard() {
               </div>
               <div className="text-4xl ml-4 shrink-0">🎯</div>
             </div>
+            {groupRegistrations.length > 0 && (
+              <div className="mt-2 pt-2 border-t border-gray-200">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-xs">
+                    <thead>
+                      <tr className="border-b border-gray-200">
+                        <th className="text-left py-1 px-2 font-semibold text-gray-700">Leader Name</th>
+                        <th className="text-center py-1 px-2 font-semibold text-gray-700">Group</th>
+                        <th className="text-center py-1 px-2 font-semibold text-gray-700">Type</th>
+                        <th className="text-center py-1 px-2 font-semibold text-gray-700">Participating</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {groupRegistrations.map((reg) => {
+                        const org = eventOrganizations.find(o => o.id === reg.organizationId);
+                        const isOpen = org?.openGroup !== false;
+                        return (
+                          <tr key={reg.id} className="border-b border-gray-100">
+                            <td className="py-1 px-2 font-bold text-gray-900">
+                              {reg.attendeeName} {reg.attendeeSurname}
+                            </td>
+                            <td className="py-1 px-2 text-center text-gray-600">
+                              {reg.organizationName || '—'}
+                            </td>
+                            <td className="py-1 px-2 text-center">
+                              <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${
+                                isOpen ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
+                              }`}>
+                                {isOpen ? 'Open' : 'Closed'}
+                              </span>
+                            </td>
+                            <td className="py-1 px-2 text-center">
+                              {reg.groupLeaderParticipating ? '✅' : '—'}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
