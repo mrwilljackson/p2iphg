@@ -146,8 +146,17 @@ export default function ManageEventsPage() {
               <h1 className="text-2xl font-bold text-gray-900">P2I Admin Dashboard - Manage Events</h1>
               <p className="text-sm text-gray-600 mt-1">View all events and set the current active event</p>
             </div>
-            <Button variant="outline" onClick={() => router.push("/admin/p2i")}>
-              ← Back to P2I Admin
+            <Button
+              onClick={() => {
+                sessionStorage.removeItem("adminAuth");
+                sessionStorage.removeItem("adminLevel");
+                sessionStorage.removeItem("administeringEventId");
+                router.push("/registration");
+              }}
+              variant="outline"
+              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              Log out
             </Button>
           </div>
         </div>
