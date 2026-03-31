@@ -362,10 +362,6 @@ export default function ManageEventsPage() {
                                 </span>
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                                <Button size="sm" variant="outline" onClick={() => handleSetCurrent(event.id)} disabled={settingCurrent !== null}>
-                                  {settingCurrent === event.id ? 'Setting...' : 'Set as Current'}
-                                </Button>
-                                <Button size="sm" variant="outline" onClick={() => handleEdit(event)}>Edit</Button>
                                 <Button size="sm" variant="destructive" onClick={() => handleDelete(event)} disabled={deletingId === event.id}>
                                   {deletingId === event.id ? 'Deleting...' : 'Delete'}
                                 </Button>
