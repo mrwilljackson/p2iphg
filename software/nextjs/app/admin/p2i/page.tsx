@@ -584,23 +584,9 @@ export default function P2IAdminDashboard() {
         {/* Current Event Card */}
         <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6 mb-8">
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <h2 className="text-xl font-semibold text-gray-900">
-                {sessionStorage.getItem('administeringEventId') ? 'Administering Event' : 'Current Event'}
-              </h2>
-              {sessionStorage.getItem('administeringEventId') && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    sessionStorage.removeItem('administeringEventId');
-                    window.location.reload();
-                  }}
-                >
-                  ← Return to Current Event
-                </Button>
-              )}
-            </div>
+            <h2 className="text-xl font-semibold text-gray-900">
+              {sessionStorage.getItem('administeringEventId') ? 'Administering Event' : 'Current Event'}
+            </h2>
             <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
               currentEvent?.status === 'active'
                 ? 'bg-green-100 text-green-800'
