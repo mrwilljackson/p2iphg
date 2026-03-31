@@ -825,8 +825,8 @@ export default function P2IAdminDashboard() {
           </div>
 
           <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
-            <div className="flex items-center justify-between">
-              <div className="w-full">
+            <div className="flex items-start justify-between">
+              <div>
                 <p className="text-sm font-medium text-gray-600">Groups</p>
                 <p className="text-3xl font-bold text-gray-900 mt-2">{counts.groups.registered}</p>
                 <div className="mt-2 space-y-1">
@@ -835,7 +835,10 @@ export default function P2IAdminDashboard() {
                     <div className="text-sm text-blue-600">+ {counts.groups.walkIns} walk-in{counts.groups.walkIns !== 1 ? 's' : ''}</div>
                   )}
                 </div>
-                {counts.groupDetails.length > 0 && (
+              </div>
+              <div className="text-4xl ml-4 shrink-0">👨‍👩‍👧‍👦</div>
+            </div>
+            {counts.groupDetails.length > 0 && (
                   <div className="mt-2 pt-2 border-t border-gray-200">
                     <div className="overflow-x-auto">
                       <table className="min-w-full text-xs">
@@ -871,9 +874,6 @@ export default function P2IAdminDashboard() {
                     </div>
                   </div>
                 )}
-              </div>
-              <div className="text-4xl ml-4">👨‍👩‍👧‍👦</div>
-            </div>
           </div>
 
           <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
