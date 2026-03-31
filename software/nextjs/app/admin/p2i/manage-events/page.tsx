@@ -365,7 +365,7 @@ export default function ManageEventsPage() {
                                 <Button size="sm" variant="destructive" onClick={() => handleDelete(event)} disabled={deletingId === event.id}>
                                   {deletingId === event.id ? 'Deleting...' : 'Delete'}
                                 </Button>
-                                <Button size="sm" onClick={() => handleAdminister(event.id)}>Administer →</Button>
+                                <Button size="sm" onClick={() => handleAdminister(event.id)}>Review →</Button>
                               </td>
                             </tr>
                           ))}
