@@ -45,6 +45,7 @@ export default function P2IAdminDashboard() {
   const [currentEvent, setCurrentEvent] = useState<Event | null>(null);
   const [volunteers, setVolunteers] = useState<Volunteer[]>([]);
   const [volunteerRegistrations, setVolunteerRegistrations] = useState<Registration[]>([]);
+  const [eventOrganizations, setEventOrganizations] = useState<Organization[]>([]);
 
   // Create Event Dialog State
   const [isCreateEventOpen, setIsCreateEventOpen] = useState(false);
@@ -157,6 +158,14 @@ export default function P2IAdminDashboard() {
             setVolunteers(allVolunteers);
           } catch (volErr) {
             console.error('P2I Admin - Error loading volunteers:', volErr);
+          }
+
+          try {
+            // Fetch all organizations for this event
+            const allOrgs = await getOrganizations(event.id);
+            setEventOrganizations(allOrgs);
+          } catch (orgErr) {
+            console.error('P2I Admin - Error loading organizations:', orgErr);
           }
 
           try {
@@ -836,21 +845,26 @@ export default function P2IAdminDashboard() {
                   )}
                 </div>
                 <div className="text-xs text-gray-500 mt-2 space-y-1 pt-2 border-t border-gray-200">
-                  <div className="flex justify-between">
-                    <span>Family: {counts.groups.familyGroups}</span>
-                    <span>Disability: {counts.groups.disabilityGroups}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Corporate: {counts.groups.corporateGroups}</span>
-                    <span>Sporting: {counts.groups.sportingGroups}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Community: {counts.groups.communityGroups}</span>
-                    <span>Educational: {counts.groups.educationalGroups}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Other: {counts.groups.otherGroups}</span>
-                  </div>
+                  {(() => {
+                    // Deduplicate orgs by name and aggregate expected group sizes
+                    const orgMap = new Map<string, number>();
+                    eventOrganizations
+                      .filter(org => org.openGroup === false && org.name !== 'Family Group')
+                      .forEach(org => {
+                        const existing = orgMap.get(org.name) || 0;
+                        orgMap.set(org.name, existing + (org.expectedGroupSize || 0));
+                      });
+                    const entries = [...orgMap.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+                    if (entries.length === 0) {
+                      return <p className="text-gray-400">No organisations for this event</p>;
+                    }
+                    return entries.map(([name, expected]) => (
+                      <div key={name} className="flex justify-between">
+                        <span>{name}</span>
+                        <span>{expected} expected</span>
+                      </div>
+                    ));
+                  })()}
                 </div>
               </div>
               <div className="text-4xl ml-4">👨‍👩‍👧‍👦</div>
