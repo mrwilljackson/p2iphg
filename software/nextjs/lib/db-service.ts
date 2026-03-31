@@ -746,7 +746,10 @@ export class DatabaseService {
             .limit(1);
 
           if (evt?.airtableRecordId) {
-            const [matchingContact] = await db.select({ id: organisationContacts.id })
+            const [matchingContact] = await db.select({
+              id: organisationContacts.id,
+              expectedGroupSize: organisationContacts.expectedGroupSize,
+            })
               .from(organisationContacts)
               .where(
                 and(
@@ -759,7 +762,10 @@ export class DatabaseService {
 
             if (matchingContact) {
               resolvedRole = 'Group';
-              data = { ...data, groupLeaderParticipating: true };
+              const groupSize = matchingContact.expectedGroupSize
+                ? parseInt(matchingContact.expectedGroupSize, 10)
+                : null;
+              data = { ...data, groupLeaderParticipating: true, groupSize: groupSize ?? data.groupSize };
             }
           }
         }
