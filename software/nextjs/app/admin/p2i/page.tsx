@@ -808,8 +808,8 @@ export default function P2IAdminDashboard() {
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
-            <div className="flex items-center justify-between">
-              <div className="w-full">
+            <div className="flex items-start justify-between">
+              <div>
                 <p className="text-sm font-medium text-gray-600">Participants</p>
                 <p className="text-3xl font-bold text-gray-900 mt-2">{counts.totalParticipants}</p>
                 <div className="mt-2">
@@ -820,7 +820,7 @@ export default function P2IAdminDashboard() {
                   <div>Group Participants: {counts.groupParticipants.total.registered} / {counts.groupParticipants.total.expected}</div>
                 </div>
               </div>
-              <div className="text-4xl ml-4">🎯</div>
+              <div className="text-4xl ml-4 shrink-0">🎯</div>
             </div>
           </div>
 
@@ -877,15 +877,15 @@ export default function P2IAdminDashboard() {
           </div>
 
           <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
-            <div className="flex items-center justify-between">
-              <div className="w-full">
+            <div className="flex items-start justify-between">
+              <div>
                 <p className="text-sm font-medium text-gray-600">Helpers</p>
                 <p className="text-3xl font-bold text-gray-900 mt-2">{volunteerRegistrations.length}</p>
                 <div className="mt-2">
                   <span className="text-lg text-gray-400">({volunteers.length} expected)</span>
                 </div>
               </div>
-              <div className="text-4xl ml-4">🙋</div>
+              <div className="text-4xl ml-4 shrink-0">🙋</div>
             </div>
 
             {/* Volunteer List */}
