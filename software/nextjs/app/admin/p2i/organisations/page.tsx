@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/select";
 import { getOrgRecords, createOrgRecord, updateOrgRecord, deleteOrgRecord } from "@/lib/actions";
 import { adminOrgRecordFormSchema, type AdminOrgRecordFormData } from "@/lib/validation";
+import { P2iAdminNav } from "@/components/p2i-admin-nav";
 import type { OrgRecord } from "@/lib/types";
 
 const GROUP_TYPES = ['Family', 'Disability', 'Corporate', 'Sporting', 'Community', 'Educational', 'Other'] as const;
@@ -181,13 +182,14 @@ export default function OrganisationsPage() {
             <h1 className="text-2xl font-bold text-gray-900">P2I Admin Dashboard - Organisations</h1>
             <p className="text-sm text-gray-500 mt-1">{orgs.length} organisation{orgs.length !== 1 ? "s" : ""}</p>
           </div>
-          <div className="flex gap-2">
-            <Button onClick={() => setIsCreateOpen(true)}>+ Add Organisation</Button>
-          </div>
+          <P2iAdminNav currentPath="/admin/p2i/organisations" />
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-6">
+          <Button onClick={() => setIsCreateOpen(true)}>+ Add Organisation</Button>
+        </div>
         {orgs.length === 0 ? (
           <div className="bg-white rounded-xl shadow border border-gray-200 p-12 text-center text-gray-500">
             No organisations yet. Click &quot;+ Add Organisation&quot; to create one.

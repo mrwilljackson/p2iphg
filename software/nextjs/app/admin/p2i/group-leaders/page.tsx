@@ -17,6 +17,7 @@ import {
 } from "@/lib/actions";
 import { adminGroupLeaderFormSchema, type AdminGroupLeaderFormData } from "@/lib/validation";
 import type { GroupLeader, OrgRecord, Event } from "@/lib/types";
+import { P2iAdminNav } from "@/components/p2i-admin-nav";
 
 const defaultValues: AdminGroupLeaderFormData = {
   orgId: "",
@@ -414,22 +415,20 @@ export default function GroupLeadersPage() {
             <h1 className="text-2xl font-bold text-gray-900">P2I Admin Dashboard - Group Leaders</h1>
             <p className="text-sm text-gray-600 mt-1">{currentEvent.name}</p>
           </div>
-          <div className="flex gap-2">
-            <Button onClick={() => {
-              createForm.reset(defaultValues);
-              resetImport();
-              setIsCreateOpen(true);
-            }}>
-              + Add Group Leader
-            </Button>
-            <Button variant="outline" onClick={() => router.push("/admin/p2i/organisations")}>
-              Manage Organisations
-            </Button>
-          </div>
+          <P2iAdminNav currentPath="/admin/p2i/group-leaders" />
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-6">
+          <Button onClick={() => {
+            createForm.reset(defaultValues);
+            resetImport();
+            setIsCreateOpen(true);
+          }}>
+            + Add Group Leader
+          </Button>
+        </div>
         {leaders.length === 0 ? (
           <div className="bg-white rounded-xl shadow border border-gray-200 p-12 text-center text-gray-500">
             No group leaders yet. Click &quot;+ Add Group Leader&quot; to create one.

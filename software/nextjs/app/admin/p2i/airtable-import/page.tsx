@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { P2iAdminNav } from "@/components/p2i-admin-nav";
 
 interface AirtableEvent {
   airtableRecordId: string;
@@ -520,12 +521,7 @@ export default function AirtableImportPage() {
               <h1 className="text-2xl font-bold text-gray-900">P2I Admin Dashboard - Airtable Import</h1>
               <p className="text-sm text-gray-600 mt-1">Import data from Airtable to Neon Database</p>
             </div>
-            <Button
-              onClick={() => router.push("/admin/p2i")}
-              variant="outline"
-            >
-              ← Back to Dashboard
-            </Button>
+            <P2iAdminNav currentPath="/admin/p2i/airtable-import" />
           </div>
         </div>
       </header>

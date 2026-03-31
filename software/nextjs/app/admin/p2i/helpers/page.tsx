@@ -16,6 +16,7 @@ import {
   getAllVolunteers, getAllEvents, createVolunteer, updateVolunteer, deleteVolunteer,
 } from "@/lib/actions";
 import { adminHelperFormSchema, type AdminHelperFormData } from "@/lib/validation";
+import { P2iAdminNav } from "@/components/p2i-admin-nav";
 import type { Volunteer, Event } from "@/lib/types";
 
 const defaultValues: AdminHelperFormData = {
@@ -322,21 +323,22 @@ export default function HelpersPage() {
               <p className="text-sm text-gray-600 mt-1">{selectedEvent.name}</p>
             )}
           </div>
-          <div className="flex gap-2">
-            <Button onClick={() => {
-              createForm.reset({ ...defaultValues, eventId: selectedEventId });
-              setImportOpen(false);
-              setImportEventId("");
-              setImportHelpers([]);
-              setIsCreateOpen(true);
-            }}>
-              + Add Helper
-            </Button>
-          </div>
+          <P2iAdminNav currentPath="/admin/p2i/helpers" />
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        <div>
+          <Button onClick={() => {
+            createForm.reset({ ...defaultValues, eventId: selectedEventId });
+            setImportOpen(false);
+            setImportEventId("");
+            setImportHelpers([]);
+            setIsCreateOpen(true);
+          }}>
+            + Add Helper
+          </Button>
+        </div>
         {/* Event filter */}
         <div className="bg-white rounded-xl shadow border border-gray-200 p-4 flex items-center gap-4">
           <label className="text-sm font-medium text-gray-700 whitespace-nowrap">Filter by event:</label>

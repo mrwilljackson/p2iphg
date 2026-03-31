@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { getAllEvents, setCurrentEvent, updateEvent, deleteEvent, createEvent } from "@/lib/actions";
 import { Label } from "@/components/ui/label";
+import { P2iAdminNav } from "@/components/p2i-admin-nav";
 import { adminEventFormSchema, type AdminEventFormData } from "@/lib/validation";
 import type { Event } from "@/lib/types";
 
@@ -183,32 +184,7 @@ export default function ManageEventsPage() {
               <h1 className="text-2xl font-bold text-gray-900">P2I Admin Dashboard - Manage Events</h1>
               <p className="text-sm text-gray-600 mt-1">View all events and set the current active event</p>
             </div>
-            <div className="flex items-center gap-2">
-              <Button
-                onClick={() => router.push("/admin/p2i/organisations")}
-                variant="outline"
-              >
-                Manage Organisations
-              </Button>
-              <Button
-                onClick={() => router.push("/admin/p2i/helpers")}
-                variant="outline"
-              >
-                Manage Helpers
-              </Button>
-              <Button
-                onClick={() => {
-                  sessionStorage.removeItem("adminAuth");
-                  sessionStorage.removeItem("adminLevel");
-                  sessionStorage.removeItem("administeringEventId");
-                  router.push("/registration");
-                }}
-                variant="outline"
-                className="text-red-600 hover:text-red-700 hover:bg-red-50"
-              >
-                Log out
-              </Button>
-            </div>
+            <P2iAdminNav currentPath="/admin/p2i/manage-events" />
           </div>
         </div>
       </header>
