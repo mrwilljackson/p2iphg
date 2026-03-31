@@ -581,6 +581,12 @@ export default function P2IAdminDashboard() {
                 Manage Events
               </Button>
               <Button
+                onClick={() => router.push("/admin/p2i/organisations")}
+                variant="outline"
+              >
+                Manage Organisations
+              </Button>
+              <Button
                 onClick={handleLogout}
                 variant="outline"
                 className="text-red-600 hover:text-red-700 hover:bg-red-50"
