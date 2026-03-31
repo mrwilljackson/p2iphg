@@ -20,13 +20,13 @@ export function HelpTip({ title, children }: HelpTipProps) {
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-gray-200 hover:bg-gray-300 text-gray-500 hover:text-gray-700 text-xs font-bold cursor-pointer transition-colors"
+          className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-600 hover:text-blue-800 border border-blue-300 text-xs font-bold cursor-pointer transition-colors"
           aria-label={`Help: ${title}`}
         >
           ?
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-72">
+      <PopoverContent className="w-72 border-blue-200 bg-blue-50">
         <PopoverHeader>
           <PopoverTitle>{title}</PopoverTitle>
           <PopoverDescription>{children}</PopoverDescription>
