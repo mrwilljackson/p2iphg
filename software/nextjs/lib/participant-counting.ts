@@ -52,8 +52,8 @@ export interface RegistrationForCounting {
   id: string;
   role: 'Participant' | 'Volunteer' | 'Group';
   groupSize?: number | null;
-  disabledStudents?: number | null;
-  senStudents?: number | null;
+  impairedParticipants?: number | null;
+  nonImpairedParticipants?: number | null;
   groupLeaderParticipating?: boolean | null;
   organizationId?: string | null;
   organizationName?: string | null;
@@ -108,8 +108,8 @@ export interface ParticipantCounts {
   totalParticipants: number;
 
   // Accessibility counts
-  disabledStudents: number;
-  senStudents: number;
+  impairedParticipants: number;
+  nonImpairedParticipants: number;
 
   // Volunteer count
   volunteers: number;
@@ -236,8 +236,8 @@ export function calculateParticipantCounts(
     if (existing) {
       // Additional leader for same org — aggregate their numbers
       existing.totalGroupSize += group.groupSize || 0;
-      existing.totalDisabled += group.disabledStudents || 0;
-      existing.totalSen += group.senStudents || 0;
+      existing.totalDisabled += group.impairedParticipants || 0;
+      existing.totalSen += group.nonImpairedParticipants || 0;
       existing.leaderCount += 1;
       if (group.groupLeaderParticipating === true) {
         existing.participatingLeaderCount += 1;
@@ -252,8 +252,8 @@ export function calculateParticipantCounts(
         groupType: group.groupType || null,
         isClosed: group.openGroup === false,
         totalGroupSize: group.groupSize || 0,
-        totalDisabled: group.disabledStudents || 0,
-        totalSen: group.senStudents || 0,
+        totalDisabled: group.impairedParticipants || 0,
+        totalSen: group.nonImpairedParticipants || 0,
         leaderCount: 1,
         participatingLeaderCount: group.groupLeaderParticipating === true ? 1 : 0,
         hasAirtableRecord: !!group.organizationAirtableRecordId,
@@ -441,8 +441,8 @@ export function calculateParticipantCounts(
 
     totalParticipants,
 
-    disabledStudents: totalDisabledStudents,
-    senStudents: totalSenStudents,
+    impairedParticipants: totalDisabledStudents,
+    nonImpairedParticipants: totalSenStudents,
 
     volunteers: volunteerRegistrations.length,
 
