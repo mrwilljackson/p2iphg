@@ -79,8 +79,8 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
       feedbackConsent: false,
       nextEventConsent: false,
       groupSize: undefined,
-      disabledStudents: undefined,
-      senStudents: undefined,
+      impairedParticipants: undefined,
+      nonImpairedParticipants: undefined,
       groupLeaderParticipating: undefined,
     },
   });
@@ -221,7 +221,7 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
           // Additional leader only — skip group size fields (already set to 0)
           fieldsToValidate = ["groupLeaderParticipating"];
         } else {
-          fieldsToValidate = ["groupLeaderParticipating", "groupSize", "disabledStudents", "senStudents"];
+          fieldsToValidate = ["groupLeaderParticipating", "groupSize", "impairedParticipants", "nonImpairedParticipants"];
         }
       }
     }
@@ -411,8 +411,8 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
         feedbackConsent: data.feedbackConsent,
         nextEventConsent: data.nextEventConsent,
         groupSize: data.groupSize,
-        disabledStudents: data.disabledStudents,
-        senStudents: data.senStudents,
+        impairedParticipants: data.impairedParticipants,
+        nonImpairedParticipants: data.nonImpairedParticipants,
         groupLeaderParticipating: data.groupLeaderParticipating,
       });
 
@@ -923,8 +923,8 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
                     setAdditionalLeaderChoice('additional_leader');
                     // Set groupSize to 0 — no additional participants
                     form.setValue('groupSize', 0);
-                    form.setValue('disabledStudents', 0);
-                    form.setValue('senStudents', 0);
+                    form.setValue('impairedParticipants', 0);
+                    form.setValue('nonImpairedParticipants', 0);
                   }}
                   className="accent-blue-600"
                 />
@@ -943,8 +943,8 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
                     setAdditionalLeaderChoice('additional_participants');
                     // Clear the auto-set values so user can enter their own
                     form.setValue('groupSize', undefined);
-                    form.setValue('disabledStudents', undefined);
-                    form.setValue('senStudents', undefined);
+                    form.setValue('impairedParticipants', undefined);
+                    form.setValue('nonImpairedParticipants', undefined);
                   }}
                   className="accent-blue-600"
                 />
@@ -1267,14 +1267,14 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
           />
         )}
 
-        {/* Disabled Students - Only for Disability Groups and Family Groups - Step 2 for Group */}
-        {!showOrganizationAlert && shouldShowSection("groupDetails") && shouldShowImpairmentFields && additionalLeaderChoice !== 'additional_leader' && isFieldVisible("disabledStudents", selectedRole) && (
+        {/* Impaired Participants - Only for closed groups - Step 2 for Group */}
+        {!showOrganizationAlert && shouldShowSection("groupDetails") && shouldShowImpairmentFields && additionalLeaderChoice !== 'additional_leader' && isFieldVisible("impairedParticipants", selectedRole) && (
           <FormField
             control={form.control}
-            name="disabledStudents"
+            name="impairedParticipants"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>How many of your participants are disabled people, or to have a long‑term physical or mental health condition or impairment? *</FormLabel>
+                <FormLabel>How many participants in your group have a disability or long-term physical or mental health condition or impairment? *</FormLabel>
                 <FormControl>
                   <Input
                     type="number"
@@ -1294,14 +1294,14 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
           />
         )}
 
-        {/* SEN Students - Only for Disability Groups and Family Groups - Step 2 for Group */}
-        {!showOrganizationAlert && shouldShowSection("groupDetails") && shouldShowImpairmentFields && additionalLeaderChoice !== 'additional_leader' && isFieldVisible("senStudents", selectedRole) && (
+        {/* Non-impaired Participants - Only for closed groups - Step 2 for Group */}
+        {!showOrganizationAlert && shouldShowSection("groupDetails") && shouldShowImpairmentFields && additionalLeaderChoice !== 'additional_leader' && isFieldVisible("nonImpairedParticipants", selectedRole) && (
           <FormField
             control={form.control}
-            name="senStudents"
+            name="nonImpairedParticipants"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Do you have any special educational needs (SEN) or require additional learning support (for example dyslexia support, autism support, or similar)? *</FormLabel>
+                <FormLabel>How many participants in your group are not impaired? *</FormLabel>
                 <FormControl>
                   <Input
                     type="number"
