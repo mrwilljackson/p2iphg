@@ -67,8 +67,8 @@ export interface Registration {
   feedbackConsent?: boolean; // true = yes to post-event feedback (OPTIONAL)
   nextEventConsent?: boolean; // true = yes to next event info (OPTIONAL)
   groupSize?: number; // Number of participants in group (REQUIRED for Group)
-  disabledStudents?: number; // Number of disabled participants (REQUIRED for Group)
-  senStudents?: number; // Number of SEN/additional learning support students (REQUIRED for Group)
+  impairedParticipants?: number; // Number of impaired participants (REQUIRED for closed Group)
+  nonImpairedParticipants?: number; // Number of non-impaired participants (REQUIRED for closed Group)
   groupLeaderParticipating?: boolean; // Whether group leader is participating in games (Group role only)
   organisationName?: string; // Organisation name stored at registration time (persisted DB column)
   syncStatus?: SyncStatus; // pending | synced | failed (optional, for offline mode)
@@ -208,8 +208,8 @@ export interface RegistrationFormData {
   feedbackConsent?: boolean; // Optional: consent for post-event feedback
   nextEventConsent?: boolean; // Optional: consent for next event info
   groupSize?: number; // Required for Group
-  disabledStudents?: number; // Required for Group
-  senStudents?: number; // Required for Group
+  impairedParticipants?: number; // Required for closed Group
+  nonImpairedParticipants?: number; // Required for closed Group
   groupLeaderParticipating?: boolean; // Optional: whether group leader is participating in games (Group role only)
 }
 
