@@ -74,10 +74,8 @@ export const registrations = pgTable('registrations', {
   feedbackConsent: boolean('feedback_consent'),
   nextEventConsent: boolean('next_event_consent'),
   groupSize: integer('group_size'),
-  // HOTFIX: live DB columns are impaired_participants / non_impaired_participants.
-  // TS field names retained to avoid a wider rename mid-event.
-  disabledStudents: integer('impaired_participants'),
-  senStudents: integer('non_impaired_participants'),
+  impairedParticipants: integer('impaired_participants'),
+  nonImpairedParticipants: integer('non_impaired_participants'),
   groupLeaderParticipating: boolean('group_leader_participating'),
   organisationName: text('organisation_name'),
   syncStatus: text('sync_status'), // 'pending' | 'synced' | 'failed'
