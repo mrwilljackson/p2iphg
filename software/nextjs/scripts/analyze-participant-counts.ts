@@ -45,8 +45,8 @@ async function analyzeParticipantCounts() {
       attendeeSurname: registrations.attendeeSurname,
       role: registrations.role,
       groupSize: registrations.groupSize,
-      disabledStudents: registrations.disabledStudents,
-      senStudents: registrations.senStudents,
+      impairedParticipants: registrations.impairedParticipants,
+      nonImpairedParticipants: registrations.nonImpairedParticipants,
       groupLeaderParticipating: registrations.groupLeaderParticipating,
       organizationId: registrations.organizationId,
       organizationName: organizations.name,
@@ -144,8 +144,8 @@ async function analyzeParticipantCounts() {
     }
 
     groupParticipants += groupCount;
-    totalDisabledStudents += group.disabledStudents || 0;
-    totalSenStudents += group.senStudents || 0;
+    totalDisabledStudents += group.impairedParticipants || 0;
+    totalSenStudents += group.nonImpairedParticipants || 0;
 
     // Categorize group type using groupType field
     const groupTypeValue = group.groupType || 'Other';
@@ -166,8 +166,8 @@ async function analyzeParticipantCounts() {
     const orgName = (group.organizationName || 'Unknown').substring(0, 23).padEnd(23);
     const size = String(group.groupSize || 0).padStart(4);
     const leader = leaderParticipating === true ? 'Yes' : leaderParticipating === false ? 'No ' : 'N/A';
-    const disabled = String(group.disabledStudents || 0).padStart(8);
-    const sen = String(group.senStudents || 0).padStart(3);
+    const disabled = String(group.impairedParticipants || 0).padStart(8);
+    const sen = String(group.nonImpairedParticipants || 0).padStart(3);
     const final = String(groupCount).padStart(11);
 
     console.log(`   ${orgName} | ${groupTypeValue.padEnd(10)} | ${size} | ${leader}     | ${disabled} | ${sen} | ${final}`);
