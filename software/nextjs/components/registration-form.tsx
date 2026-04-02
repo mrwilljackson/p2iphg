@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -96,6 +96,50 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
   const selectedRole = form.watch("role") as RegistrationType;
   const attendeeSurname = form.watch("attendeeSurname");
   const selectedOrgId = form.watch("organizationId");
+  const watchedGroupSize = form.watch("groupSize");
+  const watchedImpaired = form.watch("impairedParticipants");
+  const watchedNonImpaired = form.watch("nonImpairedParticipants");
+  const lastEditedField = useRef<"impairedParticipants" | "nonImpairedParticipants" | null>(null);
+
+  // Smart advisory: check if impaired + non-impaired adds up to group size
+  const participantCountWarning = useMemo(() => {
+    const groupSize = watchedGroupSize;
+    const impaired = watchedImpaired;
+    const nonImpaired = watchedNonImpaired;
+
+    const groupSizeFilled = groupSize != null && groupSize >= 0;
+    const impairedFilled = impaired != null && impaired >= 0;
+    const nonImpairedFilled = nonImpaired != null && nonImpaired >= 0;
+
+    if (!groupSizeFilled) return null;
+
+    // Both filled — check if they add up
+    if (impairedFilled && nonImpairedFilled) {
+      if (impaired + nonImpaired === groupSize) return null;
+
+      if (lastEditedField.current === "impairedParticipants") {
+        const expected = groupSize - impaired;
+        return `These numbers don't add up to your group size of ${groupSize}. Based on your entries, non-impaired participants should be ${expected}.`;
+      } else {
+        const expected = groupSize - nonImpaired;
+        return `These numbers don't add up to your group size of ${groupSize}. Based on your entries, impaired participants should be ${expected}.`;
+      }
+    }
+
+    // Only impaired filled — suggest non-impaired
+    if (impairedFilled && !nonImpairedFilled) {
+      const expected = groupSize - impaired;
+      return `Based on your group size of ${groupSize}, non-impaired participants should be ${expected}.`;
+    }
+
+    // Only non-impaired filled — suggest impaired
+    if (!impairedFilled && nonImpairedFilled) {
+      const expected = groupSize - nonImpaired;
+      return `Based on your group size of ${groupSize}, impaired participants should be ${expected}.`;
+    }
+
+    return null;
+  }, [watchedGroupSize, watchedImpaired, watchedNonImpaired]);
 
   // Determine total steps based on role
   const getTotalSteps = () => {
@@ -1285,6 +1329,7 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
                     onChange={(e) => {
                       const value = e.target.value;
                       field.onChange(value === "" ? undefined : parseInt(value, 10));
+                      lastEditedField.current = "impairedParticipants";
                     }}
                   />
                 </FormControl>
@@ -1312,6 +1357,7 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
                     onChange={(e) => {
                       const value = e.target.value;
                       field.onChange(value === "" ? undefined : parseInt(value, 10));
+                      lastEditedField.current = "nonImpairedParticipants";
                     }}
                   />
                 </FormControl>
@@ -1319,6 +1365,13 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
               </FormItem>
             )}
           />
+        )}
+
+        {/* Advisory: participant count mismatch */}
+        {participantCountWarning && shouldShowImpairmentFields && additionalLeaderChoice !== 'additional_leader' && (
+          <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
+            <p>{participantCountWarning}</p>
+          </div>
         )}
 
         {/* Separator: Personal/Group Details -> Consent */}
