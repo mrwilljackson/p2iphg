@@ -49,7 +49,7 @@ export interface Event {
  * - photoConsent: false = orange wristband (no photos)
  * - feedbackConsent: optional checkbox for post-event feedback
  * - nextEventConsent: optional checkbox for next event info
- * - Group role includes groupSize, disabledStudents, and senStudents
+ * - Group role includes groupSize, impairedParticipants, and nonImpairedParticipants
  * V3 Changes:
  * - Added groupLeaderParticipating field for Group role
  */
