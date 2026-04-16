@@ -1,7 +1,7 @@
 # Registration Form Fields by Role
 
-**Document Version:** 1.0  
-**Last Updated:** 2026-02-16  
+**Document Version:** 1.1  
+**Last Updated:** 2026-04-16  
 **Status:** Current Implementation
 
 ---
@@ -30,34 +30,35 @@ The registration form supports three distinct roles:
 
 #### Field Order and Details:
 
-1. **Organization / Group Name** (Optional)
+1. **Organization / Group Name** (`organizationId`) (Optional)
    - **Type:** Combobox with custom entry
    - **Label:** "Your Group Name"
    - **Description:** Allows participant to select their organization or enter a custom name
-   - **Options:** All organizations registered for the event + custom entry
+   - **Options:** Open-group organisations only (`openGroup !== false`) + "Individual" option at bottom + custom entry
    - **Required:** No
+   - **Note:** Closed-group organisations (`openGroup === false`) are excluded; participants from those groups register individually via the Group leader
 
-2. **Email Address** (Optional)
+2. **Email Address** (`email`) (Optional)
    - **Type:** Text input (email)
    - **Label:** "Your email:"
    - **Placeholder:** "your.email@example.com"
    - **Required:** No
 
-3. **First Name** (Required)
+3. **First Name** (`attendeeName`) (Required)
    - **Type:** Text input
    - **Label:** "Your first name: *"
    - **Placeholder:** "Enter first name"
    - **Validation:** 2-100 characters, letters/spaces/hyphens/apostrophes only
    - **Required:** Yes
 
-4. **Last Name** (Required)
+4. **Last Name** (`attendeeSurname`) (Required)
    - **Type:** Text input
    - **Label:** "Your last name: *"
    - **Placeholder:** "Enter last name"
    - **Validation:** 2-100 characters, letters/spaces/hyphens/apostrophes only
    - **Required:** Yes
 
-5. **Impairment Question** (Optional)
+5. **Impairment Question** (`impairment`) (Optional)
    - **Type:** Dropdown select
    - **Label:** "Do you consider yourself to be a disabled person, or to have a long‑term physical or mental health condition or impairment?"
    - **Options:**
@@ -66,20 +67,21 @@ The registration form supports three distinct roles:
      - "Rather not say"
    - **Layout:** Label on left, dropdown on right (side-by-side)
    - **Required:** No
+   - **Note:** Participant role only — not shown for Volunteer or Group
 
-6. **Feedback Consent** (Optional)
+6. **Feedback Consent** (`feedbackConsent`) (Optional)
    - **Type:** Checkbox
    - **Label:** "I consent to being contacted for post-event feedback"
    - **Default:** Unchecked
    - **Required:** No
 
-7. **Next Event Consent** (Optional)
+7. **Next Event Consent** (`nextEventConsent`) (Optional)
    - **Type:** Checkbox
    - **Label:** "I would like to receive information about future PowerHouseGames events"
    - **Default:** Unchecked
    - **Required:** No
 
-8. **Photo Consent** (Required)
+8. **Photo Consent** (`photoConsent`) (Required)
    - **Type:** Radio buttons
    - **Label:** "Photo Consent"
    - **Options:**
@@ -87,6 +89,8 @@ The registration form supports three distinct roles:
      - "I do not consent to photos being taken"
    - **Default:** Consent given (true)
    - **Required:** Yes
+
+**Steps:** 2 (role selection → form submission)
 
 ---
 
@@ -96,25 +100,25 @@ The registration form supports three distinct roles:
 
 #### Field Order and Details:
 
-1. **First Name** (Displayed but not editable)
+1. **First Name** (`attendeeName`) (Displayed but not editable)
    - **Type:** Display only (pre-populated from volunteer database)
    - **Label:** "Your first name: *"
    - **Note:** Automatically filled based on email selection
    - **Required:** Yes (pre-filled)
 
-2. **Last Name** (Displayed but not editable)
+2. **Last Name** (`attendeeSurname`) (Displayed but not editable)
    - **Type:** Display only (pre-populated from volunteer database)
    - **Label:** "Your last name: *"
    - **Note:** Automatically filled based on email selection
    - **Required:** Yes (pre-filled)
 
-3. **Email Address** (Required)
+3. **Email Address** (`email`) (Required)
    - **Type:** Dropdown select
    - **Label:** "Your email:"
    - **Options:** List of pre-registered volunteer emails + "⚠️ My email isn't listed here!"
    - **Layout:** Label on left, dropdown on right (side-by-side)
    - **Required:** Yes
-   - **Special Behavior:** 
+   - **Special Behavior:**
      - Selecting an email auto-populates first and last name
      - Selecting "not listed" shows alert to find P2I team member
 
@@ -123,29 +127,21 @@ The registration form supports three distinct roles:
    - **Content:** Instructions to find P2I team member to add volunteer to system
    - **Action:** Includes participant check flow (option to register as participant instead)
 
-5. **Impairment Question** (Optional)
-   - **Type:** Dropdown select
-   - **Label:** "Do you consider yourself to be a disabled person, or to have a long‑term physical or mental health condition or impairment?"
-   - **Options:** "Yes", "No", "Rather not say"
-   - **Layout:** Label on left, dropdown on right
-   - **Required:** No
-   - **Note:** Only visible if valid email is selected (not "NOT_LISTED")
-
-6. **Feedback Consent** (Optional)
+5. **Feedback Consent** (`feedbackConsent`) (Optional)
    - **Type:** Checkbox
    - **Label:** "I consent to being contacted for post-event feedback"
    - **Default:** Unchecked
    - **Required:** No
    - **Note:** Only visible if valid email is selected
 
-7. **Next Event Consent** (Optional)
+6. **Next Event Consent** (`nextEventConsent`) (Optional)
    - **Type:** Checkbox
    - **Label:** "I would like to receive information about future PowerHouseGames events"
    - **Default:** Unchecked
    - **Required:** No
    - **Note:** Only visible if valid email is selected
 
-8. **Photo Consent** (Required)
+7. **Photo Consent** (`photoConsent`) (Required)
    - **Type:** Radio buttons
    - **Label:** "Photo Consent"
    - **Options:**
@@ -153,6 +149,8 @@ The registration form supports three distinct roles:
      - "I do not consent to photos being taken"
    - **Default:** Consent given (true)
    - **Required:** Yes
+
+**Steps:** 1 (role selection + email lookup → form submission)
 
 ---
 
@@ -162,23 +160,24 @@ The registration form supports three distinct roles:
 
 #### Field Order and Details:
 
-1. **Organization Name** (Required)
+1. **Organization Name** (`organizationId`) (Required)
    - **Type:** Dropdown select
    - **Label:** "Your Organisation or Group Name:"
-   - **Options:** All organizations registered for the event + "⚠️ My organisation isn't listed here!"
+   - **Options:** Closed-group organisations (`openGroup === false`) + "⚠️ My organisation isn't listed here!"
    - **Required:** Yes
    - **Special Behavior:**
      - Selecting an organization with contact details auto-populates name and email fields
      - Selecting "not listed" shows alert to find P2I team member
+   - **Note:** Group leaders see only closed-group organisations (`openGroup === false`). The form auto-detects whether the selected organisation is a group leader registration based on the `openGroup` flag; open-group leaders (who set expected attendance) register here too — they appear first in the list and are removed once registered.
 
-2. **Email Address** (Optional)
+2. **Email Address** (`email`) (Optional)
    - **Type:** Text input (email)
    - **Label:** "Your email:"
    - **Placeholder:** "your.email@example.com"
    - **Required:** No
    - **Auto-population:** Pre-filled if organization has contact email on file
 
-3. **First Name** (Required)
+3. **First Name** (`attendeeName`) (Required)
    - **Type:** Text input
    - **Label:** "Your first name: *"
    - **Placeholder:** "Enter first name"
@@ -186,7 +185,7 @@ The registration form supports three distinct roles:
    - **Required:** Yes
    - **Auto-population:** Pre-filled if organization has contact first name on file
 
-4. **Last Name** (Required)
+4. **Last Name** (`attendeeSurname`) (Required)
    - **Type:** Text input
    - **Label:** "Your last name: *"
    - **Placeholder:** "Enter last name"
@@ -194,13 +193,13 @@ The registration form supports three distinct roles:
    - **Required:** Yes
    - **Auto-population:** Pre-filled if organization has contact last name on file
 
-5. **Instructional Note** (Conditional - Disability Organizations Only)
-   - **Trigger:** Only shown when a disability organization is selected (excludes Family Group)
+5. **Instructional Note** (Conditional - Closed-group organisations only, excludes Family Group)
+   - **Trigger:** Only shown when a closed-group organisation is selected (excludes Family Group)
    - **Content:** "ℹ️ **Please check your details are correct - sometimes other staff attend on behalf of the original organiser!**"
    - **Style:** Blue informational text
    - **Position:** Below first name and last name fields, spanning full width
 
-6. **Group Leader Participation** (Required for Group)
+6. **Group Leader Participation** (`groupLeaderParticipating`) (Required for Group)
    - **Type:** Radio buttons
    - **Label:** "Will you be participating in the games?"
    - **Options:**
@@ -215,46 +214,40 @@ The registration form supports three distinct roles:
    - **Icon:** 🏢 Building icon
    - **Action:** Provides clear guidance to find staff with P2I badge
 
-8. **Impairment Question** (Optional)
-   - **Type:** Dropdown select
-   - **Label:** "Do you consider yourself to be a disabled person, or to have a long‑term physical or mental health condition or impairment?"
-   - **Options:** "Yes", "No", "Rather not say"
-   - **Layout:** Label on left, dropdown on right
-   - **Required:** No
-
-9. **Feedback Consent** (Optional)
+8. **Feedback Consent** (`feedbackConsent`) (Optional)
    - **Type:** Checkbox
    - **Label:** "I consent to being contacted for post-event feedback"
    - **Default:** Unchecked
    - **Required:** No
 
-10. **Next Event Consent** (Optional)
-    - **Type:** Checkbox
-    - **Label:** "I would like to receive information about future PowerHouseGames events"
-    - **Default:** Unchecked
-    - **Required:** No
+9. **Next Event Consent** (`nextEventConsent`) (Optional)
+   - **Type:** Checkbox
+   - **Label:** "I would like to receive information about future PowerHouseGames events"
+   - **Default:** Unchecked
+   - **Required:** No
 
 ---
 
-#### Group-Specific Fields (Conditional - Only for Disability Groups and Family Groups)
+#### Group-Specific Fields (Conditional - Only for Closed-group Organisations)
 
-The following fields only appear when the selected organization is marked as a disability group (`isDisabilityGroup: true`) or is "Family Group":
+The following fields only appear when the selected organisation has `openGroup === false` (closed group):
 
-11. **Group Size** (Required for Disability/Family Groups)
+10. **Group Size** (`groupSize`) (Required for closed-group organisations)
     - **Type:** Number input
     - **Label:** "How many participants are you responsible for in your group *"
     - **Placeholder:** "e.g., 25"
     - **Validation:** Integer, minimum 1, maximum 999
     - **Required:** Yes (when visible)
+    - **Note:** Excludes the group leader; counts participants only
 
-12. **Disabled Students** (Required for Disability/Family Groups)
+11. **Disabled Students** (`disabledStudents`) (Required for closed-group organisations)
     - **Type:** Number input
     - **Label:** "How many of your participants are disabled people, or to have a long‑term physical or mental health condition or impairment? *"
     - **Placeholder:** "e.g., 5"
     - **Validation:** Integer, minimum 0, maximum 999
     - **Required:** Yes (when visible)
 
-13. **SEN Students** (Required for Disability/Family Groups)
+12. **SEN Students** (`senStudents`) (Required for closed-group organisations)
     - **Type:** Number input
     - **Label:** "How many of your participants have Special Educational Needs (SEN)? *"
     - **Placeholder:** "e.g., 3"
@@ -263,7 +256,7 @@ The following fields only appear when the selected organization is marked as a d
 
 ---
 
-14. **Photo Consent** (Required)
+13. **Photo Consent** (`photoConsent`) (Required)
     - **Type:** Radio buttons
     - **Label:** "Photo Consent"
     - **Options:**
@@ -272,6 +265,8 @@ The following fields only appear when the selected organization is marked as a d
     - **Default:** Consent given (true)
     - **Required:** Yes
 
+**Steps:** 3 (role selection → organisation + leader details → group size details → form submission)
+
 ---
 
 ## Conditional Logic Summary
@@ -279,25 +274,24 @@ The following fields only appear when the selected organization is marked as a d
 ### Field Visibility Rules
 
 | Field | Participant | Volunteer | Group |
-|-------|------------|-----------|-------|
-| Organization | ✅ (Combobox) | ❌ | ✅ (Dropdown) |
-| Email | ✅ | ✅ (Dropdown) | ✅ |
-| First Name | ✅ | ✅ (Auto-filled) | ✅ (Auto-filled) |
-| Last Name | ✅ | ✅ (Auto-filled) | ✅ (Auto-filled) |
-| Group Leader Participation | ❌ | ❌ | ✅ |
-| Impairment | ✅ | ✅* | ✅ |
-| Feedback Consent | ✅ | ✅* | ✅ |
-| Next Event Consent | ✅ | ✅* | ✅ |
-| Photo Consent | ✅ | ✅ | ✅ |
-| Group Size | ❌ | ❌ | ✅** |
-| Disabled Students | ❌ | ❌ | ✅** |
-| SEN Students | ❌ | ❌ | ✅** |
+|---|---|---|---|
+| `attendeeName` | Yes | No | Yes |
+| `attendeeSurname` | Yes | No | Yes |
+| `email` | Yes | Yes | Yes |
+| `organizationId` | Yes | No | Yes |
+| `impairment` | Yes | No | No |
+| `photoConsent` | Yes | Yes | Yes |
+| `feedbackConsent` | Yes | Yes | Yes |
+| `nextEventConsent` | Yes | Yes | Yes |
+| `groupSize` | No | No | Yes |
+| `disabledStudents` | No | No | Yes |
+| `senStudents` | No | No | Yes |
 
-**Legend:**
-- ✅ = Always visible
-- ❌ = Never visible
-- ✅* = Only visible when valid email is selected (not "NOT_LISTED")
-- ✅** = Only visible for disability groups and family groups
+**Notes:**
+- `attendeeName` / `attendeeSurname` for Volunteer are auto-filled (display-only) from volunteer database after email selection
+- `organizationId` for Participant shows open-group orgs only (`openGroup !== false`); for Group shows closed-group orgs (`openGroup === false`)
+- `groupSize`, `disabledStudents`, `senStudents` only visible for Group when selected organisation is a closed group (`openGroup === false`)
+- Volunteer consent fields only visible after a valid email is selected (not "NOT_LISTED")
 
 ---
 
@@ -321,8 +315,17 @@ The following fields only appear when the selected organization is marked as a d
 - Instructions to speak to P2I team member
 - Guidance to look for staff with P2I badge
 
-### 3. Disability Organization Instructional Note
-**Trigger:** Group role + disability organization selected (excludes Family Group)
+### 3. Auto-Detect Group Leader (Open Groups)
+**Trigger:** Group role + open-group organisation selected (`openGroup !== false`)
+
+**Behaviour:**
+- Open-group leaders register to set the expected attendance count
+- Their organisation appears at the top of the Group dropdown until registration is complete, then is removed
+- Closed-group leader registrations remain available throughout the day
+- The `groupSize`, `disabledStudents`, and `senStudents` fields are shown only for closed groups; open-group leader registrations do not capture group size (individual participants register separately)
+
+### 4. Closed-group Organisation Instructional Note
+**Trigger:** Group role + closed-group organisation selected (`openGroup === false`), excludes Family Group
 
 **Note Content:**
 - ℹ️ Icon
@@ -457,6 +460,7 @@ The form uses consistent color coding for different elements:
 | Version | Date | Changes | Author |
 |---------|------|---------|--------|
 | 1.0 | 2026-02-16 | Initial documentation of all form fields by role | AI Assistant |
+| 1.1 | 2026-04-16 | Fix field visibility table (impairment Participant-only); rename consent fields to schema names (photoConsent, feedbackConsent, nextEventConsent); update organisation field descriptions with openGroup filtering rules; remove impairment from Volunteer and Group roles; add auto-detect group leader note; add step counts per role; fix closed-group field conditions | AI Assistant |
 
 ---
 
