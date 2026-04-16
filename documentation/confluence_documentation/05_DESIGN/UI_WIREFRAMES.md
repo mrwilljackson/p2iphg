@@ -1,8 +1,10 @@
 # UI Wireframes V3 - NextJS Web Application
 
+> **Historical Document** — These wireframes were created during initial design (V3.0, Feb 2026). The live application UI has diverged significantly from these mockups. Refer to the running application for current UI state.
+
 **Version:** 3.0
 **Date:** 2026-02-16
-**Status:** Current Implementation (NextJS Web App)
+**Status:** Historical Reference
 **Previous Version:** V2.0 (Flutter Mobile App - Deprecated)
 
 ---

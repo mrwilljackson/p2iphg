@@ -1,15 +1,16 @@
 # Power2Inspire Event CRM App - Requirements Specification V2
 
-**Document Version:** 2.0
-**Date:** 2026-02-11
+**Document Version:** 2.1
+**Date:** 2026-04-16
+**Last Updated:** 2026-04-16
 **Project:** Event CRM Web Application for Power2Inspire Charity
-**Technology:** NextJS 14 + Vercel (Web Application)
+**Technology:** Next.js 16 + Vercel (Web Application)
 
 ---
 
 ## 1. Executive Summary
 
-The Power2Inspire Event CRM App is a **web-based application** designed to facilitate event management, attendee registration, volunteer coordination, and attendance tracking for a charitable organization. The application prioritizes accessibility, usability, and direct integration with Airtable for real-time data management.
+The Power2Inspire Event CRM App is a **web-based application** designed to facilitate event management, participant registration, volunteer coordination, and attendance tracking for a charitable organization. The application prioritizes accessibility, usability, and direct integration with Airtable for real-time data management.
 
 **Key Changes from V1:**
 - ✅ Web application (not mobile app) - accessible via browser on any device
@@ -22,7 +23,7 @@ The Power2Inspire Event CRM App is a **web-based application** designed to facil
 
 ## 2. Stakeholders
 
-- **Primary Users:** Event attendees, volunteers, charity staff
+- **Primary Users:** Event participants, volunteers, group leaders, charity staff
 - **Organization:** Power2Inspire (Charity)
 - **Device Access:** Charity-controlled tablets at events, staff phones/laptops
 - **User Interaction Model:** Kiosk-style self-service registration via web browser
@@ -33,66 +34,83 @@ The Power2Inspire Event CRM App is a **web-based application** designed to facil
 ## 3. Functional Requirements
 
 ### 3.1 Event Management
-- **FR-001:** Support multiple events with dropdown selection
-- **FR-002:** Pre-select current active event in registration forms
-- **FR-003:** Event details managed in Airtable (name, date, location, status)
-- **FR-004:** Fetch active events from Airtable on page load
-- **FR-005:** Display current event information on home screen
+- **FR-001:** Support multiple events with dropdown selection (IMPLEMENTED)
+- **FR-002:** Pre-select current active event in registration forms (IMPLEMENTED)
+- **FR-003:** Event details managed in Airtable (name, date, location, status) (IMPLEMENTED)
+- **FR-004:** Fetch active events from Airtable on page load (IMPLEMENTED)
+- **FR-005:** Display current event information on home screen (IMPLEMENTED)
 
-### 3.2 Attendee Registration
-- **FR-010:** Capture attendee information: **First Name, Last Name, Email, Organization, Impairment** (all required)
-- **FR-011:** Select event from dropdown (pre-selected to current event, can change)
-- **FR-012:** Record marketing consent via radio buttons (Yes/No - explicit choice required)
-- **FR-013:** Record photo consent via radio buttons (Yes/No - explicit choice required)
-- **FR-014:** Display orange wristband language for photo consent refusal
-- **FR-015:** Assign role: Attendee or Volunteer
-- **FR-016:** Validate all required fields before submission (client-side + server-side)
-- **FR-017:** Submit registration directly to Airtable via API route
-- **FR-018:** Display confirmation screen with registration details
+### 3.2 Participant Registration
+- **FR-010:** Capture participant information: **First Name, Last Name, Email, Organization, Impairment** (all required) (IMPLEMENTED)
+- **FR-011:** Select event from dropdown (pre-selected to current event, can change) (IMPLEMENTED)
+- **FR-012:** Record consent via checkboxes: photoConsent, feedbackConsent, nextEventConsent (IMPLEMENTED)
+- **FR-013:** Record photo consent via radio buttons (Yes/No - explicit choice required) (IMPLEMENTED)
+- **FR-014:** Display orange wristband language for photo consent refusal (IMPLEMENTED)
+- **FR-015:** Assign role: Participant, Volunteer, or Group (IMPLEMENTED)
+- **FR-016:** Validate all required fields before submission (client-side + server-side) (IMPLEMENTED)
+- **FR-017:** Submit registration to Neon Postgres via server actions; sync to Airtable post-event (IMPLEMENTED)
+- **FR-018:** Display confirmation screen with registration details (IMPLEMENTED)
 - **FR-019:** ~~Phone number~~ - REMOVED (not required per V2 specifications)
 
 ### 3.3 Volunteer Registration
-- **FR-020:** Same form as attendee registration with role = "Volunteer"
-- **FR-021:** ~~Conditional fields TBD~~ - PENDING: Which 1-2 fields differ from attendee form?
+- **FR-020:** Volunteer role uses same base form as Participant registration (IMPLEMENTED)
+- **FR-021:** Volunteer identification by email lookup against the `volunteers` table pre-populated from Airtable (IMPLEMENTED)
+- **FR-022:** On successful volunteer email match, auto-populate First Name and Last Name from the volunteers record (IMPLEMENTED)
+- **FR-023:** Volunteer form captures consent fields only: photoConsent, feedbackConsent, nextEventConsent (IMPLEMENTED)
+- **FR-024:** Volunteer form does not capture Organization or Impairment fields (IMPLEMENTED)
 
-### 3.4 Attendance Tracking
-- **FR-030:** Real-time check-in functionality
-- **FR-031:** Check-out functionality for safety compliance
-- **FR-032:** Display current attendance statistics (checked in count, not checked in count)
-- **FR-033:** Support fire drill/emergency evacuation reporting (list of currently checked-in people)
-- **FR-034:** Track entry and exit timestamps (ISO 8601 format)
-- **FR-035:** Search/filter attendance list by name or email
-- **FR-036:** Filter by role (All, Attendees, Volunteers)
-- **FR-037:** Visual distinction for checked-in attendees (green border)
-- **FR-038:** Update Airtable immediately on check-in/out
+### 3.4 Group Registration
+- **FR-025:** Group role is for group leaders registering on behalf of their organisation (IMPLEMENTED)
+- **FR-026:** Group leader selects their organisation from the closed-group organisations list (`openGroup === false` on organisationContacts) (IMPLEMENTED)
+- **FR-027:** Group leader enters groupSize: the number of participants in their group NOT including the leader themselves (IMPLEMENTED)
+- **FR-028:** Group leader enters disabledStudents and senStudents counts for their group (IMPLEMENTED)
+- **FR-029:** Group leader selects their contact record from a contact picker pre-populated from the organisationContacts table (IMPLEMENTED)
+- **FR-030:** Group leader indicates whether they are personally participating via groupLeaderParticipating boolean (IMPLEMENTED)
+- **FR-031:** Auto-detect group leader: when a Participant's email matches a group leader contact record, the system auto-sets groupLeaderParticipating=true and copies expectedGroupSize as the initial groupSize value (IMPLEMENTED)
 
-### 3.5 Organization Management
-- **FR-040:** Fetch organizations from Airtable for autocomplete
-- **FR-041:** ~~Support adding new organizations~~ - PENDING: Dropdown only, free text, or autocomplete with add new?
-- **FR-042:** Link registrations to organization records in Airtable
+### 3.5 Organisation Management
+- **FR-040:** Organisations imported from Airtable, stored in Neon Postgres (IMPLEMENTED)
+- **FR-041:** Organisation selection uses a role-based filtered dropdown (IMPLEMENTED)
+  - Participants see only open-group organisations (`openGroup !== false` on organisationContacts)
+  - Group leaders see only closed-group organisations (`openGroup === false` on organisationContacts)
+  - The `openGroup` boolean on `organisationContacts` is the single source of truth for filtering — `groupType` is never used for filtering logic
+- **FR-042:** An "Individual" pseudo-organisation option is available for unaffiliated participants who do not belong to any group (IMPLEMENTED)
+- **FR-043:** Link registrations to organisation records via organisationId (IMPLEMENTED)
 
-### 3.6 Reporting & Export
-- **FR-050:** Generate CSV reports with V2 fields:
+### 3.6 Attendance Tracking
+- **FR-050:** Real-time check-in functionality (IMPLEMENTED)
+- **FR-051:** Check-out functionality for safety compliance (IMPLEMENTED)
+- **FR-052:** Display current attendance statistics (checked in count, not checked in count) (IMPLEMENTED)
+- **FR-053:** Support fire drill/emergency evacuation reporting (list of currently checked-in people) (IMPLEMENTED)
+- **FR-054:** Track entry and exit timestamps (ISO 8601 format) (IMPLEMENTED)
+- **FR-055:** Search/filter attendance list by name or email (IMPLEMENTED)
+- **FR-056:** Filter by role (All, Participants, Volunteers, Groups) (IMPLEMENTED)
+- **FR-057:** Visual distinction for checked-in participants (green border) (IMPLEMENTED)
+- **FR-058:** Update Neon Postgres immediately on check-in/out; sync to Airtable post-event (IMPLEMENTED)
+
+### 3.7 Reporting & Export
+- **FR-060:** Generate CSV reports with fields:
   - Event Name, First Name, Last Name, Email
   - Organization, Impairment, Role
-  - Photo Consent, Marketing Consent
+  - Photo Consent, Feedback Consent, Next Event Consent
   - Check-in Time, Check-out Time, Attendance Duration
-- **FR-051:** Export attendance statistics
-- **FR-052:** Export volunteer participation data
-- **FR-053:** Support date-range filtering for reports
-- **FR-054:** Support event filtering for reports
-- **FR-055:** Download CSV file to user's device
-- **FR-056:** ~~Phone number~~ - REMOVED from CSV export
+  - groupSize, disabledStudents, senStudents, groupLeaderParticipating (for Group registrations)
+- **FR-061:** Export attendance statistics (IMPLEMENTED)
+- **FR-062:** Export volunteer participation data (IMPLEMENTED)
+- **FR-063:** Support date-range filtering for reports (IMPLEMENTED)
+- **FR-064:** Support event filtering for reports (IMPLEMENTED)
+- **FR-065:** Download CSV file to user's device (IMPLEMENTED)
+- **FR-066:** ~~Phone number~~ - REMOVED from CSV export
 
-### 3.7 Data Integration
-- **FR-060:** Direct write to Airtable on form submission (no offline storage)
-- **FR-061:** Direct read from Airtable for attendance list
-- **FR-062:** Real-time data (no sync delays)
-- **FR-063:** Handle Airtable API errors gracefully with user-friendly messages
-- **FR-064:** Retry failed API calls (max 3 attempts)
-- **FR-065:** ~~Offline operation~~ - REMOVED (requires internet connection)
-- **FR-066:** ~~Sync to Mailchimp~~ - DEFERRED (can be done via Airtable automation)
-- **FR-067:** ~~Sync to Google Drive~~ - DEFERRED (can be done via Airtable automation)
+### 3.8 Data Integration
+- **FR-070:** Registrations written to Neon Postgres on form submission; synced to Airtable post-event in batches (IMPLEMENTED)
+- **FR-071:** Read from Neon Postgres for attendance list and reporting (IMPLEMENTED)
+- **FR-072:** Organisations and volunteers imported from Airtable via admin import screen (IMPLEMENTED)
+- **FR-073:** Handle API errors gracefully with user-friendly messages (IMPLEMENTED)
+- **FR-074:** Airtable sync runs in batches of 10 with 250ms delays to respect rate limits (IMPLEMENTED)
+- **FR-075:** ~~Offline operation~~ - REMOVED (requires internet connection)
+- **FR-076:** ~~Sync to Mailchimp~~ - DEFERRED (can be done via Airtable automation)
+- **FR-077:** ~~Sync to Google Drive~~ - DEFERRED (can be done via Airtable automation)
 
 ---
 
@@ -128,10 +146,9 @@ The Power2Inspire Event CRM App is a **web-based application** designed to facil
 - **NFR-031:** Airtable API key stored server-side only (never exposed to browser)
 - **NFR-032:** Environment variables for all secrets
 - **NFR-033:** Input validation (client-side + server-side)
-- **NFR-034:** SQL injection prevention (N/A - no SQL database)
-- **NFR-035:** XSS prevention (React auto-escaping + CSP headers)
-- **NFR-036:** CORS configured for same-origin only
-- **NFR-037:** Rate limiting on API routes (prevent abuse)
+- **NFR-034:** XSS prevention (React auto-escaping + CSP headers)
+- **NFR-035:** CORS configured for same-origin only
+- **NFR-036:** Rate limiting on API routes (prevent abuse)
 
 ### 4.5 Reliability
 - **NFR-040:** 99.9% uptime (Vercel SLA)
@@ -144,10 +161,20 @@ The Power2Inspire Event CRM App is a **web-based application** designed to facil
 - **NFR-050:** Support 500+ registrations per event
 - **NFR-051:** Support 10+ concurrent users
 - **NFR-052:** Serverless functions scale automatically (Vercel)
-- **NFR-053:** Airtable API rate limit: 5 requests/second (handled by Vercel)
+- **NFR-053:** Airtable API rate limit: 5 requests/second (handled with batching and delays)
 
 ### 4.7 Usability
 - **NFR-060:** Intuitive navigation (max 3 clicks to any feature)
+- **NFR-065:** Error messages with clear next steps
+
+### 4.8 Maintainability
+- **NFR-070:** TypeScript for type safety (IMPLEMENTED)
+- **NFR-071:** Zod schemas for validation (single source of truth) (IMPLEMENTED)
+- **NFR-072:** Component-based architecture (React) (IMPLEMENTED)
+- **NFR-073:** Separation of concerns (UI, server actions, database service, business logic) (IMPLEMENTED)
+- **NFR-074:** Comprehensive documentation
+- **NFR-075:** Git version control (IMPLEMENTED)
+- **NFR-076:** Automated deployment (Vercel) (IMPLEMENTED)
 
 ---
 
@@ -162,7 +189,7 @@ The Power2Inspire Event CRM App is a **web-based application** designed to facil
 
 ### 5.2 Business Constraints
 - **C-010:** Must use existing Airtable base structure (V2 schema)
-- **C-011:** Must maintain V2 field requirements (Event, Email, Organization, Impairment all required)
+- **C-011:** Must maintain V2 field requirements (Event, Email, Organization, Impairment all required for Participants)
 - **C-012:** Must use radio buttons for consents (not checkboxes)
 - **C-013:** Must display orange wristband language for photo consent refusal
 - **C-014:** Budget: $0 hosting cost (Vercel free tier)
@@ -189,10 +216,11 @@ The Power2Inspire Event CRM App is a **web-based application** designed to facil
 - **A-013:** Users understand consent language (photo + marketing)
 
 ### 6.3 Data Assumptions
-- **A-020:** Organization list is pre-populated in Airtable
+- **A-020:** Organisation list is pre-populated from Airtable before event day
 - **A-021:** Event details are created in Airtable before event day
-- **A-022:** Duplicate registrations are acceptable (no deduplication required)
-- **A-023:** Data retention follows GDPR guidelines (to be confirmed by charity)
+- **A-022:** Volunteer list is imported from Airtable before event day
+- **A-023:** Duplicate registrations are acceptable (no deduplication required)
+- **A-024:** Data retention follows GDPR guidelines (to be confirmed by charity)
 
 ---
 
@@ -201,78 +229,75 @@ The Power2Inspire Event CRM App is a **web-based application** designed to facil
 ### 7.1 External Services
 - **D-001:** Airtable API availability and uptime
 - **D-002:** Vercel platform availability and uptime
-- **D-003:** npm package ecosystem (React, NextJS, Zod, etc.)
+- **D-003:** npm package ecosystem (React, Next.js, Zod, etc.)
 - **D-004:** GitHub for version control and deployment triggers
+- **D-005:** Neon serverless PostgreSQL availability and uptime
 
 ### 7.2 Third-Party Libraries
-- **D-010:** NextJS 14 (App Router)
-- **D-011:** React 18
-- **D-012:** TypeScript 5
-- **D-013:** Tailwind CSS 3
-- **D-014:** Shadcn/ui component library
-- **D-015:** React Hook Form 7
-- **D-016:** Zod 3 (validation)
-- **D-017:** Airtable.js 0.12
+- **D-010:** Next.js 16 (App Router) (IMPLEMENTED)
+- **D-011:** React 19 (IMPLEMENTED)
+- **D-012:** TypeScript 5 (IMPLEMENTED)
+- **D-013:** Tailwind CSS 4 (IMPLEMENTED)
+- **D-014:** Shadcn/ui component library (Radix) (IMPLEMENTED)
+- **D-015:** React Hook Form 7 (IMPLEMENTED)
+- **D-016:** Zod 4 (validation) (IMPLEMENTED)
+- **D-017:** Airtable.js 0.12 (IMPLEMENTED)
+- **D-018:** Drizzle ORM + Neon serverless driver (IMPLEMENTED)
 
 ### 7.3 Data Dependencies
 - **D-020:** Airtable base with V2 schema (Events, Organizations, Registrations tables)
-- **D-021:** Organization data pre-populated in Airtable
+- **D-021:** Organisation data pre-populated via Airtable import
 - **D-022:** Event data created before event day
+- **D-023:** Volunteer data imported from Airtable before event day
 
 ---
 
 ## 8. Outstanding Questions
 
-### 8.1 High Priority (Must Answer Before Development)
-1. **Organization Field Implementation:**
-   - Option A: Dropdown only (select from existing organizations)
-   - Option B: Free text only (type any organization name)
-   - **Option C: Autocomplete with ability to add new** (RECOMMENDED)
-   - **Decision:** TBD
+### 8.1 Resolved Items (Previously TBD)
 
-2. **Conditional Fields for Attendee vs Volunteer:**
-   - Current wireframe shows identical forms for both roles
-   - **Question:** Which 1-2 fields should be different between Attendee and Volunteer forms?
-   - **Decision:** TBD
+1. **Organisation Field Implementation — RESOLVED**
+   - Decision: Role-based filtered dropdown. Participants see open-group organisations (`openGroup !== false`). Group leaders see closed-group organisations (`openGroup === false`). An "Individual" option is available for unaffiliated participants.
+   - The `openGroup` boolean on `organisationContacts` is the single source of truth. `groupType` is never used for filtering.
 
-### 8.2 Medium Priority (Can Be Decided During Development)
-3. **Admin Authentication:**
-   - Should admin features (attendance tracking, CSV export) require password protection?
-   - Or rely on physical device security only?
-   - **Decision:** TBD
+2. **Conditional Fields for Participant vs Volunteer — RESOLVED**
+   - Volunteers are identified by email lookup against the pre-populated `volunteers` table.
+   - Volunteer form captures: photoConsent, feedbackConsent, nextEventConsent only.
+   - Volunteer form does not show Organization or Impairment fields.
+   - First Name and Last Name are auto-populated from the matched volunteer record.
 
+3. **Admin Authentication — RESOLVED**
+   - Client-side sessionStorage check: `adminAuth = "event"` for event admin, `adminAuth = "p2i"` for P2I admin.
+   - No server-side session or JWT. Physical device security supplements this.
+
+### 8.2 Medium Priority (Deferred)
 4. **Mailchimp Integration:**
-   - Direct from app or via Airtable automation?
-   - **Recommendation:** Airtable automation (simpler)
-   - **Decision:** TBD
+   - Decision: Deferred — handled via Airtable automation
 
 5. **Google Drive Backup:**
-   - Direct from app or via Airtable automation?
-   - **Recommendation:** Airtable automation (simpler)
-   - **Decision:** TBD
+   - Decision: Deferred — handled via Airtable automation
 
 ### 8.3 Low Priority (Nice to Have)
 6. **Multi-language Support:**
-   - English only or support additional languages?
-   - **Decision:** TBD (default: English only)
+   - Decision: English only (default)
 
 7. **PWA Features:**
-   - Add Progressive Web App features (install to home screen, offline support)?
-   - **Decision:** TBD (default: no)
+   - Decision: Not implemented (default: no)
 
 ---
 
 ## 9. Acceptance Criteria
 
 ### 9.1 Functional Acceptance
-- ✅ All 8 screens from wireframe V2 are functional
-- ✅ Registration form validates all required fields (Event, First Name, Last Name, Email, Organization, Impairment)
+- ✅ Registration form validates all required fields (Event, First Name, Last Name, Email, Organization, Impairment for Participants)
 - ✅ Consent radio buttons work correctly (force explicit Yes/No choice)
 - ✅ Orange wristband language displays when photo consent = No
 - ✅ Event dropdown pre-selects current event
-- ✅ Organization field works as specified (TBD: dropdown/autocomplete/free text)
-- ✅ Registrations save to Airtable successfully
-- ✅ Attendance tracking (check-in/out) updates Airtable in real-time
+- ✅ Organisation dropdown filters by role: Participants see open-group orgs; Group leaders see closed-group orgs
+- ✅ Volunteer email lookup auto-populates name and consent fields
+- ✅ Group registration captures groupSize, disabledStudents, senStudents, groupLeaderParticipating
+- ✅ Registrations save to Neon Postgres successfully; sync to Airtable post-event
+- ✅ Attendance tracking (check-in/out) updates Neon Postgres in real-time
 - ✅ CSV export generates correct fields (V2 specification, no phone number)
 - ✅ Search/filter works on attendance list
 
@@ -290,7 +315,7 @@ The Power2Inspire Event CRM App is a **web-based application** designed to facil
 ### 9.3 Testing Acceptance
 - ✅ Manual testing on multiple devices (tablet, phone, desktop)
 - ✅ Manual testing on multiple browsers (Chrome, Safari, Firefox, Edge)
-- ✅ End-to-end registration flow tested (Attendee + Volunteer)
+- ✅ End-to-end registration flow tested (Participant, Volunteer, Group)
 - ✅ End-to-end attendance flow tested (check-in → check-out)
 - ✅ CSV export tested with 100+ registrations
 - ✅ Error handling tested (network errors, validation errors, API errors)
@@ -338,34 +363,21 @@ The Power2Inspire Event CRM App is a **web-based application** designed to facil
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2026-02-06 | Development Team | Initial requirements for Flutter offline-first mobile app |
-| 2.0 | 2026-02-11 | Development Team | Updated for NextJS web application approach after client review |
+| 2.0 | 2026-02-11 | Development Team | Updated for Next.js web application approach after client review |
+| 2.1 | 2026-04-16 | Development Team | Resolved all TBD items; added Group role requirements (FR-025–FR-031); updated technology to Next.js 16 / React 19 / Zod 4 / Tailwind 4 / Drizzle + Neon; renamed "Attendee" to "Participant" throughout; marked implemented requirements; fixed section ordering |
 
-### Key Changes in V2:
-- Changed from Flutter mobile app to NextJS web application
-- Removed offline operation requirements (requires internet)
-- Removed mobile app platform requirements (Android/iOS)
-- Added web browser support requirements
-- Removed phone number field (not required)
-- Maintained all V2 field requirements (Event, Email, Organization, Impairment all required)
-- Maintained consent radio button requirements
-- Maintained orange wristband language
-- Updated timeline from 24-33 days to 10-15 days
-- Updated hosting from app stores to Vercel ($0 cost)
+### Key Changes in V2.1:
+- Updated technology stack: Next.js 16, React 19, Zod 4, Tailwind CSS 4, added Drizzle ORM + Neon PostgreSQL
+- Resolved TBD: organisation field uses role-based `openGroup` filtering (not `groupType`)
+- Resolved TBD: volunteer form uses email lookup, auto-populates name, captures consent fields only
+- Resolved TBD: admin authentication uses client-side sessionStorage
+- Added Group role requirements (FR-025–FR-031) including groupSize, disabledStudents, senStudents, groupLeaderParticipating, contact picker, and auto-detect logic
+- Renamed "Attendee" to "Participant" throughout
+- Marked all implemented requirements with (IMPLEMENTED) status
+- Corrected data integration: Neon Postgres is primary store; Airtable sync is post-event
 
 ---
 
 **Document End**
 
-*This requirements specification was created on 2026-02-11 to document the NextJS web application approach for the Power2Inspire Event CRM App.*
-- **NFR-065:** Error messages with clear next steps
-
-### 4.8 Maintainability
-- **NFR-070:** TypeScript for type safety
-- **NFR-071:** Zod schemas for validation (single source of truth)
-- **NFR-072:** Component-based architecture (React)
-- **NFR-073:** Separation of concerns (UI, API routes, business logic)
-- **NFR-074:** Comprehensive documentation
-- **NFR-075:** Git version control
-- **NFR-076:** Automated deployment (Vercel)
-
-
+*This requirements specification was last updated on 2026-04-16 to reflect the implemented state of the Next.js 16 application.*

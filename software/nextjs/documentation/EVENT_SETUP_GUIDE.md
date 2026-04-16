@@ -1,7 +1,7 @@
 # Event Setup Guide
 
-**Version:** 1.1
-**Date:** 2026-03-13
+**Version:** 1.2
+**Date:** 2026-04-16
 **Purpose:** Step-by-step instructions for setting up a new PowerHouseGames event in the system
 
 ---
@@ -25,17 +25,24 @@ Before participants can register for an event through the public registration pa
 
 ### Step 1: Create the Event
 
-1. **Navigate to P2I Admin Dashboard**
+1. **Log in to P2I Admin**
    - URL: `/admin/p2i`
    - Enter P2I Admin PIN: `9876`
+   - After login, you are redirected to **Manage Events** page (`/admin/p2i/manage-events`)
 
-2. **Create New Event**
-   - In the **Data Management** section, click **"➕ Create New Event"**
+2. **Navigation**
+   - The **P2iAdminNav** component at the top provides access to all P2I admin sections:
+     - **Manage Events** - Create events and set the current active event
+     - **Manage Organisations** - Add and manage organizations
+     - **Manage Helpers** - Add and manage volunteers
+     - **Logout** - Exit P2I Admin
+
+3. **Create New Event**
+   - On the **Manage Events** page, click **"➕ Create New Event"**
    - Fill in the required fields:
      - **Event Name*** (required): e.g., "Manchester Arena 2026"
      - **Event Date*** (required): Select the event date
      - **Location** (optional): e.g., "Manchester Arena"
-     - **Description** (optional): Brief description of the event
    - Click **"Create Event"**
 
 3. **Event Status**
@@ -50,9 +57,10 @@ Before participants can register for an event through the public registration pa
 Organizations must be added to the system BEFORE the event so they appear in the registration form dropdown.
 
 #### 2.1 Navigate to Organization Management
-- From P2I Admin Dashboard, click **"🏢 Manage Organizations"** (when implemented)
-- OR use the database seed script for bulk import
-- OR manually add via database
+- From any P2I Admin page, use the **P2iAdminNav** component at the top
+- Click **"Manage Organisations"**
+- Or use the database seed script for bulk import
+- Or manually add via database
 
 #### 2.2 Required Organization Data
 
@@ -109,8 +117,9 @@ For each organization, you need:
 Volunteers must be added to the system BEFORE the event so they can register through the public form.
 
 #### 3.1 Navigate to Volunteer Registration
-- From P2I Admin Dashboard, click **"👥 Manage Volunteers"** (when implemented)
-- OR use Event Admin Dashboard → **"Register Volunteer"**
+- From any P2I Admin page, use the **P2iAdminNav** component at the top
+- Click **"Manage Helpers"**
+- Or use Event Admin Dashboard → **"Register Volunteer"**
 
 #### 3.2 Required Volunteer Data
 
@@ -150,7 +159,7 @@ For each volunteer, you need:
 Once all organizations and volunteers are added, make the event active so the public can register.
 
 1. **Navigate to Manage Events**
-   - From P2I Admin Dashboard, click **"📅 Manage Events"**
+   - From the P2iAdminNav component, click **"Manage Events"**
 
 2. **Set as Current Event**
    - Find your event in the list (sorted by date, most recent first)
@@ -161,12 +170,40 @@ Once all organizations and volunteers are added, make the event active so the pu
    - Your event status changes from `'planned'` → `'active'` (green badge)
    - All other events automatically change to `'completed'` (gray badge)
    - ⚠️ **Business Rule:** Only ONE event can be active at a time
-   - Events that have had their data cleared will show as `'archived'` (see Step 8)
+   - Events that have had their data cleared will show as `'archived'` (see Post-Event Workflow)
 
 4. **Public Access**
    - The event is now visible on the public registration form
    - Event Admin Dashboard (PIN: 1234) can now access this event
    - Participants can register through `/registration`
+
+---
+
+## Event Lifecycle
+
+Events progress through four stages:
+
+1. **`planned`** (blue badge)
+   - New event, not yet active
+   - Visible to P2I Admin only
+   - Organizations and volunteers being set up
+
+2. **`active`** (green badge)
+   - Current event accepting public registrations
+   - Event Admin Dashboard can manage registrations
+   - Only ONE event can be active at a time
+
+3. **`completed`** (gray badge)
+   - Past event, no longer active
+   - Registration is closed to the public
+   - Event admin can still view registrations
+   - Ready for event summary and data export
+
+4. **`archived`** (dim badge)
+   - Event data has been cleared from local database
+   - Registrations, volunteers, and organizations deleted
+   - Event record preserved for historical reference
+   - Cannot be reactivated
 
 ---
 
@@ -185,11 +222,15 @@ Once all organizations and volunteers are added, make the event active so the pu
    ↓
 6. Registrations Collected
    ↓
-7. After Event: Change status to 'completed'
+7. After Event: Mark as Completed (status: 'completed')
    ↓
-8. Sync registrations to Airtable
+8. Generate Event Summary
    ↓
-9. Clear Event Data → status changes to 'archived'
+9. Event becomes Archived (status: 'archived')
+   ↓
+10. Sync registrations to Airtable
+   ↓
+11. Clear Event Data (optional)
 ```
 
 ---
@@ -285,42 +326,119 @@ For future events (status: 'planned'), you can set `expectedGroupSize` on organi
 
 ---
 
-## Step 8: Clear Event Data (Post-Event Housekeeping)
+## Post-Event Workflow
 
-After the event is complete and registrations have been **synced to Airtable**, you can clear local data to keep the database tidy.
+### Step 5: Mark Event as Completed
 
-1. **Navigate to P2I Admin Dashboard** → Select the completed event
-2. Click **"🗑️ Clear Event Data"**
-3. The system shows a count of records that will be deleted
-4. **Safety check:** If there are unsynced registrations (status `'pending'` or `'failed'`), the clear is blocked unless you tick the **"Force clear"** checkbox
-5. Confirm the action
+Once the event has finished and registration is closed:
 
-**What gets deleted (in FK-safe order):**
-1. All **registrations** for the event
-2. All **volunteers** for the event
-3. All **organisation contacts** linked via the event's Airtable ID
-4. All **organisations** linked through those contacts
+1. **Navigate to Manage Events**
+   - From the P2iAdminNav component, click **"Manage Events"**
 
-**After clearing:**
-- The event status changes to **`'archived'`**
-- The event record itself is preserved (name, date, location remain)
-- The event will not appear in the public registration form
-- Archived events are shown with a distinct badge in P2I Admin
+2. **Change Status to Completed**
+   - Find your event in the list
+   - Click **"Mark as Completed"** button
+   - Event status changes from `'active'` → `'completed'` (gray badge)
+   - Public registration form no longer shows this event
 
-⚠️ **This action is irreversible.** Always sync to Airtable first.
+3. **Event Admin Access**
+   - Event Admin Dashboard can still view and manage registrations
+   - Export registrations as CSV for records
+   - Prepare event summary data
 
 ---
 
-## Next Steps
+### Step 6: Generate Event Summary
 
-After event setup is complete:
-1. Test the registration form with sample data
-2. Share registration URL with participants
-3. Monitor registrations through Event Admin Dashboard
-4. Export data to CSV when needed
-5. After event: Change status to 'completed'
-6. Sync registrations to Airtable
-7. Clear event data (optional) → status becomes 'archived'
+After the event is completed, generate an event summary that captures participant statistics and consent preferences.
+
+1. **Access Event Summary**
+   - From the Event Admin Dashboard, click **"📊 Event Summary"**
+   - A modal dialog opens showing:
+     - **Participant Counts**: Total registrations by type (Participants, Volunteers, Group Leaders)
+     - **Consent Statistics**: 
+       - Photo consent acceptance rate
+       - Feedback consent acceptance rate
+       - Next event consent acceptance rate
+     - **Group Breakdown** (if applicable):
+       - Number of groups registered
+       - Average group size
+       - Disabled students total
+       - SEN students total
+
+2. **Complete Event Summary Form**
+   - **Event Sequence Number** (required): Sequential number for this event (e.g., "2026-04-16-001")
+     - Used for historical record-keeping and Airtable sync
+   - **Admin Notes** (optional): Notes for future reference (e.g., "Smooth event, high volunteer turnout", "Weather delays on arrival")
+   - Click **"Generate Summary"**
+
+3. **Event Becomes Archived**
+   - After summary generation, event status automatically changes to `'archived'`
+   - Event record is locked and cannot be reactivated
+   - Registrations are marked as synced and ready for Airtable export
+
+---
+
+### Step 7: Export and Sync Registrations
+
+Export registrations and sync to Airtable before clearing data.
+
+1. **Export Registrations as CSV**
+   - From Event Admin Dashboard, click **"📥 Export Registrations"**
+   - CSV file downloads with all registration data
+   - Keep for local records and backup
+
+2. **Sync to Airtable**
+   - From P2I Admin Dashboard, select the completed event
+   - Click **"🔄 Sync to Airtable"**
+   - System batches registrations (10 at a time) with 250ms delays
+   - Monitor sync status:
+     - **pending** - Not yet synced
+     - **synced** - Successfully exported to Airtable
+     - **failed** - Sync attempt failed (manual review needed)
+
+3. **Verify All Synced**
+   - Check that all registrations show status `'synced'`
+   - If any show `'failed'`, investigate and retry before clearing
+
+---
+
+### Step 8: Clear Event Data (Optional Housekeeping)
+
+After the event is archived and registrations are synced to Airtable, you can optionally clear local data to keep the database tidy.
+
+1. **Navigate to Manage Events**
+   - From the P2iAdminNav component, click **"Manage Events"**
+
+2. **Clear Event Data**
+   - Find your archived event in the list
+   - Click **"🗑️ Clear Event Data"**
+   - The system shows a count of records that will be deleted
+   - **Safety check:** If there are unsynced registrations (status `'pending'` or `'failed'`), the clear is blocked unless you tick the **"Force clear"** checkbox
+   - Confirm the action
+
+3. **What Gets Deleted (in FK-safe order)**
+   - All **registrations** for the event
+   - All **volunteers** for the event
+   - All **organisation contacts** linked via the event's Airtable ID
+   - All **organisations** linked through those contacts
+   - Event summary record
+
+4. **After Clearing**
+   - The event record itself is preserved (name, date, location remain)
+   - Event status remains `'archived'`
+   - The event will not appear in any dropdowns or lists
+   - Archived events with cleared data are shown with a dim badge in P2I Admin
+
+⚠️ **This action is irreversible.** Always verify all registrations are synced to Airtable first.
+
+---
+
+## Quick Reference: Event Admin PIN
+
+- **Event Admin PIN:** `1234`
+- Grants access to Event Admin Dashboard when event is `'active'`
+- Used to view, export, and manage registrations for the current event
 
 ---
 

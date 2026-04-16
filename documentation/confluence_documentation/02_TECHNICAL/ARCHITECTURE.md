@@ -1,795 +1,179 @@
-# NextJS Architecture - Power2Inspire Event CRM Web App
+# Architecture — Power2Inspire Event CRM
 
-**Document Version:** 1.1
-**Date:** 2026-02-13
-**Status:** Implementation In Progress
-**Replaces:** Flutter offline-first mobile app approach
-
----
-
-## Executive Summary
-
-Following client review, the Power2Inspire Event CRM App will be built as a **NextJS web application** hosted on **Vercel** instead of a Flutter mobile app. This approach eliminates offline sync complexity while maintaining all V2 UI/UX specifications.
-
-**Key Benefits:**
-- ✅ 60% faster development (10-15 days vs 24-33 days)
-- ✅ $0 hosting cost (Vercel free tier)
-- ✅ No app store fees or approval delays
-- ✅ Simpler architecture (direct Airtable integration)
-- ✅ Works on any device (tablets, phones, desktop)
-- ✅ All V2 wireframes and specifications remain valid
+**Document Version:** 2.0
+**Last Updated:** 2026-04-16
+**Status:** Current
 
 ---
 
 ## 1. Technology Stack
 
-### 1.1 Frontend
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| **NextJS** | 16.1.6 (App Router + Turbopack) | React framework with server-side rendering |
-| **React** | 19.2.3 | UI component library |
-| **TypeScript** | 5.x | Type safety and developer experience |
-| **Tailwind CSS** | 4.x | Utility-first CSS framework |
-| **Shadcn/ui** | Latest | Accessible, customizable component library |
-| **React Hook Form** | 7.x | Form state management and validation |
-| **Zod** | 3.x | Schema validation (client + server) |
-| **Lucide React** | Latest | Icon library (Calendar, MapPin icons) |
-| **next/font** | Built-in | Google Fonts integration (Roboto) |
-| **cmdk** | Latest | Command palette/search functionality |
-
-### 1.2 Backend (Serverless)
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| **NextJS API Routes** | 16.x | Serverless functions on Vercel |
-| **Neon PostgreSQL** | Latest | Serverless PostgreSQL database (EU West London) |
-| **Drizzle ORM** | Latest | Type-safe database queries and migrations |
-| **Drizzle Kit** | Latest | Database migration tool |
-| **@neondatabase/serverless** | Latest | Neon serverless driver |
-| **Airtable.js** | 0.12.x | Official Airtable SDK (for sync) |
-| **CSV Writer** | npm package | CSV export generation |
-
-### 1.3 Hosting & Deployment
-| Service | Tier | Purpose |
-|---------|------|---------|
-| **Vercel** | Free (Hobby) | Hosting, CDN, serverless functions |
-| **GitHub** | Free | Version control and CI/CD trigger |
-| **Neon** | Free (512MB) | PostgreSQL database (EU West London, GDPR compliant) |
-| **Airtable** | Paid | Long-term data storage and sync target |
+| Layer | Technology | Version |
+|---|---|---|
+| Framework | Next.js App Router | 16.1.6 |
+| UI | React | 19 |
+| Language | TypeScript | 5 |
+| Database ORM | Drizzle ORM + Neon serverless PostgreSQL | — |
+| External data | Airtable SDK | 0.12.2 |
+| Validation | Zod + React Hook Form | 4.3.6 / 7.71.1 |
+| Components | Shadcn UI (Radix) + Tailwind CSS | 4 |
 
 ---
 
-## 2. Architecture Overview
+## 2. Key Layers
 
-### 2.1 High-Level Architecture
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                        User Devices                          │
-│  (Tablets at events, Staff phones, Admin desktop)           │
-└────────────────────┬────────────────────────────────────────┘
-                     │ HTTPS
-                     ↓
-┌─────────────────────────────────────────────────────────────┐
-│                    Vercel Edge Network                       │
-│                  (Global CDN + HTTPS)                        │
-└────────────────────┬────────────────────────────────────────┘
-                     │
-                     ↓
-┌─────────────────────────────────────────────────────────────┐
-│                   NextJS Application                         │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │  Frontend (React Components)                         │  │
-│  │  - Home Screen                                       │  │
-│  │  - Registration Forms (Attendee/Volunteer)           │  │
-│  │  - Attendance Tracking                               │  │
-│  │  - Admin Dashboard                                   │  │
-│  └──────────────────────────────────────────────────────┘  │
-│                                                              │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │  API Routes (Serverless Functions)                   │  │
-│  │  - POST /api/registrations                           │  │
-│  │  - PATCH /api/attendance                             │  │
-│  │  - GET /api/export                                   │  │
-│  │  - GET /api/events                                   │  │
-│  │  - GET /api/organizations                            │  │
-│  └──────────────────────────────────────────────────────┘  │
-└────────────────────┬────────────────────────────────────────┘
-                     │ Airtable API
-                     ↓
-┌─────────────────────────────────────────────────────────────┐
-│                      Airtable Base                           │
-│  - Events Table                                              │
-│  - Organizations Table                                       │
-│  - Registrations Table                                       │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### 2.2 Data Flow
-
-**Registration Flow:**
-```
-1. User fills form → 2. Client validation (Zod) → 3. Submit to API route
-   ↓
-4. Server validation (Zod) → 5. Write to Airtable → 6. Return success
-   ↓
-7. Show confirmation → 8. Redirect to home
-```
-
-**Attendance Flow:**
-```
-1. Load attendance list → 2. Fetch from Airtable → 3. Display in UI
-   ↓
-4. User clicks check-in → 5. API route updates Airtable → 6. Refresh list
-```
+| File | Purpose |
+|---|---|
+| `lib/db/schema.ts` | Drizzle schema — single source of truth for DB structure |
+| `lib/db/client.ts` | Drizzle + Neon HTTP client instance |
+| `lib/db-service.ts` | `DatabaseService` class — all DB query logic lives here |
+| `lib/actions.ts` | Next.js Server Actions — thin wrappers around `DatabaseService` |
+| `lib/types.ts` | TypeScript interfaces for all entities |
+| `lib/airtable.ts` | Airtable SDK client + field mappings between Airtable and local schema |
+| `lib/validation.ts` | Zod schemas for form validation |
+| `lib/helpers.ts` | Pure utility functions (no DB/server imports; safe for client use) |
+| `lib/participant-counting.ts` | Business logic for participant count calculations |
+| `lib/field-visibility-config.ts` | Config object controlling which form fields show per registration type |
+| `lib/help-tips.ts` | Centralised help tip content with `tipKey` lookup |
 
 ---
 
-## 3. Project Structure
+## 3. Data Flow
 
-### 3.1 Directory Layout
+The system operates in three phases:
 
-```
-event-crm-web/
-├── app/                          # NextJS 14 App Router
-│   ├── layout.tsx                # Root layout (global styles, fonts)
-│   ├── page.tsx                  # Home screen (Screen 1)
-│   ├── event-info/
-│   │   └── page.tsx              # Event info screen (Screen 2)
-│   ├── register/
-│   │   ├── page.tsx              # Registration type selection (Screen 3)
-│   │   ├── attendee/
-│   │   │   └── page.tsx          # Attendee form (Screen 4)
-│   │   └── volunteer/
-│   │       └── page.tsx          # Volunteer form (Screen 5)
-│   ├── confirmation/
-│   │   └── page.tsx              # Confirmation screen (Screen 6)
-│   ├── attendance/
-│   │   └── page.tsx              # Attendance list (Screen 7)
-│   ├── admin/
-│   │   └── page.tsx              # Admin menu (Screen 8)
-│   └── api/
-│       ├── registrations/
-│       │   └── route.ts          # POST new registration
-│       ├── attendance/
-│       │   └── route.ts          # PATCH check-in/out
-│       ├── export/
-│       │   └── route.ts          # GET CSV export
-│       ├── events/
-│       │   └── route.ts          # GET active events
-│       └── organizations/
-│           └── route.ts          # GET organizations
-├── components/
-│   ├── ui/                       # Shadcn/ui components
-│   │   ├── button.tsx
-│   │   ├── input.tsx
-│   │   ├── radio-group.tsx
-│   │   └── ...
-│   ├── RegistrationForm.tsx      # Shared form component
-│   ├── ConsentRadioGroup.tsx     # Photo + marketing consent
-│   ├── EventDropdown.tsx         # Event selection
-│   ├── OrganizationAutocomplete.tsx
-│   ├── AttendanceList.tsx
-│   ├── AttendanceListItem.tsx
-│   └── StatsCard.tsx
-├── lib/
-│   ├── airtable.ts               # Airtable client singleton
-│   ├── validation.ts             # Zod schemas
-│   ├── types.ts                  # TypeScript types
-│   ├── utils.ts                  # Utility functions
-│   └── constants.ts              # App constants
-├── public/
-│   ├── logo.svg
-│   └── ...
-├── .env.local                    # Environment variables (gitignored)
-├── .env.example                  # Example env file
-├── next.config.js                # NextJS configuration
-├── tailwind.config.ts            # Tailwind configuration
-├── tsconfig.json                 # TypeScript configuration
-├── package.json
-└── vercel.json                   # Vercel deployment config
-```
+**Phase 1 — Pre-event**
+P2I admin imports events, organisations, and volunteers from Airtable into Neon Postgres via `/admin/p2i/airtable-import`.
+
+**Phase 2 — Event day**
+Attendees register via the public `/registration` form. Registrations are written directly to Neon Postgres.
+
+**Phase 3 — Post-event**
+Admin exports registrations as a CSV from the P2I dashboard for manual import into Airtable. This is the standard post-event workflow.
+
+A legacy `syncRegistrationsToAirtable()` function exists in `app/actions/airtable-sync.ts` (batches of 10 with 250ms delays to respect rate limits) but CSV export is the current standard.
 
 ---
 
-## 4. API Routes Specification
+## 4. Route Map
 
-### 4.1 POST /api/registrations
-**Purpose:** Create new registration in Airtable
+### Public
 
-**Request Body:**
-```typescript
-{
-  eventId: string;              // Airtable event record ID
-  attendeeName: string;         // First name
-  attendeeSurname: string;      // Last name
-  email: string;                // Email address
-  organizationId: string;       // Airtable organization record ID
-  impairment: string;           // Accessibility needs
-  role: "Attendee" | "Volunteer";
-  photoConsent: boolean;        // false = orange wristband
-  marketingConsent: boolean;    // false = no mailing list
-}
-```
+| Route | Description |
+|---|---|
+| `/` | Landing page — shows logo and redirects to power2inspire.org.uk/powerhousegames/ after 5 seconds |
+| `/registration` | Public registration form (only renders when an event is active) |
 
-**Response:**
-```typescript
-{
-  success: true;
-  recordId: string;             // Airtable record ID
-  message: "Registration created successfully";
-}
-```
+### P2I Admin (PIN: 9876)
 
-**Error Response:**
-```typescript
-{
-  success: false;
-  error: string;
-  details?: any;
-}
-```
+| Route | Description |
+|---|---|
+| `/admin/p2i/` | P2I admin dashboard — event options and CSV export |
+| `/admin/p2i/manage-events` | Event management — this is where P2I login lands |
+| `/admin/p2i/organisations` | Organisation CRUD |
+| `/admin/p2i/helpers` | Volunteer/helper management |
+| `/admin/p2i/group-leaders` | Group leader contacts management |
+| `/admin/p2i/airtable-import` | Airtable data import |
 
-### 4.2 PATCH /api/attendance
-**Purpose:** Update check-in or check-out time for a registration
+### Event Admin (PIN: 1234)
 
-**Request Body:**
-```typescript
-{
-  recordId: string;             // Airtable record ID
-  action: "checkin" | "checkout";
-  timestamp: string;            // ISO 8601 format
-}
-```
-
-**Response:**
-```typescript
-{
-  success: true;
-  message: "Check-in recorded successfully";
-}
-```
-
-### 4.3 GET /api/export
-**Purpose:** Generate CSV export of registrations
-
-**Query Parameters:**
-```typescript
-{
-  eventId?: string;             // Optional: filter by event
-  startDate?: string;           // Optional: filter by date range
-  endDate?: string;
-}
-```
-
-**Response:**
-- Content-Type: `text/csv`
-- Filename: `registrations-{date}.csv`
-
-**CSV Columns:**
-- Event Name, First Name, Last Name, Email, Organization, Impairment, Role, Photo Consent, Marketing Consent, Check-in Time, Check-out Time, Registration Time
-
-### 4.4 GET /api/events
-**Purpose:** Fetch active events for dropdown
-
-**Response:**
-```typescript
-{
-  events: Array<{
-    id: string;                 // Airtable record ID
-    name: string;               // Event name
-    date: string;               // Event date
-    isActive: boolean;          // Currently active
-  }>;
-}
-```
-
-### 4.5 GET /api/organizations
-**Purpose:** Fetch organizations for autocomplete
-
-**Query Parameters:**
-```typescript
-{
-  search?: string;              // Optional: filter by name
-}
-```
-
-**Response:**
-```typescript
-{
-  organizations: Array<{
-    id: string;                 // Airtable record ID
-    name: string;               // Organization name
-  }>;
-}
-```
+| Route | Description |
+|---|---|
+| `/admin/event/` | Event admin dashboard |
+| `/admin/event/registrations` | Registration list |
+| `/admin/event/registrations/[id]` | Registration detail |
+| `/admin/event/register-volunteer` | Manual volunteer registration |
+| `/admin/event/register-organization` | Manual org registration |
+| `/admin/event/organizations/[organizationId]` | Org detail |
+| `/admin/event/report` | Group registration report |
 
 ---
 
-## 5. Security & Authentication
+## 5. Registration Roles
 
-### 5.1 Environment Variables
-All sensitive data stored in Vercel environment variables:
+The registration form (`components/registration-form.tsx`, ~50KB) supports three roles with different field sets and step counts.
 
-```bash
-# .env.local (never committed to git)
-AIRTABLE_API_KEY=keyXXXXXXXXXXXXXX
-AIRTABLE_BASE_ID=appXXXXXXXXXXXXXX
-NEXT_PUBLIC_APP_URL=https://event-crm.vercel.app
+| Role | Description | Steps |
+|---|---|---|
+| **Participant** | Individual attendee; sees open-group organisations (`openGroup !== false`) | 2 |
+| **Volunteer** | Identified by email lookup against the `volunteers` table | 1 |
+| **Group** | Group leader; sees all organisations (open and closed); captures group size, disabled students, SEN students, and whether the leader is participating | 3 |
+
+### Field Visibility by Role
+
+| Field | Participant | Volunteer | Group |
+|---|---|---|---|
+| attendeeName | Yes | No | Yes |
+| attendeeSurname | Yes | No | Yes |
+| email | Yes | Yes | Yes |
+| organizationId | Yes | No | Yes |
+| impairment | Yes | No | No |
+| photoConsent | Yes | Yes | Yes |
+| feedbackConsent | Yes | Yes | Yes |
+| nextEventConsent | Yes | Yes | Yes |
+| groupSize | No | No | Yes |
+| disabledStudents | No | No | Yes |
+| senStudents | No | No | Yes |
+
+Field visibility per role is driven by `lib/field-visibility-config.ts`.
+
+---
+
+## 6. Organisation Model
+
+### Source of Truth: `openGroup`
+
+The `openGroup` boolean on `organisationContacts` is the single source of truth for group behaviour and filtering.
+
+- `openGroup === true` (or `null`): **open group** — Participants register individually; the group leader registers to set expected count
+- `openGroup === false`: **closed group** — the group leader registers on behalf of all members; no individual Participant registrations are taken
+
+**Rule: `groupType` is for reporting only.** It must never be used for filtering, selection, or any conditional logic within the application.
+
+### Dropdown Filtering
+
+- **Participant dropdown**: only organisations where `openGroup !== false`; the `Individual` option is always last
+- **Group dropdown**: only organisations where `openGroup === false`
+- `Individual` is a system `groupType` for participants without group affiliation and is excluded from counting
+
+---
+
+## 7. Authentication
+
+Authentication is sessionStorage-based. There is no server-side session or JWT.
+
+| Key | Value | Access |
+|---|---|---|
+| `adminAuth` | `"event"` | Event admin routes (`/admin/event/*`) |
+| `adminAuth` | `"p2i"` | P2I admin routes (`/admin/p2i/*`) |
+| `administeringEventId` | event UUID | Tracks which event the P2I admin is managing |
+
+Access is checked client-side in page components. P2I login redirects to `/admin/p2i/manage-events`.
+
+---
+
+## 8. Key Components
+
+**`registration-form.tsx`**
+Multi-step registration form (~50KB). The core of the application. Handles all three registration roles, field visibility, step navigation, and form submission.
+
+**`P2iAdminNav`**
+Shared navigation component across all P2I admin pages. Links: Manage Events, Manage Organisations, Manage Helpers, Logout.
+
+**`HelpTip`**
+Inline help popovers with randomised P2I brand colours. Content is centralised in `lib/help-tips.ts` and looked up by `tipKey`.
+
+**Event summary modal**
+Allows P2I admin to preview participant counts and consent stats, enter an event sequence number and admin notes, then archive the event.
+
+---
+
+## 9. Event Lifecycle
+
+Events progress through a fixed sequence of statuses:
+
+```
+planned → active → completed → archived
 ```
 
-### 5.2 API Route Security
-- ✅ Airtable token **never exposed** to browser
-- ✅ All Airtable calls happen server-side only
-- ✅ API routes validate all inputs with Zod
-- ✅ HTTPS enforced by Vercel
-- ✅ CORS configured for same-origin only
-
-### 5.3 Data Validation
-**Client-Side (Browser):**
-- React Hook Form + Zod validation
-- Immediate feedback to user
-- Prevents invalid submissions
-
-**Server-Side (API Routes):**
-- Zod schema validation on all inputs
-- Sanitize data before Airtable write
-- Return detailed error messages
-
----
-
-## 6. Data Models (TypeScript)
-
-### 6.1 Registration Type
-```typescript
-// lib/types.ts
-export interface Registration {
-  id?: string;                  // Airtable record ID (optional for new)
-  eventId: string;              // Link to Events table
-  attendeeName: string;         // First name
-  attendeeSurname: string;      // Last name
-  email: string;                // Email address
-  organizationId: string;       // Link to Organizations table
-  impairment: string;           // Accessibility needs
-  role: "Attendee" | "Volunteer";
-  photoConsent: boolean;        // false = orange wristband
-  marketingConsent: boolean;    // false = no mailing list
-  checkinTime?: string;         // ISO 8601 timestamp
-  checkoutTime?: string;        // ISO 8601 timestamp
-  createdAt?: string;           // Auto-generated by Airtable
-}
-```
-
-### 6.2 Validation Schemas
-```typescript
-// lib/validation.ts
-import { z } from "zod";
-
-export const registrationSchema = z.object({
-  eventId: z.string().min(1, "Event is required"),
-  attendeeName: z.string().min(1, "First name is required"),
-  attendeeSurname: z.string().min(1, "Last name is required"),
-  email: z.string().email("Invalid email address"),
-  organizationId: z.string().min(1, "Organization is required"),
-  impairment: z.string().min(1, "Please specify accessibility needs"),
-  role: z.enum(["Attendee", "Volunteer"]),
-  photoConsent: z.boolean(),
-  marketingConsent: z.boolean(),
-});
-
-export type RegistrationInput = z.infer<typeof registrationSchema>;
-```
-
----
-
-## 7. Airtable Integration
-
-### 7.1 Client Singleton
-```typescript
-// lib/airtable.ts
-import Airtable from "airtable";
-
-const base = new Airtable({
-  apiKey: process.env.AIRTABLE_API_KEY,
-}).base(process.env.AIRTABLE_BASE_ID!);
-
-export const tables = {
-  registrations: base("Registrations"),
-  events: base("Events"),
-  organizations: base("Organizations"),
-};
-```
-
-### 7.2 Field Mappings
-Maps TypeScript types to Airtable field names (from V2 documentation):
-
-| App Field | Airtable Field | Type |
-|-----------|----------------|------|
-| eventId | Event | Link to Events |
-| attendeeName | First Name | Single line text |
-| attendeeSurname | Last Name | Single line text |
-| email | Email | Email |
-| organizationId | Organization | Link to Organizations |
-| impairment | Do you have an impairment | Single line text |
-| role | Role | Single select |
-| photoConsent | Photo Consent | Checkbox |
-| marketingConsent | Marketing Consent | Checkbox |
-| checkinTime | Check-in Time | Date/time |
-| checkoutTime | Check-out Time | Date/time |
-
----
-
-## 8. Deployment Strategy
-
-### 8.1 Vercel Configuration
-```json
-// vercel.json
-{
-  "buildCommand": "npm run build",
-  "devCommand": "npm run dev",
-  "installCommand": "npm install",
-  "framework": "nextjs",
-  "regions": ["lhr1"]
-}
-```
-
-### 8.2 Deployment Workflow
-1. **Development:** Push to feature branch → Vercel creates preview deployment
-2. **Testing:** Test preview URL → Verify functionality
-3. **Production:** Merge to `main` → Vercel auto-deploys to production
-4. **Rollback:** One-click rollback in Vercel dashboard
-
-### 8.3 Environment Variables Setup
-1. Go to Vercel project settings
-2. Add environment variables:
-   - `AIRTABLE_API_KEY` (production + preview)
-   - `AIRTABLE_BASE_ID` (production + preview)
-   - `NEXT_PUBLIC_APP_URL` (production + preview)
-3. Redeploy to apply changes
-
----
-
-## 9. Testing Strategy
-
-### 9.1 Unit Tests
-- **Tool:** Jest + React Testing Library
-- **Coverage:** Components, validation schemas, utility functions
-- **Run:** `npm test`
-
-### 9.2 Integration Tests
-- **Tool:** Playwright
-- **Coverage:** Full user flows (registration, attendance, export)
-- **Run:** `npm run test:e2e`
-
-### 9.3 Manual Testing Checklist
-- [ ] Registration form validation (all fields)
-- [ ] Consent radio buttons (orange wristband language)
-- [ ] Event dropdown (pre-selection works)
-- [ ] Organization autocomplete
-- [ ] Attendance check-in/out
-- [ ] CSV export
-- [ ] Responsive design (tablet, phone, desktop)
-- [ ] Accessibility (keyboard navigation, screen reader)
-
----
-
-## 10. Performance Optimization
-
-### 10.1 NextJS Features
-- ✅ **Server-Side Rendering (SSR):** Fast initial page load
-- ✅ **Static Generation:** Pre-render home page
-- ✅ **Image Optimization:** Automatic image compression
-- ✅ **Code Splitting:** Load only needed JavaScript
-- ✅ **Edge Caching:** Vercel CDN caches static assets
-
-### 10.2 Optimization Techniques
-- **Lazy Loading:** Load attendance list on demand
-- **Debouncing:** Organization autocomplete search
-- **Memoization:** Cache event/organization lists
-- **Compression:** Gzip/Brotli enabled by Vercel
-
----
-
-## 11. Accessibility Implementation
-
-### 11.1 WCAG AA Compliance
-- ✅ **Color Contrast:** 4.5:1 minimum for text
-- ✅ **Touch Targets:** 48x48 dp minimum (72x72 dp preferred)
-- ✅ **Keyboard Navigation:** All interactive elements accessible
-- ✅ **Screen Reader:** Semantic HTML + ARIA labels
-- ✅ **Focus Indicators:** Visible focus states
-
-### 11.2 Shadcn/ui Benefits
-- Pre-built accessible components
-- ARIA attributes included
-- Keyboard navigation built-in
-- Focus management handled
-
----
-
-## 12. Migration from V2 Flutter Specs
-
-### 12.1 What Stays the Same
-✅ All 8 screens (UI/UX unchanged)
-✅ Registration form fields
-✅ Consent radio buttons
-✅ Orange wristband language
-✅ Event dropdown with pre-selection
-✅ Organization autocomplete
-✅ Attendance tracking
-✅ CSV export
-✅ Airtable field mappings
-✅ Validation rules
-
-### 12.2 What Changes
-❌ Remove: Flutter, Dart, SQLite, offline sync
-✅ Add: NextJS, React, Vercel, direct Airtable integration
-✅ Benefit: 60% faster development, $0 hosting, simpler architecture
-
----
-
-## 13. Implementation Status (As of 2026-02-13)
-
-### 13.1 Completed Features ✅
-
-#### **Phase 1: Setup & Infrastructure (COMPLETE)**
-- ✅ NextJS 16.1.6 project initialized with App Router and Turbopack
-- ✅ TypeScript 5.x configured
-- ✅ Tailwind CSS 4.x installed and configured
-- ✅ Shadcn/ui components installed (button, input, label, select, radio-group, form, checkbox, command, popover, dialog)
-- ✅ React Hook Form 7.x + Zod 3.x validation setup
-- ✅ Vercel deployment configured and live at: `https://p2iphg-ewodz4p4i-mrwilljackson-com.vercel.app`
-- ✅ GitHub repository connected for CI/CD
-- ✅ Environment variables configured (.env.local)
-- ✅ Neon PostgreSQL database setup (EU West London region, GDPR compliant)
-- ✅ Drizzle ORM configured with schema and migrations
-- ✅ Database schema created (events, organizations, registrations tables)
-
-#### **Phase 2: Registration Form (COMPLETE)**
-- ✅ Generic registration form component built
-- ✅ Three registration types implemented:
-  - Attendee
-  - Volunteer
-  - Teacher / Coordinator (with conditional fields)
-- ✅ All V2 required fields implemented:
-  - Event (hidden field, pre-populated from header)
-  - First name and last name (side-by-side layout)
-  - Email (optional, horizontal layout)
-  - Organization (optional, autocomplete combobox, horizontal layout)
-  - Impairment (optional, dropdown select with 3 options, horizontal layout)
-  - Registration type (3 radio button options)
-  - Photo consent (2 radio button options, defaults to "Yes")
-  - Contact consent (2 independent checkboxes)
-- ✅ Conditional fields for Teacher/Coordinator:
-  - Group size (required number input)
-  - Disabled students count (required number input)
-  - SEN students count (required number input)
-- ✅ Client-side validation with Zod schema
-- ✅ Form state management with React Hook Form
-- ✅ Mock data service for testing (pre-populated event and organizations)
-
-#### **UI/UX Enhancements (COMPLETE)**
-- ✅ Event header component with P2I logo and event details
-- ✅ Roboto font applied to headings (matches P2I website)
-- ✅ Responsive layout (mobile-first, tablet-optimized)
-- ✅ Fully clickable selection boxes using native `<label>` wrapper pattern:
-  - Registration type boxes (3 options)
-  - Photo consent boxes (2 options)
-  - Contact consent boxes (2 checkboxes)
-- ✅ Hover effects on all interactive elements
-- ✅ Lime green submit button (matches P2I logo) with purple click effect
-- ✅ Horizontal field layouts for email, organization, and impairment
-- ✅ Visual separators (horizontal rules) between form sections
-- ✅ Gradient background for modern look
-- ✅ Centered layout with max-width for readability
-
-#### **Field Labels & Text (COMPLETE)**
-All field labels updated to match client requirements:
-- ✅ "Your first name: *"
-- ✅ "Your last name: *"
-- ✅ "Your email:"
-- ✅ "Your organisation:"
-- ✅ "Do you consider yourself to be a disabled person, or to have a long‑term physical or mental health condition or impairment?"
-- ✅ "How many participants are you responsible for in your group *"
-- ✅ "How many of your participants are disabled people, or to have a long‑term physical or mental health condition or impairment? *"
-- ✅ "Do you have any special educational needs (SEN) or require additional learning support? *"
-- ✅ Photo consent "No" option: "No, I will wear an orange wristband to denote I do not wish photos of me to be used in this way"
-- ✅ Submit button: "Click here to register!"
-
-### 13.2 Database Architecture (IMPLEMENTED)
-
-#### **Three-Phase Workflow:**
-1. **Pre-Event:** Admin fetches data from Airtable → Stores in Neon database
-2. **During Event:** Registrations stored in Neon (fast, no Airtable API calls)
-3. **Post-Event:** Admin syncs all registrations to Airtable → Wipes Neon database
-
-#### **Database Schema (Neon PostgreSQL):**
-
-**Events Table:**
-```sql
-CREATE TABLE events (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT NOT NULL,
-  date DATE NOT NULL,
-  location TEXT NOT NULL,
-  created_at TIMESTAMP DEFAULT NOW()
-);
-```
-
-**Organizations Table:**
-```sql
-CREATE TABLE organizations (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT NOT NULL UNIQUE,
-  created_at TIMESTAMP DEFAULT NOW()
-);
-```
-
-**Registrations Table:**
-```sql
-CREATE TABLE registrations (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  event_id UUID NOT NULL REFERENCES events(id),
-  attendee_name TEXT NOT NULL,
-  attendee_surname TEXT NOT NULL,
-  email TEXT,
-  organization_id UUID REFERENCES organizations(id),
-  organization_name TEXT,
-  impairment TEXT,
-  role TEXT NOT NULL,
-  photo_consent BOOLEAN NOT NULL,
-  feedback_consent BOOLEAN,
-  next_event_consent BOOLEAN,
-  group_size TEXT,
-  disabled_students TEXT,
-  sen_students TEXT,
-  created_at TIMESTAMP DEFAULT NOW(),
-  synced_to_airtable BOOLEAN DEFAULT FALSE,
-  airtable_record_id TEXT
-);
-```
-
-### 13.3 In Progress / Pending 🚧
-
-#### **API Routes (NOT STARTED)**
-- [ ] POST /api/admin/seed - Seed database with mock data
-- [ ] GET /api/events/current - Get current active event
-- [ ] GET /api/organizations - Get all organizations
-- [ ] POST /api/registrations - Submit registration to Neon database
-- [ ] POST /api/admin/fetch-airtable - Fetch data from Airtable to Neon
-- [ ] POST /api/admin/sync-airtable - Sync registrations from Neon to Airtable
-- [ ] POST /api/admin/wipe-database - Clear all data from Neon
-
-#### **Admin Dashboard (NOT STARTED)**
-- [ ] Pre-event: "Fetch from Airtable" button
-- [ ] During event: Live registration count display
-- [ ] Post-event: "Sync to Airtable" button
-- [ ] Post-event: "Wipe Database" button
-- [ ] Sync status indicators
-
-#### **Attendance Tracking (NOT STARTED)**
-- [ ] Attendance list screen
-- [ ] Check-in functionality
-- [ ] Check-out functionality
-- [ ] Real-time attendance count
-
-#### **Airtable Integration (NOT STARTED)**
-- [ ] Airtable API key configuration
-- [ ] Airtable base ID configuration
-- [ ] Fetch service (Airtable → Neon)
-- [ ] Sync service (Neon → Airtable)
-- [ ] Field mapping configuration
-
-#### **Testing & Polish (NOT STARTED)**
-- [ ] Cross-browser testing
-- [ ] Accessibility audit
-- [ ] Performance optimization
-- [ ] User acceptance testing
-- [ ] Production deployment
-
-### 13.4 Technical Decisions Made
-
-#### **Database Selection: Neon PostgreSQL**
-- **Why:** Auto-wakes in 1-2 seconds after inactivity (acceptable for event start)
-- **Region:** EU West (London) for GDPR compliance
-- **Tier:** Free (512MB storage, sufficient as data is wiped after each event)
-- **Rejected alternatives:**
-  - Supabase (pauses after 7 days, requires manual reactivation)
-  - PlanetScale (good option, but Neon chosen for EU region)
-  - Turso (good option, but Neon chosen for PostgreSQL familiarity)
-
-#### **UI Pattern: Native Label Wrappers**
-- **Why:** Entire selection boxes are clickable using native HTML `<label>` behavior
-- **Implementation:** Wrap radio buttons and checkboxes in `<label>` elements
-- **Benefits:**
-  - No custom JavaScript needed
-  - Accessible by default
-  - Works reliably across all browsers
-  - Larger click targets for better UX
-
-#### **Photo Consent Default: Opt-Out**
-- **Decision:** Photo consent defaults to "Yes" (opt-out model)
-- **Rationale:** Simplifies registration flow, users can still decline
-- **Note:** Ensure this aligns with privacy policy and legal requirements
-
-#### **Form Layout: Horizontal Fields**
-- **Decision:** Email, organization, and impairment fields use horizontal layout (label left, input right)
-- **Rationale:** Better use of screen space on tablets, cleaner visual hierarchy
-- **Responsive:** Stacks vertically on mobile devices
-
----
-
-## 14. Development Timeline
-
-### Phase 1: Setup (1-2 days)
-- [ ] Initialize NextJS project
-- [ ] Install dependencies (Tailwind, Shadcn/ui, Airtable.js, Zod)
-- [ ] Set up TypeScript types
-- [ ] Configure Vercel deployment
-- [ ] Set up environment variables
-
-### Phase 2: Core Features (4-6 days)
-- [ ] Build registration forms (Attendee + Volunteer)
-- [ ] Implement consent radio groups
-- [ ] Create event dropdown
-- [ ] Build organization autocomplete
-- [ ] Implement API routes (POST /api/registrations)
-- [ ] Add form validation (client + server)
-
-### Phase 3: Attendance & Admin (2-3 days)
-- [ ] Build attendance list screen
-- [ ] Implement check-in/out functionality
-- [ ] Create admin menu
-- [ ] Build CSV export
-
-### Phase 4: Polish & Testing (3-4 days)
-- [ ] Responsive design (tablet, phone, desktop)
-- [ ] Accessibility testing
-- [ ] Cross-browser testing
-- [ ] Performance optimization
-- [ ] User acceptance testing
-
-**Total Estimate:** 10-15 days
-
----
-
-## 14. Outstanding Questions (from V2)
-
-These questions still need answers before development:
-
-1. **Organization Field Implementation:**
-   - Pre-loaded dropdown only?
-   - Free text only?
-   - **Autocomplete with ability to add new?** (recommended)
-
-2. **Conditional Fields:**
-   - Which 1-2 fields should differ between Attendee and Volunteer forms?
-   - Current wireframe has identical forms
-
----
-
-## 15. Next Steps
-
-### Immediate Actions:
-1. ✅ Review this architecture document
-2. ✅ Answer 2 outstanding questions
-3. ✅ Update V2 documentation to reflect NextJS approach
-4. ✅ Set up Vercel deployment configuration
-5. ✅ Initialize NextJS project structure
-
-### Development Sequence:
-1. Create NextJS project with TypeScript + Tailwind
-2. Install Shadcn/ui and configure theme
-3. Set up Airtable client and environment variables
-4. Build registration forms (reuse V2 wireframe HTML/CSS)
-5. Implement API routes
-6. Add attendance tracking
-7. Build admin features
-8. Test and deploy to Vercel
-
----
-
-**Document End**
-
-*This architecture document replaces the Flutter offline-first approach with a simpler NextJS web application hosted on Vercel. All V2 UI/UX specifications remain valid and will be implemented in React components.*
-
-
+Only one event can be `active` at a time. The `active` event is what the public registration form displays. An event moves to `archived` after the summary modal has been completed.

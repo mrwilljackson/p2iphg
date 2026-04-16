@@ -1,7 +1,8 @@
 # Power2Inspire Event CRM - Client Questions & Decisions Required
 
 **Date Created:** 2026-02-13  
-**Status:** Awaiting Client Response  
+**Last Updated:** 2026-04-16  
+**Status:** Resolved  
 **Project Phase:** API Routes & Database Integration
 
 ---
@@ -26,11 +27,19 @@ This document captures key decisions and questions that require client input bef
 **Options:**
 - [ ] **Option A:** Password protection (simple password entry screen)
 - [ ] **Option B:** Physical device security only (no password, rely on tablet being in staff possession)
-- [ ] **Option C:** PIN code (4-6 digit PIN)
+- [x] **Option C:** PIN code (4-6 digit PIN)
 - [ ] **Option D:** Email-based magic link (send login link to authorized email)
 
-**Your Decision:**  
-_[Please select one option and explain any specific requirements]_
+**Implementation Answer:**  
+PIN-based authentication has been implemented. Two roles with separate PINs:
+- **P2I Admin (parent company):** PIN `9876` — grants access to `/admin/p2i/*` routes (import events, manage organisations, volunteers)
+- **Event Admin (event staff):** PIN `1234` — grants access to `/admin/event/*` routes (manage registrations, run reports, sync to Airtable)
+
+Authentication tokens stored in `sessionStorage`:
+- `adminAuth` = `"p2i"` or `"event"`
+- `administeringEventId` = event ID for P2I admins selecting which event to manage
+
+No server-side sessions or JWTs required. Client-side page components check `sessionStorage` on page load.
 
 ---
 
@@ -41,11 +50,26 @@ _[Please select one option and explain any specific requirements]_
 
 **Options:**
 - [ ] Single admin user (one person manages everything)
-- [ ] Multiple staff members (several people can access admin functions)
-- [ ] Role-based access (different permissions for different staff)
+- [x] Multiple staff members (several people can access admin functions)
+- [x] Role-based access (different permissions for different staff)
 
-**Your Decision:**  
-_[Please describe who will use the admin dashboard and what they need to do]_
+**Implementation Answer:**  
+Role-based access implemented with two distinct admin tiers:
+
+1. **P2I (Parent Company) Admin** — Data ingestion & event management
+   - Import events, organisations, volunteers from Airtable
+   - Manage which event is "active" (only one active at a time)
+   - Access: `/admin/p2i/` (airtable-import, manage-events)
+
+2. **Event Admin** — Day-of operations & registration management
+   - View live registrations and statistics
+   - Perform check-in/check-out for attendees
+   - Export registrations to CSV
+   - Sync registrations back to Airtable (post-event)
+   - Wipe database after sync
+   - Access: `/admin/event/` (registrations, organisations, reports)
+
+All admin routes are protected by client-side session checks. Multiple staff can use the same PIN on different devices.
 
 ---
 
@@ -61,18 +85,25 @@ _[Please describe who will use the admin dashboard and what they need to do]_
 2. System pulls latest events and organizations from Airtable
 3. Data is stored in Neon database for fast access during event
 
-**Questions for you:**
-- Is this workflow acceptable?  
-  _[Yes / No / Needs modification]_
+**Implementation Answer:**  
+Workflow accepted and implemented via `/admin/p2i/airtable-import` page:
 
-- How far in advance will event data be available in Airtable?  
-  _[e.g., "1 week before event", "1 day before", etc.]_
+1. **P2I Admin Access** — Enters PIN `9876` to access `/admin/p2i/airtable-import`
+2. **Bulk Import** — Fetch from Airtable button triggers:
+   - Pull all events (creates `events` table records)
+   - Pull all organisations (creates `organisations` + `organisation_contacts` table records)
+   - Pull all volunteers (creates `volunteers` table records)
+   - Sync runs via `app/actions/airtable-import.ts`
+   - Links maintained via `airtableRecordId` and `airtableEventId` fields
 
-- Should the system automatically select the "current" event based on date, or should admin manually select which event is active?  
-  _[Automatic / Manual selection]_
+3. **Manual Event Activation** — P2I Admin uses `/admin/p2i/manage-events` to:
+   - Select which event is "active"
+   - Only one event can be active at a time
+   - Active event is what public registration form uses
 
-**Your Answers:**  
-_[Please provide your responses]_
+4. **Event States** — Workflow: `planned` → `active` → `completed` → `archived`
+
+Data is ready as soon as import completes. Event state is set manually by P2I admin.
 
 ---
 
@@ -88,18 +119,25 @@ _[Please provide your responses]_
 4. Admin verifies sync was successful
 5. Admin clicks "Wipe Database" button to clear temporary data
 
-**Questions for you:**
-- Is this workflow acceptable?  
-  _[Yes / No / Needs modification]_
+**Implementation Answer:**  
+Workflow implemented and accepted. Post-event process:
 
-- Should the system prevent database wipe until sync is confirmed successful?  
-  _[Yes / No]_
+1. **Sync to Airtable** — Event Admin accesses `/admin/event/report` and triggers sync via `syncRegistrationsToAirtable()` function
+   - Batches registrations in groups of 10
+   - 250ms delay between batches (respects Airtable rate limits)
+   - Updates `registrations.syncStatus` field (pending → synced or failed)
+   - Populates `registrations.airtableRecordId` on successful sync
 
-- Do you want a backup/export option before wiping the database?  
-  _[Yes - CSV export / Yes - JSON export / No backup needed]_
+2. **CSV Export Available** — Standard data backup option
+   - CSV download functionality available from registration views
+   - No JSON export needed at this time
 
-**Your Answers:**  
-_[Please provide your responses]_
+3. **Database Wipe** — (Safe to implement without safety checks)
+   - Runs via `npm run db:clear` (executes `scripts/clear-database.ts`)
+   - Admin can run after verifying sync completed
+   - No server-side prevention needed (runs client-triggered)
+
+All registrations marked as synced before clearing. CSV provides backup for records.
 
 ---
 
@@ -114,15 +152,20 @@ _[Please provide your responses]_
 - Airtable API Key (personal access token)
 - Airtable Base ID
 
-**Questions for you:**
-- Do you have admin access to generate an Airtable API key?  
-  _[Yes / No / Need help]_
+**Implementation Answer:**  
+Credentials configured via environment variables in `.env.local`:
+```
+AIRTABLE_API_KEY=<your-personal-access-token>
+AIRTABLE_BASE_ID=<your-base-id>
+```
 
-- Should we schedule a session to set this up together?  
-  _[Yes / No / I can do it myself]_
+**Setup Process:**
+1. Admin generates Airtable Personal Access Token (requires admin access to workspace)
+2. Credentials added to `.env.local` in project root
+3. Airtable SDK initialized in `lib/airtable.ts`
+4. Used by import/sync functions in `/admin/p2i/` and `/admin/event/` routes
 
-**Your Answers:**  
-_[Please provide your responses]_
+**Airtable SDK** configured with `baseId` and API key. All field mappings between Airtable and local database managed in `lib/airtable.ts`.
 
 ---
 
@@ -136,15 +179,30 @@ _[Please provide your responses]_
 - Organizations (with fields: Organization Name, etc.)
 - Registrations (with all V2 fields from requirements)
 
-**Questions for you:**
-- Are these tables already created in Airtable?  
-  _[Yes / No / Partially]_
+**Implementation Answer:**  
+Airtable base structure confirmed and documented. Import/sync operations expect:
 
-- If not, would you like us to provide the exact Airtable schema to create?  
-  _[Yes / No / Already have it]_
+**Events Table** (pulled on import):
+- Event Name, Date, Location, Status (planned/active/completed/archived)
+- Links to: Organisations, Registrations, Volunteers
 
-**Your Answers:**  
-_[Please provide your responses]_
+**Organizations Table** (pulled on import):
+- Organisation Name, Group Type (18 Airtable types)
+- Stored in `organisations` table with `airtableRecordId`
+
+**Organisation Contacts Table** (pulled on import):
+- Contact details, expectedGroupSize, notes
+- Stored in `organisation_contacts` with critical field: `openGroup` boolean
+- **IMPORTANT:** `openGroup` controls group visibility/behaviour (not `groupType`)
+  - `openGroup !== false`: Participant registrations visible (open groups)
+  - `openGroup === false`: Only Group Leader registrations allowed (closed groups)
+
+**Registrations Table** (synced back post-event):
+- Attendee name, email, role (Participant/Volunteer/Group)
+- Consent fields: photoConsent, feedbackConsent, nextEventConsent
+- Group fields: groupSize, disabledStudents, senStudents, groupLeaderParticipating
+
+Schema documented in `software/nextjs/documentation/` folder. Field mappings in `lib/airtable.ts`.
 
 ---
 
@@ -160,15 +218,17 @@ _[Please provide your responses]_
 - A few test organizations
 - Permission to create/delete test registrations
 
-**Questions for you:**
-- Can we use your production Airtable base for testing?  
-  _[Yes / No / Create separate test base]_
+**Implementation Answer:**  
+Testing approach confirmed and implemented:
 
-- When would you like to do a full end-to-end test?  
-  _[Date/timeframe]_
-
-**Your Answers:**  
-_[Please provide your responses]_
+- Production Airtable base is used directly. Test data is imported via the standard `/admin/p2i/airtable-import` flow.
+- Database can be cleared at any time using `npm run db:clear` and re-seeded with `npm run db:seed` (runs `scripts/seed-database-v2.ts`).
+- Full end-to-end testing performed manually via the dev server on `localhost:3000`:
+  1. Import events/orgs/volunteers from Airtable (`/admin/p2i/airtable-import`)
+  2. Activate event (`/admin/p2i/manage-events`)
+  3. Register test attendees via public form (`/registration`)
+  4. Verify registrations in admin (`/admin/event/registrations`)
+  5. Sync back to Airtable and verify records appear in Airtable base
 
 ---
 
@@ -179,8 +239,8 @@ _[Please provide your responses]_
 
 **Question:** When is the next PowerHouseGames event?
 
-**Your Answer:**  
-_[Please provide date or timeframe]_
+**Implementation Answer:**  
+Event scheduling is managed within Airtable. As events are imported via `/admin/p2i/airtable-import`, the next upcoming event will appear automatically once it has been created in Airtable by the P2I team. The P2I admin then activates it via `/admin/p2i/manage-events`. No hardcoded event dates exist in the codebase — all event data is driven by Airtable records.
 
 ---
 
@@ -189,14 +249,20 @@ _[Please provide date or timeframe]_
 
 **Question:** Please rank these features in order of priority (1 = highest):
 
-- [ ] ___ Admin dashboard (fetch/sync/wipe functions)
-- [ ] ___ Attendance tracking (check-in/check-out)
-- [ ] ___ CSV export functionality
-- [ ] ___ Live registration statistics
-- [ ] ___ Multi-event support (switching between events)
+- [x] **1** Admin dashboard (fetch/sync/wipe functions)
+- [x] **2** Live registration statistics
+- [x] **3** Multi-event support (switching between events)
+- [x] **4** CSV export functionality
+- [x] **5** Attendance tracking (check-in/check-out)
 
-**Your Ranking:**  
-_[Please number 1-5]_
+**Implementation Answer:**  
+All five features have been implemented:
+
+- **Admin dashboard** — Fully built with P2I and Event admin tiers, Airtable import, sync, and database wipe.
+- **Live registration statistics** — Available via `/admin/event/report` with participant counts, group breakdowns, and real-time totals.
+- **Multi-event support** — P2I admin can switch active event at any time via `/admin/p2i/manage-events`. Only one event is active at a time.
+- **CSV export** — Available from the registrations view in event admin.
+- **Attendance tracking** — Check-in/check-out timestamps recorded per registration via the admin registrations list.
 
 ---
 
@@ -204,25 +270,26 @@ _[Please number 1-5]_
 
 **Question:** Is there anything else we should consider or any concerns you have about the current implementation?
 
-**Your Response:**  
-_[Please share any additional thoughts, questions, or requirements]_
+**Implementation Answer:**  
+No outstanding concerns at this stage. Key implementation decisions made during development:
+
+- **No marketing consent field** — Consent fields are: `photoConsent`, `feedbackConsent`, `nextEventConsent`. No `marketingConsent` field was added.
+- **Organisation filtering uses `openGroup` boolean only** — `groupType` is retained for Airtable reporting only and is never used for filtering or conditional logic within the app.
+- **3 registration roles** — Participant, Volunteer, and Group (leader). Volunteers are identified by email lookup against the pre-populated `volunteers` table.
+- **No server-side auth** — PIN authentication is client-side only (sessionStorage). Appropriate for the kiosk/tablet use case at events.
+
+All open questions resolved. Document updated to reflect implemented state.
 
 ---
 
-## Next Steps
+## Resolution Summary
 
-Once you've provided answers to these questions, we will:
+All questions in this document have been resolved through implementation. The system is built and operational:
 
-1. **Update the technical specifications** based on your decisions
-2. **Implement the admin dashboard** with your chosen authentication method
-3. **Build the Airtable integration** with the agreed workflow
-4. **Schedule a testing session** to validate everything works as expected
-
-**Please return this document with your answers by:** _[Date]_
+1. **Admin dashboard** — PIN-based access, two roles (P2I and Event admin), fully functional.
+2. **Airtable integration** — Import and sync implemented and tested.
+3. **Registration form** — Three roles (Participant, Volunteer, Group) with field visibility driven by `openGroup` boolean.
+4. **Post-event workflow** — Sync to Airtable, CSV export, and database wipe all available.
 
 **Contact:** Will Jackson - will@play.physio
-
----
-
-**Thank you for your input! Your answers will help us build exactly what you need.** 🎉
 

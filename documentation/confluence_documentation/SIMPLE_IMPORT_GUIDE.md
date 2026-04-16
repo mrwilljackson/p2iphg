@@ -129,10 +129,7 @@ Repeat for:
 **At root level or under Planning:**
 
 #### Documentation Workflow
-- Click **Create** (at root or as child of Planning)
-- Title: `Documentation Workflow`
-- Open: `DOCUMENTATION_WORKFLOW.md`
-- Copy all → Paste → Publish
+- See `CONFLUENCE_UPDATE_TRACKER.md` for the current documentation workflow and page mapping
 
 ---
 
@@ -183,7 +180,7 @@ When you update documentation:
 3. Copy-paste updated content into Confluence page
 4. Publish
 
-See `DOCUMENTATION_WORKFLOW.md` for the complete process.
+See `CONFLUENCE_UPDATE_TRACKER.md` for the current documentation workflow.
 
 ---
 
