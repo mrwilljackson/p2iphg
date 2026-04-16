@@ -28,29 +28,41 @@ The mapping is implemented in `app/actions/airtable-import.ts` via the `normaliz
 | HR | Other | Other |
 | Media and News | Other | Other |
 | Supplier | Other | Other |
+| — | Individual | Individual |
 
-## Registration Form — Role-Based Filtering
+**Individual** is a system marker for participants without group affiliation. It is excluded from participant counting. The Individual org always appears last in the Participant dropdown.
 
-The `groupType` value also controls **which organisations appear in the registration form dropdown**, depending on the user's selected role. This filtering is implemented in `lib/helpers.ts` → `organizationsToOptions()`.
+## Organisation Filtering — `openGroup` is the Source of Truth
 
-| Role | Filter Rule | Organisations Shown |
-|---|---|---|
-| **Participant** | Exclude `Disability` and `Family` | Corporate, Sporting, Community, Educational, Other + virtual "Family Group" placeholder |
-| **Group** | Include **only** `Disability` and `Family` | Disability and Family organisations only |
-| **Volunteer** | Organisation field is hidden | — |
+**Critical rule:** `openGroup` is the single source of truth for group behaviour. The `groupType` field is an administrative label for reporting only — it must **NEVER** be used for filtering, selection, or conditional logic within this application.
+
+The `openGroup` boolean on `organisation_contacts` controls which organisations are available to each role:
+
+- **`openGroup === true` (or `null`)**: Open group — Participants register individually; Group leader sets expected count
+- **`openGroup === false`**: Closed group — Group leader registers on behalf of all members; no individual participant registrations
+
+This filtering is implemented in `lib/helpers.ts`:
+- `organizationsToOptions()` — filters for Participant and Group roles
+- `groupOrgsToSections()` — organises Group leader dropdown
+
+| Role | Filter Rule | Organisations Shown | Notes |
+|---|---|---|---|
+| **Participant** | Only `openGroup !== false` | Open-group organisations only; "Individual" org always last | Individual org is a system marker for participants without group affiliation |
+| **Group** | Only `openGroup === false` | Closed-group organisations only | Only Disability and Family types are typically closed groups |
+| **Volunteer** | — | Organisation field is hidden | No org selector |
 
 - When the user switches role, the selected organisation is **cleared** automatically (the filtered lists don't overlap).
-- The "Family Group" placeholder (value `FAMILY_GROUP_PLACEHOLDER`) is a virtual option only shown for the Participant role; it triggers on-the-day family group creation.
-- Organisation selection is **required** for both Participant and Group roles (enforced via Zod `superRefine`).
+- The "Individual" option (value `INDIVIDUAL_PLACEHOLDER`) is a virtual option only shown for the Participant role; it marks participants with no group affiliation and is excluded from participant counting.
+- Organisation selection is **required** for Participant and Group roles (enforced via Zod `superRefine`).
 
 See `documentation/REGISTRATION_FORM_LOGIC.md` § 5.1 for the full behavioural reference.
 
 ## Counting Behaviour
 
-The 7 dashboard categories have different counting logic (see `lib/participant-counting.ts`):
+Counting logic depends on `openGroup` status, not `groupType` (see `lib/participant-counting.ts`):
 
-- **Family & Disability**: "Expected-only" groups — participants are counted at group level from `expectedGroupSize`. Individual registrations are not tracked.
-- **All other types** (Corporate, Sporting, Community, Educational, Other): Group leaders provide an expected count, but individual participants must also register separately. Both expected and registered counts are tracked.
+- **Closed groups** (`openGroup === false`): Counted at group level from `groupSize` (+ leader if participating). Individual registrations do not occur.
+- **Open groups** (`openGroup !== false`): Group leaders provide an expected count, but individual participants must also register separately. Actual count = number of Participant registrations (not `groupSize`).
 
 ## Field Name Reference
 
