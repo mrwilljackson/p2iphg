@@ -1,7 +1,7 @@
 # Power2Inspire Event CRM App - Data Models
 
-**Document Version:** 2.1
-**Date:** 2026-02-18
+**Document Version:** 2.2
+**Date:** 2026-04-16
 **Status:** Current Implementation (NextJS Web App)
 
 ## 1. Domain Entities
@@ -16,7 +16,7 @@ Represents a charitable event organized by Power2Inspire.
 - `date` (DateTime, required): Event date and time
 - `location` (String, optional): Event venue/address
 - `description` (String, optional): Event details
-- `status` (EventStatus, required): active | completed | cancelled
+- `status` (EventStatus, required): planned | active | completed | archived
 - `createdAt` (DateTime, required): Record creation timestamp
 - `modifiedAt` (DateTime, required): Last modification timestamp
 
@@ -26,7 +26,7 @@ Represents a charitable event organized by Power2Inspire.
 - Event name must be 3-100 characters
 
 **Example:**
-```dart
+```typescript
 Event(
   id: 'evt_123abc',
   name: 'Community Wellness Day',
@@ -63,6 +63,7 @@ Represents an attendee, volunteer, or group leader registration for an event.
 - `groupLeaderParticipating` (bool, optional): Whether group leader is participating in games (Group role only)
 - `checkinTime` (DateTime, optional): Check-in timestamp
 - `checkoutTime` (DateTime, optional): Check-out timestamp
+- `organisationName` (String, optional): Organisation name captured at registration time (denormalised for resilience against org record changes)
 - `syncStatus` (SyncStatus, optional): pending | synced | failed
 - `airtableRecordId` (String, optional): Airtable record ID after sync
 - `createdAt` (DateTime, optional): Record creation timestamp
@@ -157,106 +158,122 @@ Represents an attendee, volunteer, or group leader registration for an event.
 
 ---
 
-### 1.3 Organization Entity
+### 1.3 Organisation Entity
 
-Represents an organization that attendees/volunteers may be affiliated with. Organizations are event-specific.
+Represents an organisation that attendees/volunteers may be affiliated with. The implementation uses two tables: `organisations` (master record, Airtable-imported) and `organisation_contacts` (event-specific contact details and group behaviour flags).
+
+#### 1.3a organisations table
 
 **Properties:**
-- `id` (String, UUID): Unique identifier
-- `eventId` (String, required): Foreign key to Event (organizations are event-specific)
-- `name` (String, required): Organization name
-- `isDisabilityGroup` (bool, optional): Whether organization is a disability group (triggers conditional fields)
-- `imageUrl` (String, optional): Organization logo/image URL
+- `id` (UUID, PK): Local unique identifier
+- `name` (String, optional): Organisation name
+- `groupType` (String, optional): Reporting category — Family | Disability | Corporate | Sporting | Community | Educational | Other (see section 2.5). **For reporting/Airtable sync only — never used for filtering.**
+- `imageUrl` (String, optional): Organisation logo/image URL
+- `airtableRecordId` (String, optional): Airtable record ID (used as join key)
+- `airtableEventId` (String, optional): Airtable event ID this org is associated with
+- `createdAt` (DateTime, optional): Record creation timestamp
+- `modifiedAt` (DateTime, optional): Last modification timestamp
+
+#### 1.3b organisation_contacts table
+
+Stores event-specific contact details and group behaviour settings. The same organisation can have different contacts and `openGroup` settings at different events.
+
+**Properties:**
+- `id` (UUID, PK): Unique identifier
+- `organisationId` (String, required): Airtable record ID of the parent organisation
+- `airtableEventId` (String, optional): Airtable event ID linking this contact to an event
+- `openGroup` (Boolean, required, default: true): **Whether this group is visible to individual Participants at this event.** `true` = open group (participants register individually); `false` = closed group (group leader registers on behalf of all members). This is the single source of truth for organisation filtering — see section 9.
+- `photoConsent` (Boolean, required, default: true): Group leader's photo consent preference (pre-populated on Group registration form)
+- `feedbackConsent` (Boolean, required, default: false): Group leader's feedback survey consent preference
+- `nextEventConsent` (Boolean, required, default: false): Group leader's next event info consent preference
 - `contactFirstName` (String, optional): Contact person first name (for Group role auto-population)
 - `contactLastName` (String, optional): Contact person last name (for Group role auto-population)
 - `contactEmail` (String, optional): Contact person email (for Group role auto-population)
 - `contactPhone` (String, optional): Contact person phone
+- `expectedGroupSize` (String, optional): Expected number of participants (pre-event planning)
 - `notes` (String, optional): Additional information
-- `airtableRecordId` (String, optional): Airtable record ID after sync
+- `airtableRecordId` (String, optional): Airtable record ID for this contact record
 - `createdAt` (DateTime, optional): Record creation timestamp
 - `modifiedAt` (DateTime, optional): Last modification timestamp
 
 **Business Rules:**
-- Organization name must be 2-200 characters
-- Organizations are linked to specific events via eventId
-- Organizations can be pre-loaded from Airtable before event
-- Organizations can be created by Event Admin during event
-- isDisabilityGroup flag controls whether group-specific fields appear in registration form
-- Contact person details (firstName, lastName, email) are used to auto-populate Group role registration form
-- Family Group organizations do NOT have pre-set contact details (personalized per family)
+- Organisation name must be 2-200 characters
+- Organisations are linked to events via `airtableEventId` (not a UUID FK)
+- Organisations can be pre-loaded from Airtable before the event
+- Organisations can be created by Event Admin during the event
+- `openGroup` on `organisation_contacts` (not `groupType` on `organisations`) controls whether participants can see and select the organisation — see section 9
+- Contact person details (firstName, lastName, email) auto-populate the Group role registration form
+- Family Group organisations do NOT have pre-set contact details (personalised per family)
 
-**Organization Types:**
+**Organisation Types (by groupType):**
 
-**Corporate/Institutional Organizations:**
+**Corporate/Institutional:**
 - Examples: Next PLC, Leicester Tigers, De Montfort University, Deloitte, Siemens
-- isDisabilityGroup: false
-- Have contact person details for auto-population
+- `openGroup`: typically true
 
-**Disability Organizations:**
+**Disability/SEN:**
 - Examples: Glenfield SEN School, Hazel Grove Special School
-- isDisabilityGroup: true
-- Have contact person details for auto-population
 - Trigger additional fields in Group registration: groupSize, disabledStudents, senStudents
-- Show instructional note to verify contact details
+- `openGroup`: typically false (closed group)
 
 **Family Groups:**
-- Special organization type for individual families
-- isDisabilityGroup: true (to show group-specific fields)
-- Do NOT have pre-set contact details
-- Each family enters their own details
+- `groupType`: Family
+- `openGroup`: false
+- No pre-set contact details — each family provides their own
 
-**Example (Corporate Organization):**
+**Example (organisations row):**
 ```typescript
 {
-  id: 'org_leicester_next',
-  eventId: 'evt_001',
+  id: 'uuid-local',
   name: 'Next PLC',
-  isDisabilityGroup: false,
+  groupType: 'Corporate',
   imageUrl: null,
+  airtableRecordId: 'recXXXXXXXXXXXXXX',
+  airtableEventId: 'recEVENTXXXXXXXXXX',
+  createdAt: '2026-01-15T10:00:00Z',
+  modifiedAt: '2026-01-15T10:00:00Z',
+}
+```
+
+**Example (organisation_contacts row — open group):**
+```typescript
+{
+  id: 'uuid-contact',
+  organisationId: 'recXXXXXXXXXXXXXX',  // Airtable record ID
+  airtableEventId: 'recEVENTXXXXXXXXXX',
+  openGroup: true,
+  photoConsent: true,
+  feedbackConsent: false,
+  nextEventConsent: false,
   contactFirstName: 'Rachel',
   contactLastName: 'Thompson',
   contactEmail: 'rachel.thompson@next.co.uk',
   contactPhone: null,
+  expectedGroupSize: '20',
   notes: 'Corporate sponsor and participant',
-  airtableRecordId: null,
+  airtableRecordId: 'recCONTACTXXXXXXXX',
   createdAt: '2026-01-15T10:00:00Z',
   modifiedAt: '2026-01-15T10:00:00Z',
 }
 ```
 
-**Example (Disability Organization):**
+**Example (organisation_contacts row — closed group / disability):**
 ```typescript
 {
-  id: 'org_leicester_glenfield',
-  eventId: 'evt_001',
-  name: 'Glenfield SEN School',
-  isDisabilityGroup: true,
-  imageUrl: null,
+  id: 'uuid-contact-2',
+  organisationId: 'recGLENFIELDXXXXXX',
+  airtableEventId: 'recEVENTXXXXXXXXXX',
+  openGroup: false,
+  photoConsent: true,
+  feedbackConsent: true,
+  nextEventConsent: true,
   contactFirstName: 'Helen',
   contactLastName: 'Davies',
   contactEmail: 'helen.davies@glenfield.sch.uk',
   contactPhone: null,
+  expectedGroupSize: '25',
   notes: 'Special educational needs school',
-  airtableRecordId: null,
-  createdAt: '2026-01-15T10:00:00Z',
-  modifiedAt: '2026-01-15T10:00:00Z',
-}
-```
-
-**Example (Family Group):**
-```typescript
-{
-  id: 'org_family_group',
-  eventId: 'evt_001',
-  name: 'Family Group',
-  isDisabilityGroup: true,
-  imageUrl: null,
-  contactFirstName: null,  // No pre-set contact details
-  contactLastName: null,
-  contactEmail: null,
-  contactPhone: null,
-  notes: 'For individual families attending together',
-  airtableRecordId: null,
+  airtableRecordId: 'recCONTACT2XXXXXXX',
   createdAt: '2026-01-15T10:00:00Z',
   modifiedAt: '2026-01-15T10:00:00Z',
 }
@@ -308,7 +325,64 @@ Represents a pre-registered volunteer for an event. Volunteers are event-specifi
 
 ---
 
-### 1.5 SyncLog Entity
+### 1.5 EventSummary Entity
+
+Represents a point-in-time snapshot generated when a P2I admin archives a completed event. The summary persists after the event's participant and organisation data has been cleared from the database.
+
+**Properties:**
+- `id` (UUID, PK): Unique identifier
+- `eventId` (UUID, required, unique FK → events): The archived event this summary belongs to
+- `eventName` (String, required): Event name captured at archive time
+- `eventDate` (String, required): Event date (ISO 8601) captured at archive time
+- `eventLocation` (String, optional): Event venue captured at archive time
+- `eventDescription` (String, optional): Event description captured at archive time
+- `eventAirtableRecordId` (String, optional): Airtable record ID of the event
+- `participantCount` (Integer, required, default: 0): Number of Participant registrations
+- `volunteerCount` (Integer, required, default: 0): Number of Volunteer registrations
+- `groupCount` (Integer, required, default: 0): Number of Group registrations
+- `totalHeadcount` (Integer, required, default: 0): Total computed headcount (accounts for closed-group sizes)
+- `photoConsentCount` (Integer, required, default: 0): Number of attendees who gave photo consent
+- `feedbackConsentCount` (Integer, required, default: 0): Number of attendees who gave feedback consent
+- `nextEventConsentCount` (Integer, required, default: 0): Number of attendees who gave next-event consent
+- `orgBreakdown` (String, required, default: '[]'): JSON array of `{ orgName: string, headcount: number }` objects
+- `eventSequenceNumber` (Integer, required): Human-readable sequence number assigned by P2I admin at archive time
+- `adminNotes` (String, optional): Free-text notes entered by P2I admin at archive time
+- `createdAt` (DateTime, optional): Timestamp when the summary was generated
+
+**Business Rules:**
+- One summary per event (`eventId` is unique)
+- Summary is created when the event is archived; event data is cleared immediately after
+- All event metadata fields are copied from the event record at archive time to survive the data clear
+- `orgBreakdown` is stored as serialised JSON text
+- `eventSequenceNumber` is required and assigned manually by the P2I admin (not auto-incremented)
+
+**Example:**
+```typescript
+{
+  id: 'uuid-summary-001',
+  eventId: 'uuid-evt-001',
+  eventName: 'Community Wellness Day 2026',
+  eventDate: '2026-03-15',
+  eventLocation: 'Community Center, Main Street',
+  eventDescription: 'Annual wellness event with health screenings',
+  eventAirtableRecordId: 'recEVENTXXXXXXXXXX',
+  participantCount: 142,
+  volunteerCount: 18,
+  groupCount: 12,
+  totalHeadcount: 310,
+  photoConsentCount: 295,
+  feedbackConsentCount: 210,
+  nextEventConsentCount: 185,
+  orgBreakdown: '[{"orgName":"Next PLC","headcount":45},{"orgName":"Glenfield SEN School","headcount":26}]',
+  eventSequenceNumber: 7,
+  adminNotes: 'Excellent turnout. Venue was slightly too small.',
+  createdAt: '2026-03-20T14:30:00Z',
+}
+```
+
+---
+
+### 1.6 SyncLog Entity
 
 Tracks synchronization attempts to external systems.
 
@@ -328,7 +402,7 @@ Tracks synchronization attempts to external systems.
 - Successful syncs cannot be retried
 
 **Example:**
-```dart
+```typescript
 SyncLog(
   id: 'sync_789ghi',
   entityType: 'registration',
@@ -348,9 +422,10 @@ SyncLog(
 ### 2.1 EventStatus Enum
 ```typescript
 enum EventStatus {
-  active = "active",      // Currently ongoing or upcoming
-  completed = "completed",   // Event has finished
-  cancelled = "cancelled",   // Event was cancelled
+  planned = "planned",      // Future event, not yet active
+  active = "active",        // Currently ongoing or upcoming
+  completed = "completed",  // Event has finished; registration data still present
+  archived = "archived",    // Event whose participant/organisation data has been cleared; eventSummary snapshot exists
 }
 ```
 
@@ -387,6 +462,32 @@ enum SyncTarget {
 ```
 
 **Note:** In V2, only Airtable sync is actively used. Mailchimp and Google Drive targets are deprecated.
+
+### 2.5 GroupType Union
+
+```typescript
+type GroupType =
+  | 'Family'
+  | 'Disability'
+  | 'Corporate'
+  | 'Sporting'
+  | 'Community'
+  | 'Educational'
+  | 'Other'
+  | 'Individual';
+```
+
+**Type Descriptions:**
+- **Family** – Family groups attending together
+- **Disability** – Disability/SEN organisations (triggers group-specific fields)
+- **Corporate** – Corporate sponsors and workplace teams
+- **Sporting** – Sports clubs and teams
+- **Community** – Community organisations
+- **Educational** – Schools and universities
+- **Other** – Uncategorised organisations
+- **Individual** – System marker for participants with no group affiliation. **Excluded from all participant counting logic.** Not selectable by the user; assigned automatically.
+
+**Important:** `groupType` is an administrative label used for external reporting and Airtable sync only. It must never be used for filtering, selection, or conditional logic within the application. See section 9 (Organisation Filtering) for the correct approach.
 
 ---
 
@@ -576,7 +677,49 @@ Organization (1) ──────< (Many) Registration
 
 ---
 
+## 9. Organisation Filtering
+
+### Rule: Use `openGroup`, Never `groupType`
+
+**`groupType` is an administrative label for external reporting systems only. It must never be used for filtering, selection, or any conditional logic within this application.**
+
+The single source of truth for group behaviour is the `openGroup` boolean on the `organisation_contacts` table:
+
+| `openGroup` value | Meaning |
+|---|---|
+| `true` (or not set) | **Open group** — participants register individually; group leader registers separately to set expected count |
+| `false` | **Closed group** — group leader registers on behalf of all members; no individual participant registrations |
+
+### Filtering by Registration Role
+
+Implemented in `lib/helpers.ts`:
+
+- **Participants** — see only organisations where `openGroup !== false` (open groups only)
+- **Group leaders** — see all organisations (open and closed); open groups listed first, closed groups at the bottom
+- **Volunteers / undefined** — no filter applied
+
+### Why `openGroup` Lives on `organisation_contacts`
+
+`openGroup` is stored on `organisation_contacts` (not `organisations`) because the same organisation may be open at one event and closed at another. This makes the flag event-specific rather than a permanent attribute of the organisation.
+
+### Rationale
+
+`groupType` values such as `'Disability'` or `'Family'` are normalised from 18 Airtable values for Airtable sync and reporting dashboards. They carry no reliable behavioural meaning within the app — a Disability group might be open at one event, a Corporate group might be closed at another. Always use `openGroup` for any branching logic.
+
+See also: `lib/helpers.ts` → `organizationsToOptions()` and `groupOrgsToSections()`.
+
+---
+
 ## 8. Version History
+
+### V2.2 Changes (2026-04-16)
+
+1. **EventStatus Enum**: Corrected to match schema — replaced `cancelled` with `planned` and `archived`
+2. **GroupType Union (section 2.5)**: New section documenting all 8 values including `Individual` (system marker, excluded from counting)
+3. **Registration Entity**: Added `organisationName` field (denormalised org name captured at registration time)
+4. **Organisation Entity (section 1.3)**: Rewrote to document actual two-table structure (`organisations` + `organisation_contacts`); added `openGroup`, `photoConsent`, `feedbackConsent`, `nextEventConsent` fields on `organisation_contacts`
+5. **EventSummary Entity (section 1.5)**: New table — point-in-time snapshot created when an event is archived
+6. **Organisation Filtering (section 9)**: New section explaining `openGroup` as the source of truth; `groupType` is for reporting only
 
 ### V2.1 Changes (2026-02-18)
 
