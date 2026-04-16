@@ -43,7 +43,7 @@ Event(
 
 ### 1.2 Registration Entity
 
-Represents an attendee, volunteer, or group leader registration for an event.
+Represents a participant, volunteer, or group leader registration for an event.
 
 **Properties:**
 - `id` (String, UUID): Unique identifier
@@ -70,8 +70,8 @@ Represents an attendee, volunteer, or group leader registration for an event.
 - `modifiedAt` (DateTime, optional): Last modification timestamp
 
 **Business Rules:**
-- Attendee name must be 2-100 characters, letters/spaces/hyphens/apostrophes only
-- Attendee surname must be 2-100 characters, letters/spaces/hyphens/apostrophes only
+- Name must be 2-100 characters, letters/spaces/hyphens/apostrophes only
+- Surname must be 2-100 characters, letters/spaces/hyphens/apostrophes only
 - Email must be valid format if provided (max 255 characters)
 - Email is required for Volunteer role (selected from pre-registered list)
 - Phone field has been REMOVED in V2

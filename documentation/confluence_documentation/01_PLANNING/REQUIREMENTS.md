@@ -43,7 +43,7 @@ The Power2Inspire Event CRM App is a **web-based application** designed to facil
 ### 3.2 Participant Registration
 - **FR-010:** Capture participant information: **First Name, Last Name, Email, Organization, Impairment** (all required) (IMPLEMENTED)
 - **FR-011:** Select event from dropdown (pre-selected to current event, can change) (IMPLEMENTED)
-- **FR-012:** Record marketing consent via radio buttons (Yes/No - explicit choice required) (IMPLEMENTED)
+- **FR-012:** Record consent via checkboxes: photoConsent, feedbackConsent, nextEventConsent (IMPLEMENTED)
 - **FR-013:** Record photo consent via radio buttons (Yes/No - explicit choice required) (IMPLEMENTED)
 - **FR-014:** Display orange wristband language for photo consent refusal (IMPLEMENTED)
 - **FR-015:** Assign role: Participant, Volunteer, or Group (IMPLEMENTED)
@@ -92,7 +92,7 @@ The Power2Inspire Event CRM App is a **web-based application** designed to facil
 - **FR-060:** Generate CSV reports with fields:
   - Event Name, First Name, Last Name, Email
   - Organization, Impairment, Role
-  - Photo Consent, Marketing Consent
+  - Photo Consent, Feedback Consent, Next Event Consent
   - Check-in Time, Check-out Time, Attendance Duration
   - groupSize, disabledStudents, senStudents, groupLeaderParticipating (for Group registrations)
 - **FR-061:** Export attendance statistics (IMPLEMENTED)
