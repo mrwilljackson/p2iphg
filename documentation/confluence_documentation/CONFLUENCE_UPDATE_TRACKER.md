@@ -1,131 +1,97 @@
 # Confluence Update Tracker
 
-**Last Updated:** 2026-02-13  
-**Purpose:** Track which Confluence pages need to be updated online
+**Last Updated:** 2026-04-16
+**Purpose:** Maps repo documentation to Confluence pages and tracks upload status
 
 ---
 
-## 📋 Pages Requiring Update
+## Confluence Space
 
-### ✅ Updated 2026-02-13
+**URL:** https://mrwilljackson-projects.atlassian.net/wiki/spaces/P2I/pages/71925764/Project+Overview
 
-1. **00_PROJECT_OVERVIEW.md** → Confluence: "Project Overview"
-   - Status: Ready for upload
-   - Changes: Updated tech stack, current phase, completed features
-   - Priority: HIGH
-
-2. **01_PLANNING/PROJECT_STATUS.md** → Confluence: "Planning > Project Status"
-   - Status: Ready for upload
-   - Changes: Implementation progress, phases complete, technical decisions
-   - Priority: HIGH
-
-3. **02_TECHNICAL/ARCHITECTURE.md** → Confluence: "Technical > Architecture"
-   - Status: Ready for upload
-   - Changes: Complete NextJS architecture v1.1 with implementation status
-   - Priority: HIGH
-
-### 🔄 Ready for Upload (Newly Organized)
-
-4. **02_TECHNICAL/DEPLOYMENT_GUIDE.md** → Confluence: "Technical > Deployment Guide"
-   - Status: Ready for upload
-   - Changes: Vercel deployment instructions (moved from root)
-   - Priority: MEDIUM
-
-5. **01_PLANNING/REQUIREMENTS.md** → Confluence: "Planning > Requirements"
-   - Status: Ready for upload
-   - Changes: Updated to V2 requirements (NextJS-based)
-   - Priority: MEDIUM
-
-6. **01_PLANNING/TODO.md** → Confluence: "Planning > TODO"
-   - Status: Ready for upload
-   - Changes: Updated with current implementation status
-   - Priority: MEDIUM
-
-7. **02_TECHNICAL/DATA_MODELS.md** → Confluence: "Technical > Data Models"
-   - Status: Ready for upload
-   - Changes: Neon PostgreSQL schema definitions
-   - Priority: MEDIUM
-
-8. **03_INTEGRATION/AIRTABLE_INTEGRATION.md** → Confluence: "Integration > Airtable Integration"
-   - Status: Ready for upload
-   - Changes: Field mappings and API examples
-   - Priority: MEDIUM
-
-9. **03_INTEGRATION/INTEGRATION_DISCUSSION.md** → Confluence: "Integration > Integration Discussion"
-   - Status: Ready for upload
-   - Changes: Integration decisions and questions
-   - Priority: LOW
-
-### 📦 Historical Reference (Low Priority)
-
-10. **05_DESIGN/UI_WIREFRAMES.md** → Confluence: "Design > UI Wireframes"
-    - Status: Ready for upload
-    - Changes: V2 wireframes (historical reference)
-    - Priority: LOW
-
-11. **05_DESIGN/FORM_ANALYSIS.md** → Confluence: "Design > Form Analysis"
-    - Status: Ready for upload
-    - Changes: Existing form analysis (historical reference)
-    - Priority: LOW
-
-12. **05_DESIGN/V2_CHANGES_SUMMARY.md** → Confluence: "Design > V2 Changes Summary"
-    - Status: Ready for upload
-    - Changes: Summary of V1 to V2 changes (historical reference)
-    - Priority: LOW
-
-13. **05_DESIGN/wireframes/interactive-wireframe-v2.html** → Confluence: "Design > Interactive Wireframe"
-    - Status: Attach to UI Wireframes page
-    - Changes: Clickable prototype (historical reference)
-    - Priority: LOW
-
----
-
-## 📝 Upload Instructions
-
-1. Log into Confluence
-2. Navigate to Power2Inspire Event CRM App space
-3. For each page marked "Ready for upload":
-   - Open the corresponding Confluence page
-   - Copy content from markdown file
-   - Paste and format in Confluence
-   - Add update date and version number
-   - Publish changes
-
----
-
-## 🗂️ Confluence Space Structure
+**Space Structure:**
 
 ```
 Power2Inspire Event CRM App/
-├── 00_PROJECT_OVERVIEW
+├── Project Overview
 ├── 01_PLANNING/
-│   ├── PROJECT_STATUS
-│   ├── REQUIREMENTS
+│   ├── Project Status
+│   ├── Requirements
 │   └── TODO
 ├── 02_TECHNICAL/
-│   ├── ARCHITECTURE
-│   ├── DATA_MODELS
-│   └── DEPLOYMENT_GUIDE
+│   ├── Architecture
+│   ├── Data Models
+│   └── Deployment Guide
 ├── 03_INTEGRATION/
-│   ├── AIRTABLE_INTEGRATION
-│   └── INTEGRATION_DISCUSSION
-├── 04_DEVELOPMENT/
-│   └── DATA_REQUIREMENTS
-└── 05_DESIGN/
-    ├── UI_WIREFRAMES
-    └── FORM_ANALYSIS
+│   ├── Airtable Integration
+│   └── Integration Discussion
+├── 05_DESIGN/
+│   ├── Registration Form Fields
+│   └── UI Wireframes (historical)
+├── Event Setup Guide (NEW)
+├── Registration Flow (NEW)
+└── Data Export (NEW)
 ```
 
 ---
 
-## 📅 Update History
+## Page Mapping
 
-- **2026-02-13:**
-  - Initial tracker created
-  - Documentation reorganization complete
-  - All markdown files moved to confluence_documentation/
-  - 13 pages ready for upload to Confluence
-  - Created 05_DESIGN/ directory for wireframes and historical docs
-  - Removed duplicate and outdated files from documentation root
-  - Created TODO.md in project root
+For pages with a **stakeholder version**, upload the `confluence_exports/` version to Confluence (written in non-technical, operational language). For pages without a stakeholder version, upload the developer version directly.
 
+| Confluence Page | Repo Source (Developer) | Repo Source (Stakeholder) | Last Updated | Status |
+|---|---|---|---|---|
+| Project Overview | `confluence_documentation/00_PROJECT_OVERVIEW.md` | `confluence_exports/PROJECT_OVERVIEW.md` | 2026-04-16 | Ready for upload |
+| Planning > Project Status | `confluence_documentation/01_PLANNING/PROJECT_STATUS.md` | — | 2026-04-16 | Ready for upload |
+| Planning > Requirements | `confluence_documentation/01_PLANNING/REQUIREMENTS.md` | — | 2026-04-16 | Ready for upload |
+| Planning > TODO | `confluence_documentation/01_PLANNING/TODO.md` | — | 2026-04-16 | Ready for upload |
+| Technical > Architecture | `confluence_documentation/02_TECHNICAL/ARCHITECTURE.md` | — | 2026-04-16 | Ready for upload |
+| Technical > Data Models | `confluence_documentation/02_TECHNICAL/DATA_MODELS.md` | — | 2026-04-16 | Ready for upload |
+| Technical > Deployment Guide | `confluence_documentation/02_TECHNICAL/DEPLOYMENT_GUIDE.md` | — | Unchanged | Current |
+| Integration > Airtable Integration | `confluence_documentation/03_INTEGRATION/AIRTABLE_INTEGRATION.md` | — | 2026-04-16 | Ready for upload |
+| Integration > Integration Discussion | `confluence_documentation/03_INTEGRATION/INTEGRATION_DISCUSSION.md` | — | Unchanged | Review needed |
+| Design > Registration Form Fields | `confluence_documentation/05_DESIGN/REGISTRATION_FORM_FIELDS.md` | — | 2026-04-16 | Ready for upload |
+| Design > UI Wireframes | `confluence_documentation/05_DESIGN/UI_WIREFRAMES.md` | — | Unchanged | Historical |
+| Client Questions | `confluence_documentation/CLIENT_QUESTIONS.md` | — | 2026-04-16 | Ready for upload |
+| **NEW:** Event Setup Guide | `software/nextjs/documentation/EVENT_SETUP_GUIDE.md` | `confluence_exports/EVENT_SETUP_GUIDE.md` | 2026-04-16 | New page — create in Confluence |
+| **NEW:** Registration Flow | — | `confluence_exports/REGISTRATION_FLOW.md` | 2026-04-16 | New page — create in Confluence |
+| **NEW:** Data Export | — | `confluence_exports/DATA_EXPORT.md` | 2026-04-16 | New page — create in Confluence |
+
+---
+
+## Upload Instructions
+
+1. Log into Confluence
+2. Navigate to the **Power2Inspire Event CRM App** space
+3. For each page marked **"Ready for upload"**:
+   - If a stakeholder version exists (see table above), copy content from the `confluence_exports/` file
+   - Otherwise, copy content from the developer version
+   - Paste and format in Confluence
+   - Add the update date (2026-04-16)
+   - Publish
+4. For pages marked **"New page"**:
+   - Create a new page in the appropriate location in the Confluence tree
+   - Copy content from the stakeholder version
+   - Publish
+
+---
+
+## Workflow Going Forward
+
+1. All documentation changes happen in the **repo first**
+2. Developer docs are updated in their canonical locations
+3. If the page has a non-technical audience, update or create a stakeholder version in `documentation/confluence_exports/`
+4. Update this tracker with the new date and status
+5. Upload the changed pages to Confluence
+
+**Source of truth:** The repo. Confluence is updated from the repo, not the other way around.
+
+---
+
+## Files Removed in This Update
+
+The following files were deleted as part of the 2026-04-16 documentation update:
+
+- `REORGANIZATION_SUMMARY.md` — historical, no longer needed
+- `DOCUMENTATION_WORKFLOW.md` — superseded by this tracker
+- `docs/registration-form-element-map.md` — content merged into `documentation/REGISTRATION_FORM_LOGIC.md`
