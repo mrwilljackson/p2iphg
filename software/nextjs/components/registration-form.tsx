@@ -317,7 +317,7 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
     };
 
     updateOrganizations();
-  }, [attendeeSurname, selectedRole, form]);
+  }, [attendeeSurname, selectedRole, currentEvent?.id, form]);
 
   // Load pre-populated data on component mount
   useEffect(() => {

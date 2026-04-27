@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { RegistrationForm } from "@/components/registration-form";
 import { EventHeader } from "@/components/event-header";
@@ -14,18 +14,17 @@ interface TestFormContentProps {
 function TestFormContentInner({ currentEvent }: TestFormContentProps) {
   const [showAdminModal, setShowAdminModal] = useState(false);
   const searchParams = useSearchParams();
-  const [preselectedRole, setPreselectedRole] = useState<RegistrationRole | undefined>();
 
-  useEffect(() => {
-    const roleParam = searchParams.get("role");
-    if (roleParam) {
-      // Normalize the role parameter to match our RegistrationRole type
-      const normalizedRole = roleParam.charAt(0).toUpperCase() + roleParam.slice(1).toLowerCase();
-      if (normalizedRole === "Participant" || normalizedRole === "Volunteer" || normalizedRole === "Group") {
-        setPreselectedRole(normalizedRole as RegistrationRole);
-      }
+  // Read role synchronously during render so the form initialises with the correct
+  // role on first render (avoids a race where loadData captures selectedRole="Participant").
+  const roleParam = searchParams.get("role");
+  let preselectedRole: RegistrationRole | undefined;
+  if (roleParam) {
+    const normalizedRole = roleParam.charAt(0).toUpperCase() + roleParam.slice(1).toLowerCase();
+    if (normalizedRole === "Participant" || normalizedRole === "Volunteer" || normalizedRole === "Group") {
+      preselectedRole = normalizedRole as RegistrationRole;
     }
-  }, [searchParams]);
+  }
 
   // Format date for display
   const formatDate = (dateString: string) => {
