@@ -463,8 +463,8 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
     } catch (error) {
       console.error("Error saving registration:", error);
       setIsSubmitting(false);
-      // TODO: Show error message to user
-      alert("Failed to save registration. Please try again.");
+      const message = error instanceof Error ? error.message : String(error);
+      alert(`Failed to save registration.\n\n${message}`);
     }
   };
 
