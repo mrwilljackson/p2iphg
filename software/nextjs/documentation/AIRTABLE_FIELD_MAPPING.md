@@ -1,7 +1,9 @@
 # Registration Sync: Neon → Airtable Field Mapping
 
+> ⚠️ **Deprecated as of 2026-04-29.** The direct sync path described in this document (`syncRegistrationsToAirtable()` in `app/actions/airtable-sync.ts`) is no longer the supported post-event workflow. The standard workflow is **CSV export** from the P2I admin dashboard, followed by manual import into Airtable. The sync code remains in the repository for reference but should not be extended; new post-event work should target CSV export only.
+
 **Date:** 2026-03-11
-**Status:** Implemented — Sync action: `app/actions/airtable-sync.ts`
+**Status:** Deprecated (see banner above) — Sync action: `app/actions/airtable-sync.ts`
 **Airtable Table:** `Registrations`
 
 ---

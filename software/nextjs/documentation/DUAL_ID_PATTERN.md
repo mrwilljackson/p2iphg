@@ -4,6 +4,8 @@
 **Date:** 2026-02-18  
 **Status:** Current Implementation
 
+> ⚠️ **Note (2026-04-29):** The dual-ID pattern remains in the schema and is still relevant on the **import** side (Airtable → Neon). However the **post-event sync** examples below (showing `syncStatus` transitions and `airtableRecordId` population on registrations via `syncRegistrationsToAirtable()`) describe a code path that is now **deprecated**. CSV export is the supported post-event workflow. See `AIRTABLE_INTEGRATION.md` for the canonical deprecation note.
+
 ---
 
 ## Overview

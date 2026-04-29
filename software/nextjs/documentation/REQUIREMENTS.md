@@ -1,10 +1,12 @@
 # Power2Inspire Event CRM App - Requirements Specification V2
 
-**Document Version:** 2.1
-**Date:** 2026-04-16
-**Last Updated:** 2026-04-16
+**Document Version:** 2.2
+**Date:** 2026-04-29
+**Last Updated:** 2026-04-29
 **Project:** Event CRM Web Application for Power2Inspire Charity
 **Technology:** Next.js 16 + Vercel (Web Application)
+
+> ⚠️ **Deprecation notice (2026-04-29):** Functional requirements describing **direct Neon → Airtable sync** (FR-017 sync clause, FR-058 sync clause, FR-070, FR-074) are deprecated. The supported post-event workflow is **CSV export** from the P2I admin dashboard, followed by manual import into Airtable. Inline `DEPRECATED` markers below identify the affected requirements. The sync code path (`syncRegistrationsToAirtable()`) remains in the codebase for reference but should not be extended.
 
 ---
 
@@ -48,7 +50,7 @@ The Power2Inspire Event CRM App is a **web-based application** designed to facil
 - **FR-014:** Display orange wristband language for photo consent refusal (IMPLEMENTED)
 - **FR-015:** Assign role: Participant, Volunteer, or Group (IMPLEMENTED)
 - **FR-016:** Validate all required fields before submission (client-side + server-side) (IMPLEMENTED)
-- **FR-017:** Submit registration to Neon Postgres via server actions; sync to Airtable post-event (IMPLEMENTED)
+- **FR-017:** Submit registration to Neon Postgres via server actions (IMPLEMENTED). ~~sync to Airtable post-event~~ — DEPRECATED 2026-04-29; CSV export is the supported post-event workflow.
 - **FR-018:** Display confirmation screen with registration details (IMPLEMENTED)
 - **FR-019:** ~~Phone number~~ - REMOVED (not required per V2 specifications)
 
@@ -86,7 +88,7 @@ The Power2Inspire Event CRM App is a **web-based application** designed to facil
 - **FR-055:** Search/filter attendance list by name or email (IMPLEMENTED)
 - **FR-056:** Filter by role (All, Participants, Volunteers, Groups) (IMPLEMENTED)
 - **FR-057:** Visual distinction for checked-in participants (green border) (IMPLEMENTED)
-- **FR-058:** Update Neon Postgres immediately on check-in/out; sync to Airtable post-event (IMPLEMENTED)
+- **FR-058:** Update Neon Postgres immediately on check-in/out (IMPLEMENTED). ~~sync to Airtable post-event~~ — DEPRECATED 2026-04-29; CSV export is the supported post-event workflow.
 
 ### 3.7 Reporting & Export
 - **FR-060:** Generate CSV reports with fields:
@@ -103,11 +105,11 @@ The Power2Inspire Event CRM App is a **web-based application** designed to facil
 - **FR-066:** ~~Phone number~~ - REMOVED from CSV export
 
 ### 3.8 Data Integration
-- **FR-070:** Registrations written to Neon Postgres on form submission; synced to Airtable post-event in batches (IMPLEMENTED)
+- **FR-070:** Registrations written to Neon Postgres on form submission (IMPLEMENTED). ~~synced to Airtable post-event in batches~~ — DEPRECATED 2026-04-29; CSV export is the supported post-event workflow.
 - **FR-071:** Read from Neon Postgres for attendance list and reporting (IMPLEMENTED)
 - **FR-072:** Organisations and volunteers imported from Airtable via admin import screen (IMPLEMENTED)
 - **FR-073:** Handle API errors gracefully with user-friendly messages (IMPLEMENTED)
-- **FR-074:** Airtable sync runs in batches of 10 with 250ms delays to respect rate limits (IMPLEMENTED)
+- **FR-074:** ~~Airtable sync runs in batches of 10 with 250ms delays to respect rate limits~~ — DEPRECATED 2026-04-29 (sync code path retained for reference only).
 - **FR-075:** ~~Offline operation~~ - REMOVED (requires internet connection)
 - **FR-076:** ~~Sync to Mailchimp~~ - DEFERRED (can be done via Airtable automation)
 - **FR-077:** ~~Sync to Google Drive~~ - DEFERRED (can be done via Airtable automation)

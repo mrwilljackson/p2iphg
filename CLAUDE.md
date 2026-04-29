@@ -57,7 +57,7 @@ Present both lists to the user for review before starting implementation.
 Next.js 16 App Router application. The data lifecycle is:
 1. **Pre-event**: P2I admin imports events, organisations, and volunteers from Airtable into Neon Postgres via `/admin/p2i/airtable-import`
 2. **Event day**: Attendees register via the public `/registration` form, written directly to Neon
-3. **Post-event**: Admin syncs registrations back to Airtable via `syncRegistrationsToAirtable()` in `app/actions/airtable-sync.ts`
+3. **Post-event**: Admin downloads registrations as a CSV from the P2I dashboard for manual import into Airtable. The direct-sync function `syncRegistrationsToAirtable()` in `app/actions/airtable-sync.ts` is **deprecated** (as of 2026-04-29) — do not extend or recommend it; new post-event work should target CSV export.
 
 ### Key Layers
 
@@ -117,9 +117,9 @@ The single source of truth for group behaviour is the `openGroup` boolean on `or
 ### Airtable Integration
 
 - 18 Airtable `groupType` values are normalised to 7 dashboard categories (mapping in `lib/airtable.ts`)
-- Sync to Airtable runs in batches of 10 with 250ms delays to respect rate limits
 - `organisations.airtableEventId` links organisations to events (matches `events.airtableRecordId`)
 - `organisationContacts.organisationId` stores Airtable record IDs (not local UUIDs)
+- Direct push from Neon to Airtable (`syncRegistrationsToAirtable()`) is **deprecated** — see data-lifecycle note above
 
 ## Environment Variables
 

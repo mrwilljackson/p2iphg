@@ -1,15 +1,17 @@
 # Airtable Integration Architecture
 
-**Document Version:** 2.0
-**Date:** 2026-04-16
-**Status:** Current
+**Document Version:** 2.1
+**Date:** 2026-04-29
+**Status:** Current — Section 4 (Direct Sync) deprecated
+
+> ⚠️ **Direct Neon → Airtable sync is deprecated as of 2026-04-29.** Section 4 ("Legacy Sync") and Section 5 ("Airtable Field Mappings") describe a code path that is no longer the supported post-event workflow. Use **CSV export** (Section 3) instead. The sync code remains in the repository for reference but should not be extended.
 
 ## 1. Overview
 
 The Power2Inspire Event CRM is a Next.js web application. Airtable serves two roles in the workflow:
 
 - **Pre-event source of truth** — events, organisations, and volunteers are maintained in Airtable and imported into the application's Neon PostgreSQL database before each event.
-- **Post-event target** — registration data collected on event day can be exported as CSV or pushed directly to Airtable after the event.
+- **Post-event target** — registration data collected on event day is exported as CSV from the P2I admin dashboard for manual import into Airtable. (A direct-sync code path also exists but is deprecated; see Section 4.)
 
 The application stores all working data in Neon PostgreSQL (online only, no offline or SQLite layer). Airtable is not queried during event-day operations.
 
@@ -85,15 +87,19 @@ The standard post-event workflow is CSV download from the P2I admin dashboard, f
 
 All boolean fields are formatted as `"Yes"` or `"No"` in the CSV output.
 
-## 4. Legacy Sync (Direct Push to Airtable)
+## 4. Legacy Sync (Direct Push to Airtable) — Deprecated
 
-A direct sync function remains available as an alternative export method.
+> ⚠️ **Deprecated as of 2026-04-29.** Do not extend or recommend this path. CSV export (Section 3) is the only supported post-event workflow.
+
+A direct sync function still exists in the codebase but is no longer in active use.
 
 - **Location:** `app/actions/airtable-sync.ts` — `syncRegistrationsToAirtable()`
-- **Behaviour:** Reads all registrations with `syncStatus = "pending"` and pushes them to Airtable in batches of 10 with 250 ms delays between batches (to respect Airtable's rate limits).
-- **Status:** Available but not the standard workflow. CSV export is preferred.
+- **Behaviour (for reference):** Reads all registrations with `syncStatus = "pending"` and pushes them to Airtable in batches of 10 with 250 ms delays between batches (to respect Airtable's rate limits).
+- **Status:** Deprecated. Code retained for reference only; not part of the supported workflow.
 
-## 5. Airtable Field Mappings
+## 5. Airtable Field Mappings (Deprecated Sync Path)
+
+> ⚠️ Retained for reference only — the direct sync described here is deprecated (see Section 4).
 
 The following mappings apply when using the direct sync (`syncRegistrationsToAirtable()`). Field name constants are defined in `lib/airtable.ts` as `AIRTABLE_FIELDS`.
 
