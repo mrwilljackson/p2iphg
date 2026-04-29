@@ -4,6 +4,8 @@
 **Date:** 2026-04-16
 **Status:** Current Implementation (NextJS Web App)
 
+> ⚠️ **Note (2026-04-29):** The `syncStatus` and `airtableRecordId` fields documented below remain in the schema, but the **Neon → Airtable direct sync flow is deprecated**. CSV export is the supported post-event workflow. These fields are retained for historical records but are no longer actively populated by a live sync. See `AIRTABLE_INTEGRATION.md` for the canonical deprecation note.
+
 ## 1. Domain Entities
 
 ### 1.1 Event Entity

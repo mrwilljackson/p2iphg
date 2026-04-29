@@ -1,7 +1,9 @@
 # Power2Inspire Event CRM App - Project Status
 
-**Last Updated:** 2026-04-16
+**Last Updated:** 2026-04-29
 **Status:** System in Active Use — Ongoing Refinement ✅
+
+> ⚠️ **Note (2026-04-29):** Direct Neon → Airtable registration sync (`syncRegistrationsToAirtable()` in `app/actions/airtable-sync.ts`) is **deprecated**. CSV export is the supported post-event workflow. References below to sync are retained as historical record only — see `AIRTABLE_INTEGRATION.md` for the canonical deprecation note.
 
 ## Current Phase
 

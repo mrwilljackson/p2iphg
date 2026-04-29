@@ -5,6 +5,8 @@
 **Status:** ✅ Implemented  
 **Related Documentation:** [DATA_MODELS.md](DATA_MODELS.md), [DUAL_ID_PATTERN.md](DUAL_ID_PATTERN.md), [AIRTABLE_INTEGRATION.md](../03_INTEGRATION/AIRTABLE_INTEGRATION.md)
 
+> ⚠️ **Note (2026-04-29):** The "Airtable sync" sections below describe a code path that is now **deprecated**. CSV export is the supported post-event workflow. The family-group creation logic itself is unaffected; only the post-event push to Airtable is deprecated. See `AIRTABLE_INTEGRATION.md` for the canonical deprecation note.
+
 ---
 
 ## Overview

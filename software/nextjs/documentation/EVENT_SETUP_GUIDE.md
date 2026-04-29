@@ -1,8 +1,10 @@
 # Event Setup Guide
 
-**Version:** 1.2
-**Date:** 2026-04-16
+**Version:** 1.3
+**Date:** 2026-04-29
 **Purpose:** Step-by-step instructions for setting up a new PowerHouseGames event in the system
+
+> ⚠️ **Deprecation note (2026-04-29):** Step 7 below previously instructed admins to "Sync to Airtable" via the in-app button. **That button and the underlying `syncRegistrationsToAirtable()` function are deprecated.** The supported post-event workflow is now CSV export only — download the CSV from the P2I Admin Dashboard and import it into Airtable manually. The sync-status fields (`pending` / `synced` / `failed`) on registrations remain in the schema but should be ignored. See `AIRTABLE_INTEGRATION.md` for full detail.
 
 ---
 

@@ -1,9 +1,11 @@
 # Power2Inspire Event CRM App - TODO
 
-**Last Updated:** 2026-04-16
+**Last Updated:** 2026-04-29
 **Project Status:** Live — Next.js application deployed and in use
 **Current Version:** V2 (production)
 **Technology:** Next.js 16 + Neon PostgreSQL + Vercel
+
+> ⚠️ **Note (2026-04-29):** Direct Neon → Airtable registration sync (`syncRegistrationsToAirtable()`) is **deprecated**. CSV export is the supported post-event workflow. References below are retained as historical record only — see `AIRTABLE_INTEGRATION.md` for the canonical deprecation note.
 
 ---
 
