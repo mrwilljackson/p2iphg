@@ -74,7 +74,7 @@ export const organizationSchema = z.object({
  * - Phone field REMOVED
  * - photoConsent is boolean (radio buttons)
  * - feedbackConsent and nextEventConsent are optional booleans (checkboxes)
- * - Group fields (groupSize, disabledStudents, senStudents, groupLeaderParticipating) are OPTIONAL
+ * - Group fields (groupSize, impairedParticipants, nonImpairedParticipants, groupLeaderParticipating) are OPTIONAL
  *   They are only shown and required for disability groups and family groups
  * - role includes "Participant", "Volunteer", "Group"
  */
@@ -114,17 +114,17 @@ export const registrationFormSchema = z.object({
     .min(0, "Group size cannot be negative")
     .max(999, "Group size must be at most 999")
     .optional(),
-  disabledStudents: z
+  impairedParticipants: z
     .number()
     .int("Must be a whole number")
     .min(0, "Cannot be negative")
-    .max(999, "Disabled students must be at most 999")
+    .max(999, "Must be at most 999")
     .optional(),
-  senStudents: z
+  nonImpairedParticipants: z
     .number()
     .int("Must be a whole number")
     .min(0, "Cannot be negative")
-    .max(999, "SEN students must be at most 999")
+    .max(999, "Must be at most 999")
     .optional(),
   groupLeaderParticipating: z.boolean().optional(), // Whether group leader is participating in games (Group role only)
 }).superRefine((data, ctx) => {

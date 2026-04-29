@@ -40,8 +40,8 @@ const organizationRegistrationSchema = z.object({
   feedbackConsent: z.boolean(),
   nextEventConsent: z.boolean(),
   groupSize: z.number().min(1, "Group size must be at least 1").max(999, "Group size must be less than 1000").optional(),
-  disabledStudents: z.number().min(0, "Cannot be negative").max(999, "Must be less than 1000").optional(),
-  senStudents: z.number().min(0, "Cannot be negative").max(999, "Must be less than 1000").optional(),
+  impairedParticipants: z.number().min(0, "Cannot be negative").max(999, "Must be less than 1000").optional(),
+  nonImpairedParticipants: z.number().min(0, "Cannot be negative").max(999, "Must be less than 1000").optional(),
   groupLeaderParticipating: z.boolean().optional(),
 });
 
@@ -67,8 +67,8 @@ export default function RegisterOrganizationPage() {
       feedbackConsent: false,
       nextEventConsent: false,
       groupSize: undefined,
-      disabledStudents: undefined,
-      senStudents: undefined,
+      impairedParticipants: undefined,
+      nonImpairedParticipants: undefined,
       groupLeaderParticipating: false,
     },
   });
@@ -155,8 +155,8 @@ export default function RegisterOrganizationPage() {
             feedbackConsent: data.feedbackConsent,
             nextEventConsent: data.nextEventConsent,
             groupSize: data.groupSize,
-            disabledStudents: data.disabledStudents,
-            senStudents: data.senStudents,
+            impairedParticipants: data.impairedParticipants,
+            nonImpairedParticipants: data.nonImpairedParticipants,
             groupLeaderParticipating: data.groupLeaderParticipating ?? false,
           });
 
@@ -428,13 +428,13 @@ export default function RegisterOrganizationPage() {
                 )}
               />
 
-              {/* Disabled Students */}
+              {/* Impaired Participants */}
               <FormField
                 control={form.control}
-                name="disabledStudents"
+                name="impairedParticipants"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>How many of your participants have a disability?</FormLabel>
+                    <FormLabel>How many participants in your group have a disability or long-term physical or mental health condition or impairment?</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
@@ -451,13 +451,13 @@ export default function RegisterOrganizationPage() {
                 )}
               />
 
-              {/* SEN Students */}
+              {/* Non-impaired Participants */}
               <FormField
                 control={form.control}
-                name="senStudents"
+                name="nonImpairedParticipants"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>How many of your participants have SEN or additional learning support needs?</FormLabel>
+                    <FormLabel>How many participants in your group are not impaired?</FormLabel>
                     <FormControl>
                       <Input
                         type="number"

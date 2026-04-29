@@ -43,8 +43,8 @@ For each field, set it to:
 "Participant": {
   // ... other fields
   groupSize: true,        // ← Changed from false to true
-  disabledStudents: true, // ← Changed from false to true
-  senStudents: true,      // ← Changed from false to true
+  impairedParticipants: true, // ← Changed from false to true
+  nonImpairedParticipants: true,      // ← Changed from false to true
 }
 ```
 
@@ -61,8 +61,8 @@ For each field, set it to:
 | `feedbackConsent` | Feedback survey consent checkbox |
 | `nextEventConsent` | Next event info consent checkbox |
 | `groupSize` | Number of participants in group |
-| `disabledStudents` | Number of disabled participants |
-| `senStudents` | Number of SEN participants |
+| `impairedParticipants` | Number of impaired participants |
+| `nonImpairedParticipants` | Number of non-impaired participants |
 
 ## Current Default Configuration
 

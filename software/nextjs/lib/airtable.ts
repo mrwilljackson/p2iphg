@@ -77,8 +77,8 @@ export const AIRTABLE_FIELDS = {
     EVENT: "Event", // Linked record to Events table
     ROLE: "Role",
     GROUP_SIZE: "Group Size",
-    DISABLED_STUDENTS: "Disabled Students",
-    SEN_STUDENTS: "SEN Students",
+    IMPAIRED_PARTICIPANTS: "Disabled Students",
+    NON_IMPAIRED_PARTICIPANTS: "SEN Students",
     LEADER_PARTICIPATING: "Leader Participating",
     CHECKIN_TIME: "Check-in Time",
     CHECKOUT_TIME: "Check-out Time",

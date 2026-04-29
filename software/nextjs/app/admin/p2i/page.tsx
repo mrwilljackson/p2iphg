@@ -29,8 +29,8 @@ interface RegistrationCSVRow {
   feedbackConsent: string;
   nextEventConsent: string;
   groupSize: string;
-  disabledStudents: string;
-  senStudents: string;
+  impairedParticipants: string;
+  nonImpairedParticipants: string;
   groupLeaderParticipating: string;
   syncStatus: string;
   airtableRecordId: string;
@@ -101,8 +101,8 @@ export default function P2IAdminDashboard() {
     },
     groupDetails: [],
     totalParticipants: 0,
-    disabledStudents: 0,
-    senStudents: 0,
+    impairedParticipants: 0,
+    nonImpairedParticipants: 0,
     volunteers: 0,
     groups: {
       total: 0,
@@ -284,8 +284,8 @@ export default function P2IAdminDashboard() {
       'Feedback Consent',
       'Next Event Consent',
       'Group Size',
-      'Disabled Students',
-      'SEN Students',
+      'Impaired Participants',
+      'Non-impaired Participants',
       'Group Leader Participating',
       'Sync Status',
       'Airtable Record ID',
@@ -321,8 +321,8 @@ export default function P2IAdminDashboard() {
         escapeCSV(row.feedbackConsent),
         escapeCSV(row.nextEventConsent),
         escapeCSV(row.groupSize),
-        escapeCSV(row.disabledStudents),
-        escapeCSV(row.senStudents),
+        escapeCSV(row.impairedParticipants),
+        escapeCSV(row.nonImpairedParticipants),
         escapeCSV(row.groupLeaderParticipating),
         escapeCSV(row.syncStatus),
         escapeCSV(row.airtableRecordId),
@@ -425,8 +425,8 @@ export default function P2IAdminDashboard() {
           feedbackConsent: formatBoolean(reg.feedbackConsent),
           nextEventConsent: formatBoolean(reg.nextEventConsent),
           groupSize: reg.groupSize?.toString() || '',
-          disabledStudents: reg.disabledStudents?.toString() || '',
-          senStudents: reg.senStudents?.toString() || '',
+          impairedParticipants: reg.impairedParticipants?.toString() || '',
+          nonImpairedParticipants: reg.nonImpairedParticipants?.toString() || '',
           groupLeaderParticipating: formatBoolean(reg.groupLeaderParticipating),
           syncStatus: reg.syncStatus || '',
           airtableRecordId: reg.airtableRecordId || '',
@@ -1210,8 +1210,8 @@ export default function P2IAdminDashboard() {
                               },
                               groupDetails: [],
                               totalParticipants: 0,
-                              disabledStudents: 0,
-                              senStudents: 0,
+                              impairedParticipants: 0,
+                              nonImpairedParticipants: 0,
                               volunteers: 0,
                               groups: { total: 0, registered: 0, walkIns: 0, familyGroups: 0, disabilityGroups: 0, corporateGroups: 0, sportingGroups: 0, communityGroups: 0, educationalGroups: 0, otherGroups: 0 },
                               totalRegistrations: 0,

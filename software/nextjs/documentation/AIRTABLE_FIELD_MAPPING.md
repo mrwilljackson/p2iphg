@@ -24,8 +24,8 @@
 | 10 | feedback_consent | feedbackConsent | Feedback Consent | Checkbox | true = checked, omit for unchecked |
 | 11 | next_event_consent | nextEventConsent | Next Event Consent | Checkbox | true = checked, omit for unchecked |
 | 12 | group_size | groupSize | Group Size | Number (integer) | Group role only. Send as number or omit if null. |
-| 13 | disabled_students | disabledStudents | Disabled Students | Number (integer) | Group role only. Send as number or omit if null. |
-| 14 | sen_students | senStudents | SEN Students | Number (integer) | Group role only. Send as number or omit if null. |
+| 13 | impaired_participants | impairedParticipants | Disabled Students | Number (integer) | Group role only. Send as number or omit if null. |
+| 14 | non_impaired_participants | nonImpairedParticipants | SEN Students | Number (integer) | Group role only. Send as number or omit if null. |
 | 15 | group_leader_participating | groupLeaderParticipating | Leader Participating | Checkbox | Group role only. true = checked, omit for unchecked. |
 | 16 | checkin_time | checkinTime | Check-in Time | Date & Time | ISO 8601 string, omit if null |
 | 17 | checkout_time | checkoutTime | Check-out Time | Date & Time | ISO 8601 string, omit if null |

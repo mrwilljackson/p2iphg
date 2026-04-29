@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -79,8 +79,8 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
       feedbackConsent: false,
       nextEventConsent: false,
       groupSize: undefined,
-      disabledStudents: undefined,
-      senStudents: undefined,
+      impairedParticipants: undefined,
+      nonImpairedParticipants: undefined,
       groupLeaderParticipating: undefined,
     },
   });
@@ -96,6 +96,50 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
   const selectedRole = form.watch("role") as RegistrationType;
   const attendeeSurname = form.watch("attendeeSurname");
   const selectedOrgId = form.watch("organizationId");
+  const watchedGroupSize = form.watch("groupSize");
+  const watchedImpaired = form.watch("impairedParticipants");
+  const watchedNonImpaired = form.watch("nonImpairedParticipants");
+  const lastEditedField = useRef<"impairedParticipants" | "nonImpairedParticipants" | null>(null);
+
+  // Smart advisory: check if impaired + non-impaired adds up to group size
+  const participantCountWarning = useMemo(() => {
+    const groupSize = watchedGroupSize;
+    const impaired = watchedImpaired;
+    const nonImpaired = watchedNonImpaired;
+
+    const groupSizeFilled = groupSize != null && groupSize >= 0;
+    const impairedFilled = impaired != null && impaired >= 0;
+    const nonImpairedFilled = nonImpaired != null && nonImpaired >= 0;
+
+    if (!groupSizeFilled) return null;
+
+    // Both filled — check if they add up
+    if (impairedFilled && nonImpairedFilled) {
+      if (impaired + nonImpaired === groupSize) return null;
+
+      if (lastEditedField.current === "impairedParticipants") {
+        const expected = groupSize - impaired;
+        return `These numbers don't add up to your group size of ${groupSize}. Based on your entries, non-impaired participants should be ${expected}.`;
+      } else {
+        const expected = groupSize - nonImpaired;
+        return `These numbers don't add up to your group size of ${groupSize}. Based on your entries, impaired participants should be ${expected}.`;
+      }
+    }
+
+    // Only impaired filled — suggest non-impaired
+    if (impairedFilled && !nonImpairedFilled) {
+      const expected = groupSize - impaired;
+      return `Based on your group size of ${groupSize}, non-impaired participants should be ${expected}.`;
+    }
+
+    // Only non-impaired filled — suggest impaired
+    if (!impairedFilled && nonImpairedFilled) {
+      const expected = groupSize - nonImpaired;
+      return `Based on your group size of ${groupSize}, impaired participants should be ${expected}.`;
+    }
+
+    return null;
+  }, [watchedGroupSize, watchedImpaired, watchedNonImpaired]);
 
   // Determine total steps based on role
   const getTotalSteps = () => {
@@ -221,7 +265,7 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
           // Additional leader only — skip group size fields (already set to 0)
           fieldsToValidate = ["groupLeaderParticipating"];
         } else {
-          fieldsToValidate = ["groupLeaderParticipating", "groupSize", "disabledStudents", "senStudents"];
+          fieldsToValidate = ["groupLeaderParticipating", "groupSize", "impairedParticipants", "nonImpairedParticipants"];
         }
       }
     }
@@ -411,8 +455,8 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
         feedbackConsent: data.feedbackConsent,
         nextEventConsent: data.nextEventConsent,
         groupSize: data.groupSize,
-        disabledStudents: data.disabledStudents,
-        senStudents: data.senStudents,
+        impairedParticipants: data.impairedParticipants,
+        nonImpairedParticipants: data.nonImpairedParticipants,
         groupLeaderParticipating: data.groupLeaderParticipating,
       });
 
@@ -923,8 +967,8 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
                     setAdditionalLeaderChoice('additional_leader');
                     // Set groupSize to 0 — no additional participants
                     form.setValue('groupSize', 0);
-                    form.setValue('disabledStudents', 0);
-                    form.setValue('senStudents', 0);
+                    form.setValue('impairedParticipants', 0);
+                    form.setValue('nonImpairedParticipants', 0);
                   }}
                   className="accent-blue-600"
                 />
@@ -943,8 +987,8 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
                     setAdditionalLeaderChoice('additional_participants');
                     // Clear the auto-set values so user can enter their own
                     form.setValue('groupSize', undefined);
-                    form.setValue('disabledStudents', undefined);
-                    form.setValue('senStudents', undefined);
+                    form.setValue('impairedParticipants', undefined);
+                    form.setValue('nonImpairedParticipants', undefined);
                   }}
                   className="accent-blue-600"
                 />
@@ -1267,14 +1311,14 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
           />
         )}
 
-        {/* Disabled Students - Only for Disability Groups and Family Groups - Step 2 for Group */}
-        {!showOrganizationAlert && shouldShowSection("groupDetails") && shouldShowImpairmentFields && additionalLeaderChoice !== 'additional_leader' && isFieldVisible("disabledStudents", selectedRole) && (
+        {/* Impaired Participants - Only for closed groups - Step 2 for Group */}
+        {!showOrganizationAlert && shouldShowSection("groupDetails") && shouldShowImpairmentFields && additionalLeaderChoice !== 'additional_leader' && isFieldVisible("impairedParticipants", selectedRole) && (
           <FormField
             control={form.control}
-            name="disabledStudents"
+            name="impairedParticipants"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>How many of your participants are disabled people, or to have a long‑term physical or mental health condition or impairment? *</FormLabel>
+                <FormLabel>How many participants in your group have a disability or long-term physical or mental health condition or impairment? *</FormLabel>
                 <FormControl>
                   <Input
                     type="number"
@@ -1285,6 +1329,7 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
                     onChange={(e) => {
                       const value = e.target.value;
                       field.onChange(value === "" ? undefined : parseInt(value, 10));
+                      lastEditedField.current = "impairedParticipants";
                     }}
                   />
                 </FormControl>
@@ -1294,14 +1339,14 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
           />
         )}
 
-        {/* SEN Students - Only for Disability Groups and Family Groups - Step 2 for Group */}
-        {!showOrganizationAlert && shouldShowSection("groupDetails") && shouldShowImpairmentFields && additionalLeaderChoice !== 'additional_leader' && isFieldVisible("senStudents", selectedRole) && (
+        {/* Non-impaired Participants - Only for closed groups - Step 2 for Group */}
+        {!showOrganizationAlert && shouldShowSection("groupDetails") && shouldShowImpairmentFields && additionalLeaderChoice !== 'additional_leader' && isFieldVisible("nonImpairedParticipants", selectedRole) && (
           <FormField
             control={form.control}
-            name="senStudents"
+            name="nonImpairedParticipants"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Do you have any special educational needs (SEN) or require additional learning support (for example dyslexia support, autism support, or similar)? *</FormLabel>
+                <FormLabel>How many participants in your group are not impaired? *</FormLabel>
                 <FormControl>
                   <Input
                     type="number"
@@ -1312,6 +1357,7 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
                     onChange={(e) => {
                       const value = e.target.value;
                       field.onChange(value === "" ? undefined : parseInt(value, 10));
+                      lastEditedField.current = "nonImpairedParticipants";
                     }}
                   />
                 </FormControl>
@@ -1319,6 +1365,13 @@ export function RegistrationForm({ preselectedRole }: RegistrationFormProps = {}
               </FormItem>
             )}
           />
+        )}
+
+        {/* Advisory: participant count mismatch */}
+        {participantCountWarning && shouldShowImpairmentFields && additionalLeaderChoice !== 'additional_leader' && (
+          <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
+            <p>{participantCountWarning}</p>
+          </div>
         )}
 
         {/* Separator: Personal/Group Details -> Consent */}

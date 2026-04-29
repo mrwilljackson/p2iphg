@@ -33,8 +33,8 @@ export default function EventAdminDashboard() {
     },
     groupDetails: [],
     totalParticipants: 0,
-    disabledStudents: 0,
-    senStudents: 0,
+    impairedParticipants: 0,
+    nonImpairedParticipants: 0,
     volunteers: 0,
     groups: {
       total: 0,

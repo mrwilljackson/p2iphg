@@ -53,8 +53,8 @@ async function main() {
 
   if (reg.role === "Group") {
     if (reg.groupSize != null) fields["Group Size"] = reg.groupSize;
-    if (reg.disabledStudents != null) fields["Disabled Students"] = reg.disabledStudents;
-    if (reg.senStudents != null) fields["SEN Students"] = reg.senStudents;
+    if (reg.impairedParticipants != null) fields["Disabled Students"] = reg.impairedParticipants;
+    if (reg.nonImpairedParticipants != null) fields["SEN Students"] = reg.nonImpairedParticipants;
     if (reg.groupLeaderParticipating) fields["Leader Participating"] = true;
   }
 

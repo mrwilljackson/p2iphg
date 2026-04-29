@@ -66,8 +66,8 @@ function buildAirtableFields(
   // Group-specific fields
   if (reg.role === "Group") {
     if (reg.groupSize != null) fields[F.GROUP_SIZE] = reg.groupSize;
-    if (reg.disabledStudents != null) fields[F.DISABLED_STUDENTS] = reg.disabledStudents;
-    if (reg.senStudents != null) fields[F.SEN_STUDENTS] = reg.senStudents;
+    if (reg.impairedParticipants != null) fields[F.IMPAIRED_PARTICIPANTS] = reg.impairedParticipants;
+    if (reg.nonImpairedParticipants != null) fields[F.NON_IMPAIRED_PARTICIPANTS] = reg.nonImpairedParticipants;
     if (reg.groupLeaderParticipating) fields[F.LEADER_PARTICIPATING] = true;
   }
 

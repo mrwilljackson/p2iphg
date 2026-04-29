@@ -157,8 +157,8 @@ export default function RegistrationDetailPage() {
                 )}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <DetailField label="Group Size" value={registration.groupSize?.toString() || '—'} />
-                  <DetailField label="Disabled Students" value={registration.disabledStudents?.toString() || '—'} />
-                  <DetailField label="SEN Students" value={registration.senStudents?.toString() || '—'} />
+                  <DetailField label="Impaired Participants" value={registration.impairedParticipants?.toString() || '—'} />
+                  <DetailField label="Non-impaired Participants" value={registration.nonImpairedParticipants?.toString() || '—'} />
                 </div>
                 <div className="mt-4">
                   <DetailField

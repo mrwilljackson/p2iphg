@@ -17,8 +17,8 @@ export type FieldName =
   | "feedbackConsent"
   | "nextEventConsent"
   | "groupSize"
-  | "disabledStudents"
-  | "senStudents";
+  | "impairedParticipants"
+  | "nonImpairedParticipants";
 
 /**
  * Field visibility configuration for each registration type
@@ -46,8 +46,8 @@ export const fieldVisibilityConfig: Record<RegistrationType, Record<FieldName, b
 
     // Group Details (typically hidden for Participants)
     groupSize: false,
-    disabledStudents: false,
-    senStudents: false,
+    impairedParticipants: false,
+    nonImpairedParticipants: false,
   },
 
   "Volunteer": {
@@ -65,8 +65,8 @@ export const fieldVisibilityConfig: Record<RegistrationType, Record<FieldName, b
 
     // Group Details (typically hidden for Volunteers)
     groupSize: false,
-    disabledStudents: false,
-    senStudents: false,
+    impairedParticipants: false,
+    nonImpairedParticipants: false,
   },
 
   "Group": {
@@ -84,8 +84,8 @@ export const fieldVisibilityConfig: Record<RegistrationType, Record<FieldName, b
 
     // Group Details (visible for Group leaders)
     groupSize: true,
-    disabledStudents: true,
-    senStudents: true,
+    impairedParticipants: true,
+    nonImpairedParticipants: true,
   },
 };
 
