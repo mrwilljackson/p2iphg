@@ -49,9 +49,9 @@ P2I admin imports events, organisations, and volunteers from Airtable into Neon 
 Attendees register via the public `/registration` form. Registrations are written directly to Neon Postgres.
 
 **Phase 3 — Post-event**
-Admin exports registrations as a CSV from the P2I dashboard for manual import into Airtable. This is the standard post-event workflow.
+Admin exports registrations as a CSV from the P2I dashboard for manual import into Airtable. This is the only supported post-event workflow.
 
-A legacy `syncRegistrationsToAirtable()` function exists in `app/actions/airtable-sync.ts` (batches of 10 with 250ms delays to respect rate limits) but CSV export is the current standard.
+> ⚠️ **Deprecated:** A direct-sync function (`syncRegistrationsToAirtable()` in `app/actions/airtable-sync.ts`) still exists in the codebase for reference, but is **deprecated as of 2026-04-29**. Do not extend or recommend it; new post-event work should target CSV export only.
 
 ---
 
