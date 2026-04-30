@@ -63,6 +63,14 @@ function TestFormContentInner({ currentEvent }: TestFormContentProps) {
             >
               Admin
             </button>
+            {process.env.NEXT_PUBLIC_COMMIT_SHA && (
+              <>
+                {" | "}
+                <span className="font-mono">
+                  {process.env.NEXT_PUBLIC_COMMIT_SHA.slice(0, 7)}
+                </span>
+              </>
+            )}
           </p>
         </div>
       </div>
