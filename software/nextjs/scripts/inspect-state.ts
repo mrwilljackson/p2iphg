@@ -17,6 +17,7 @@ async function main() {
     { label: 'organisation_contacts total', q: 'SELECT COUNT(*)::int AS n FROM organisation_contacts' },
     { label: 'organisation_contacts with uuid_id', q: 'SELECT COUNT(*)::int AS n FROM organisation_contacts WHERE uuid_id IS NOT NULL' },
     { label: 'organisation_contacts with organisation_uuid', q: 'SELECT COUNT(*)::int AS n FROM organisation_contacts WHERE organisation_uuid IS NOT NULL' },
+    { label: 'organisation_contacts with event_id', q: 'SELECT COUNT(*)::int AS n FROM organisation_contacts WHERE event_id IS NOT NULL' },
     { label: 'organisation_contacts with airtable_event_id', q: 'SELECT COUNT(*)::int AS n FROM organisation_contacts WHERE airtable_event_id IS NOT NULL' },
     { label: 'organisations total', q: 'SELECT COUNT(*)::int AS n FROM organisations' },
     { label: 'organisations with event_id', q: 'SELECT COUNT(*)::int AS n FROM organisations WHERE event_id IS NOT NULL' },
