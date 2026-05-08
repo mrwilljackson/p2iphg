@@ -124,7 +124,6 @@ export interface OrgRecord {
   groupType: string;
 
   airtableRecordId?: string;
-  airtableEventId?: string;
   createdAt?: string;
   modifiedAt?: string;
 }
@@ -136,7 +135,7 @@ export interface OrgRecord {
 export interface GroupLeader {
   id: string;                      // organisation_contacts.id
   orgId: string;                   // organisations.id (UUID)
-  organisationAirtableId: string;  // organisations.airtableRecordId (FK link field)
+  eventId: string;                 // organisation_contacts.eventId (UUID)
   orgName: string;
   openGroup: boolean;
   groupType: string;
@@ -150,7 +149,6 @@ export interface GroupLeader {
   feedbackConsent?: boolean;
   nextEventConsent?: boolean;
   airtableRecordId?: string;       // organisation_contacts.airtableRecordId
-  airtableEventId?: string;
 }
 
 /**

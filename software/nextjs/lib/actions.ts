@@ -9,8 +9,8 @@
 
 
 import { db } from './db/client';
-import { events, registrations, volunteers, organisations, organisationContacts } from './db/schema';
-import { eq, and, or, isNull, sql, inArray } from 'drizzle-orm';
+import { events, registrations, volunteers, organisationContacts } from './db/schema';
+import { eq, sql } from 'drizzle-orm';
 import { DatabaseService } from './db-service';
 import type { Event, Organization, OrgRecord, GroupLeader, Volunteer, Registration, OrgContactOption, EventSummaryPreview, EventSummary } from './types';
 import type { ParticipantCounts } from './participant-counting';
@@ -229,20 +229,15 @@ export interface EventDataCounts {
 }
 
 export async function getEventDataCounts(eventId: string): Promise<EventDataCounts> {
-  // Get the event's airtable_record_id for org/contact lookups
   const evt = await db.select().from(events).where(eq(events.id, eventId)).limit(1);
   if (!evt[0]) throw new Error(`Event not found: ${eventId}`);
 
-  const eventAirtableId = evt[0].airtableRecordId;
-
-  // Count registrations for this event
   const regCountResult = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(registrations)
     .where(eq(registrations.eventId, eventId));
   const regCount = regCountResult[0]?.count ?? 0;
 
-  // Count unsynced registrations (pending, failed, or null)
   const unsyncedResult = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(registrations)
@@ -251,36 +246,24 @@ export async function getEventDataCounts(eventId: string): Promise<EventDataCoun
     );
   const unsyncedCount = unsyncedResult[0]?.count ?? 0;
 
-  // Count volunteers for this event
   const volCountResult = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(volunteers)
     .where(eq(volunteers.eventId, eventId));
   const volCount = volCountResult[0]?.count ?? 0;
 
-  // Count organisations and contacts linked via organisation_contacts.airtable_event_id
-  // Note: organisations.airtable_event_id is NOT populated — the event link is only
-  // on organisation_contacts. So we find orgs by joining through contacts.
-  let orgCount = 0;
-  let contactCount = 0;
-  if (eventAirtableId) {
-    const contactResult = await db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(organisationContacts)
-      .where(eq(organisationContacts.airtableEventId, eventAirtableId));
-    contactCount = contactResult[0]?.count ?? 0;
+  // Count organisations participating in this event (via organisation_contacts)
+  const contactResult = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(organisationContacts)
+    .where(eq(organisationContacts.eventId, eventId));
+  const contactCount = contactResult[0]?.count ?? 0;
 
-    // Count distinct organisations referenced by contacts for this event
-    const orgResult = await db
-      .select({ count: sql<number>`count(DISTINCT ${organisations.id})::int` })
-      .from(organisations)
-      .innerJoin(
-        organisationContacts,
-        eq(organisationContacts.organisationId, organisations.airtableRecordId)
-      )
-      .where(eq(organisationContacts.airtableEventId, eventAirtableId));
-    orgCount = orgResult[0]?.count ?? 0;
-  }
+  const orgResult = await db
+    .select({ count: sql<number>`count(DISTINCT ${organisationContacts.organisationId})::int` })
+    .from(organisationContacts)
+    .where(eq(organisationContacts.eventId, eventId));
+  const orgCount = orgResult[0]?.count ?? 0;
 
   return {
     registrations: regCount,
@@ -293,15 +276,15 @@ export async function getEventDataCounts(eventId: string): Promise<EventDataCoun
 
 
 /**
- * Clear all participant and organisation data for an event.
- * Deletes in FK-safe order, then sets the event status to 'archived'.
+ * Clear event-scoped data and archive the event.
+ * Deletes only data scoped to this event — organisations remain, since they
+ * are global records reused across events.
  *
  * Deletion order:
- * 1. Registrations (FK → events.id via eventId)
- * 2. Volunteers (FK → events.id via eventId)
- * 3. Organisation contacts (linked via airtableEventId)
- * 4. Organisations (found via contacts join, no direct event FK)
- * 5. Update event status → 'archived'
+ * 1. Registrations (eventId → events.id)
+ * 2. Volunteers (eventId → events.id)
+ * 3. Organisation contacts (eventId → events.id)
+ * 4. Update event status → 'archived'
  *
  * @param eventId - UUID of the event to clear
  * @param force - If true, allows clearing even with unsynced registrations
@@ -318,15 +301,11 @@ export interface ClearEventResult {
 }
 
 export async function clearEventData(eventId: string, force: boolean = false): Promise<ClearEventResult> {
-  // Validate event exists
   const evt = await db.select().from(events).where(eq(events.id, eventId)).limit(1);
   if (!evt[0]) {
     return { success: false, deleted: { registrations: 0, volunteers: 0, organisationContacts: 0, organisations: 0 }, error: 'Event not found' };
   }
 
-  const eventAirtableId = evt[0].airtableRecordId;
-
-  // Safety check: block if unsynced registrations exist and force is not set
   if (!force) {
     const unsyncedResult = await db
       .select({ count: sql<number>`count(*)::int` })
@@ -344,45 +323,12 @@ export async function clearEventData(eventId: string, force: boolean = false): P
     }
   }
 
-  // 1. Delete registrations for this event
   const regResult = await db.delete(registrations).where(eq(registrations.eventId, eventId)).returning({ id: registrations.id });
-
-  // 2. Delete volunteers for this event
   const volResult = await db.delete(volunteers).where(eq(volunteers.eventId, eventId)).returning({ id: volunteers.id });
+  const contactResult = await db.delete(organisationContacts)
+    .where(eq(organisationContacts.eventId, eventId))
+    .returning({ id: organisationContacts.id });
 
-  // 3 & 4. Delete organisation contacts and organisations linked via contacts
-  let contactDeleteCount = 0;
-  let orgDeleteCount = 0;
-
-  if (eventAirtableId) {
-    // Find the organisation IDs (Neon UUIDs) linked through contacts for this event
-    const linkedOrgs = await db
-      .select({ orgId: organisations.id })
-      .from(organisations)
-      .innerJoin(
-        organisationContacts,
-        eq(organisationContacts.organisationId, organisations.airtableRecordId)
-      )
-      .where(eq(organisationContacts.airtableEventId, eventAirtableId));
-
-    const orgIds = [...new Set(linkedOrgs.map(r => r.orgId))];
-
-    // 3. Delete organisation contacts for this event
-    const contactResult = await db.delete(organisationContacts)
-      .where(eq(organisationContacts.airtableEventId, eventAirtableId))
-      .returning({ id: organisationContacts.id });
-    contactDeleteCount = contactResult.length;
-
-    // 4. Delete the organisations themselves
-    if (orgIds.length > 0) {
-      const orgResult = await db.delete(organisations)
-        .where(inArray(organisations.id, orgIds))
-        .returning({ id: organisations.id });
-      orgDeleteCount = orgResult.length;
-    }
-  }
-
-  // 5. Set event status to 'archived'
   await db.update(events)
     .set({ status: 'archived', modifiedAt: new Date() })
     .where(eq(events.id, eventId));
@@ -392,8 +338,8 @@ export async function clearEventData(eventId: string, force: boolean = false): P
     deleted: {
       registrations: regResult.length,
       volunteers: volResult.length,
-      organisationContacts: contactDeleteCount,
-      organisations: orgDeleteCount,
+      organisationContacts: contactResult.length,
+      organisations: 0,
     },
   };
 }
