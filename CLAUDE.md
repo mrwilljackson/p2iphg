@@ -91,6 +91,18 @@ This is checked client-side in page components. There is no server-side session 
 
 Field visibility per role is driven by `lib/field-visibility-config.ts`.
 
+### Database FKs — RULE: UUID FKs only, never Airtable IDs
+
+`airtableRecordId` (and any other `airtable_*_id` text fields) are **reference-only** — they exist to track which Airtable record a row originated from for re-import upserts. They must never be used as join keys, filter conditions, or constraints.
+
+All joins, filtering, and constraints between local tables go through UUID FKs:
+- `organisation_contacts.organisationId` → `organisations.id`
+- `organisation_contacts.eventId` → `events.id`
+- `registrations.eventId` → `events.id`
+- `registrations.organizationId` → `organisations.id`
+
+Organisations are **global records** reused across events. Per-event scoping (which org participates in which event, with what leader) lives on `organisation_contacts` — never on `organisations`.
+
 ### Organisation Filtering — RULE: Use `openGroup`, never `groupType`
 
 **`groupType` is an administrative label for external reporting systems only. It must never be used for filtering, selection, or any conditional logic within this application.**
@@ -117,8 +129,7 @@ The single source of truth for group behaviour is the `openGroup` boolean on `or
 ### Airtable Integration
 
 - 18 Airtable `groupType` values are normalised to 7 dashboard categories (mapping in `lib/airtable.ts`)
-- `organisations.airtableEventId` links organisations to events (matches `events.airtableRecordId`)
-- `organisationContacts.organisationId` stores Airtable record IDs (not local UUIDs)
+- During contact import, the Airtable org/event record IDs are resolved to local UUIDs once and written onto `organisation_contacts.organisationId` / `eventId`. The Airtable text IDs are not stored on the contact row beyond `airtable_record_id` (the contact's own).
 - Direct push from Neon to Airtable (`syncRegistrationsToAirtable()`) is **deprecated** — see data-lifecycle note above
 
 ## Environment Variables
