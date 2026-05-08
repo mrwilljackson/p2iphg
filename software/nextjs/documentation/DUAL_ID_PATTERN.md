@@ -273,17 +273,30 @@ export const events = pgTable('events', {
 });
 ```
 
-### Organizations Table
+### Organisations Table (global records — no event link)
 ```typescript
-export const organizations = pgTable('organizations', {
+export const organisations = pgTable('organisations', {
   id: uuid('id').primaryKey().defaultRandom(),        // Local UUID
-  eventId: uuid('event_id').notNull().references(() => events.id),
-  name: text('name').notNull(),
-  isDisabilityGroup: boolean('is_disability_group').default(false),
+  name: text('name'),
+  groupType: text('group_type'),
   // ... other fields
-  airtableRecordId: text('airtable_record_id'),       // Airtable ID
-  createdAt: timestamp('created_at').defaultNow(),
-  modifiedAt: timestamp('modified_at').defaultNow(),
+  airtableRecordId: text('airtable_record_id'),       // Airtable ID (reference only)
+  createdAt: timestamp('created_at'),
+  modifiedAt: timestamp('modified_at'),
+});
+```
+
+### Organisation Contacts Table (one row per org + event pair)
+```typescript
+export const organisationContacts = pgTable('organisation_contacts', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  organisationId: uuid('organisation_id').notNull()
+    .references(() => organisations.id, { onDelete: 'restrict' }),
+  eventId: uuid('event_id').notNull()
+    .references(() => events.id, { onDelete: 'cascade' }),
+  openGroup: boolean('open_group').notNull().default(true),
+  // ... contact + consent fields
+  airtableRecordId: text('airtable_record_id'),       // Airtable ID (reference only)
 });
 ```
 

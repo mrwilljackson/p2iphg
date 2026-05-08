@@ -60,8 +60,8 @@ Represents a participant, volunteer, or group leader registration for an event.
 - `feedbackConsent` (bool, optional): Consent for post-event feedback
 - `nextEventConsent` (bool, optional): Consent for next event information
 - `groupSize` (int, optional): Number of participants in group (Group role only, required for disability/family groups)
-- `disabledStudents` (int, optional): Number of disabled participants (Group role only, required for disability/family groups)
-- `senStudents` (int, optional): Number of SEN participants (Group role only, required for disability/family groups)
+- `impairedParticipants` (int, optional): Number of impaired participants in the group (Group role only, required for disability/family groups)
+- `nonImpairedParticipants` (int, optional): Number of non-impaired participants in the group (Group role only, required for disability/family groups)
 - `groupLeaderParticipating` (bool, optional): Whether group leader is participating in games (Group role only)
 - `checkinTime` (DateTime, optional): Check-in timestamp
 - `checkoutTime` (DateTime, optional): Check-out timestamp
@@ -79,9 +79,9 @@ Represents a participant, volunteer, or group leader registration for an event.
 - Phone field has been REMOVED in V2
 - Impairment is a dropdown selection, not free text
 - Organization is required for Group role
-- For Group role with disability/family groups: groupSize, disabledStudents, and senStudents are required
+- For Group role with disability/family groups: groupSize, impairedParticipants, and nonImpairedParticipants are required
 - groupSize must be >= 1, max 999
-- disabledStudents and senStudents must be >= 0, max 999
+- impairedParticipants and nonImpairedParticipants must be >= 0, max 999
 - Cannot check out before checking in
 - Photo consent defaults to true (opt-out available)
 - feedbackConsent and nextEventConsent default to false (opt-in required)
@@ -101,7 +101,7 @@ Represents a participant, volunteer, or group leader registration for an event.
 **Group:**
 - Required: organizationId, attendeeName, attendeeSurname, email, groupLeaderParticipating, photoConsent
 - Optional: impairment, feedbackConsent, nextEventConsent
-- Conditional Required (for disability/family groups): groupSize, disabledStudents, senStudents
+- Conditional Required (for disability/family groups): groupSize, impairedParticipants, nonImpairedParticipants
 - Name and email fields may be auto-populated from organization contact details
 
 **Computed Properties:**
@@ -147,8 +147,8 @@ Represents a participant, volunteer, or group leader registration for an event.
   feedbackConsent: true,
   nextEventConsent: true,
   groupSize: 25,
-  disabledStudents: 20,
-  senStudents: 15,
+  impairedParticipants: 20,
+  nonImpairedParticipants: 15,
   groupLeaderParticipating: false,
   checkinTime: null,
   checkoutTime: null,
@@ -162,28 +162,29 @@ Represents a participant, volunteer, or group leader registration for an event.
 
 ### 1.3 Organisation Entity
 
-Represents an organisation that attendees/volunteers may be affiliated with. The implementation uses two tables: `organisations` (master record, Airtable-imported) and `organisation_contacts` (event-specific contact details and group behaviour flags).
+Represents an organisation that attendees/volunteers may be affiliated with. The implementation uses two tables: `organisations` (global master record, reusable across events) and `organisation_contacts` (one row per org-and-event pair, holds the event-specific contact details and group behaviour flags).
 
 #### 1.3a organisations table
+
+Global records — the same organisation row is reused across multiple events. Per-event scoping lives entirely on `organisation_contacts`, never on this table.
 
 **Properties:**
 - `id` (UUID, PK): Local unique identifier
 - `name` (String, optional): Organisation name
 - `groupType` (String, optional): Reporting category — Family | Disability | Corporate | Sporting | Community | Educational | Other (see section 2.5). **For reporting/Airtable sync only — never used for filtering.**
 - `imageUrl` (String, optional): Organisation logo/image URL
-- `airtableRecordId` (String, optional): Airtable record ID (used as join key)
-- `airtableEventId` (String, optional): Airtable event ID this org is associated with
+- `airtableRecordId` (String, optional): Airtable record ID, retained as a reference field for re-import upserts
 - `createdAt` (DateTime, optional): Record creation timestamp
 - `modifiedAt` (DateTime, optional): Last modification timestamp
 
 #### 1.3b organisation_contacts table
 
-Stores event-specific contact details and group behaviour settings. The same organisation can have different contacts and `openGroup` settings at different events.
+One row = one organisation's participation in one event. Holds the group leader contact details, the open/closed flag, expected size, and consent preferences for that specific (org, event) pair.
 
 **Properties:**
 - `id` (UUID, PK): Unique identifier
-- `organisationId` (String, required): Airtable record ID of the parent organisation
-- `airtableEventId` (String, optional): Airtable event ID linking this contact to an event
+- `organisationId` (UUID, required, NOT NULL): FK → `organisations.id` ON DELETE RESTRICT
+- `eventId` (UUID, required, NOT NULL): FK → `events.id` ON DELETE CASCADE
 - `openGroup` (Boolean, required, default: true): **Whether this group is visible to individual Participants at this event.** `true` = open group (participants register individually); `false` = closed group (group leader registers on behalf of all members). This is the single source of truth for organisation filtering — see section 9.
 - `photoConsent` (Boolean, required, default: true): Group leader's photo consent preference (pre-populated on Group registration form)
 - `feedbackConsent` (Boolean, required, default: false): Group leader's feedback survey consent preference
@@ -194,13 +195,13 @@ Stores event-specific contact details and group behaviour settings. The same org
 - `contactPhone` (String, optional): Contact person phone
 - `expectedGroupSize` (String, optional): Expected number of participants (pre-event planning)
 - `notes` (String, optional): Additional information
-- `airtableRecordId` (String, optional): Airtable record ID for this contact record
+- `airtableRecordId` (String, optional): Airtable record ID for this contact record (reference field for re-import upserts)
 - `createdAt` (DateTime, optional): Record creation timestamp
 - `modifiedAt` (DateTime, optional): Last modification timestamp
 
 **Business Rules:**
 - Organisation name must be 2-200 characters
-- Organisations are linked to events via `airtableEventId` (not a UUID FK)
+- Organisations are global; an org's participation in a specific event is represented by an `organisation_contacts` row with `organisationId` and `eventId` UUID FKs
 - Organisations can be pre-loaded from Airtable before the event
 - Organisations can be created by Event Admin during the event
 - `openGroup` on `organisation_contacts` (not `groupType` on `organisations`) controls whether participants can see and select the organisation — see section 9
@@ -215,7 +216,7 @@ Stores event-specific contact details and group behaviour settings. The same org
 
 **Disability/SEN:**
 - Examples: Glenfield SEN School, Hazel Grove Special School
-- Trigger additional fields in Group registration: groupSize, disabledStudents, senStudents
+- Trigger additional fields in Group registration: groupSize, impairedParticipants, nonImpairedParticipants
 - `openGroup`: typically false (closed group)
 
 **Family Groups:**
@@ -226,12 +227,11 @@ Stores event-specific contact details and group behaviour settings. The same org
 **Example (organisations row):**
 ```typescript
 {
-  id: 'uuid-local',
+  id: 'org-uuid-local',
   name: 'Next PLC',
   groupType: 'Corporate',
   imageUrl: null,
   airtableRecordId: 'recXXXXXXXXXXXXXX',
-  airtableEventId: 'recEVENTXXXXXXXXXX',
   createdAt: '2026-01-15T10:00:00Z',
   modifiedAt: '2026-01-15T10:00:00Z',
 }
@@ -241,8 +241,8 @@ Stores event-specific contact details and group behaviour settings. The same org
 ```typescript
 {
   id: 'uuid-contact',
-  organisationId: 'recXXXXXXXXXXXXXX',  // Airtable record ID
-  airtableEventId: 'recEVENTXXXXXXXXXX',
+  organisationId: 'org-uuid-local',     // FK → organisations.id
+  eventId: 'event-uuid-local',          // FK → events.id
   openGroup: true,
   photoConsent: true,
   feedbackConsent: false,
@@ -263,8 +263,8 @@ Stores event-specific contact details and group behaviour settings. The same org
 ```typescript
 {
   id: 'uuid-contact-2',
-  organisationId: 'recGLENFIELDXXXXXX',
-  airtableEventId: 'recEVENTXXXXXXXXXX',
+  organisationId: 'glenfield-org-uuid', // FK → organisations.id
+  eventId: 'event-uuid-local',          // FK → events.id
   openGroup: false,
   photoConsent: true,
   feedbackConsent: true,
@@ -510,8 +510,8 @@ Used for generating CSV reports for post-event analysis and Airtable sync.
 - `feedbackConsent` (String): yes | no
 - `nextEventConsent` (String): yes | no
 - `groupSize` (Number): Number of participants in group (Group role only)
-- `disabledStudents` (Number): Number of disabled participants (Group role only)
-- `senStudents` (Number): Number of SEN participants (Group role only)
+- `impairedParticipants` (Number): Number of impaired participants in the group (Group role only)
+- `nonImpairedParticipants` (Number): Number of non-impaired participants in the group (Group role only)
 - `groupLeaderParticipating` (String): yes | no (Group role only)
 - `checkinTime` (String): ISO 8601 formatted timestamp
 - `checkoutTime` (String): ISO 8601 formatted timestamp
@@ -546,13 +546,13 @@ Used for generating CSV reports for post-event analysis and Airtable sync.
   - Maximum: 999
   - Required for: Disability/Family groups in Group role
 
-- **Disabled Students:**
+- **Impaired Participants:**
   - Type: Integer
   - Minimum: 0
   - Maximum: 999
   - Required for: Disability/Family groups in Group role
 
-- **SEN Students:**
+- **Non-Impaired Participants:**
   - Type: Integer
   - Minimum: 0
   - Maximum: 999
@@ -741,7 +741,7 @@ See also: `lib/helpers.ts` → `organizationsToOptions()` and `groupOrgsToSectio
    - Added `isDisabilityGroup` flag
    - Added contact person fields (firstName, lastName, email) for auto-population
    - Added `imageUrl` for organization logos
-5. **Group-Specific Fields**: Added `groupSize`, `disabledStudents`, `senStudents` for Group role
+5. **Group-Specific Fields**: Added `groupSize`, `impairedParticipants`, `nonImpairedParticipants` for Group role
 6. **Group Leader Participation**: Added `groupLeaderParticipating` boolean field
 7. **Consent Fields**: Replaced `marketingConsent` with `feedbackConsent` and `nextEventConsent`
 8. **Removed Fields**: Removed `phone` field from Registration entity

@@ -80,5 +80,5 @@ There are no critical bugs or blocking issues at this time. The items below are 
 ## Notes
 
 - `groupType` on organisations is an administrative label for external reporting only — it must never be used for filtering or conditional logic within the application. The `openGroup` boolean on `organisation_contacts` is the single source of truth for group behaviour.
-- Organisations are linked to events via `organisations.airtableEventId` matching `events.airtableRecordId`.
-- Airtable sync batches 10 records at a time with 250ms delays to respect rate limits.
+- Organisations are global records reused across events. An org's participation in a specific event is represented by an `organisation_contacts` row with UUID FKs `organisationId` (→ `organisations.id`) and `eventId` (→ `events.id`).
+- Direct Neon → Airtable sync (`syncRegistrationsToAirtable()`) is **deprecated** as of 2026-04-29 — use the CSV export from the dashboard instead.

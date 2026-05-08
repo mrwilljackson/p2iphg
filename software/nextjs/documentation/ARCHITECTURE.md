@@ -112,8 +112,8 @@ The registration form (`components/registration-form.tsx`, ~50KB) supports three
 | feedbackConsent | Yes | Yes | Yes |
 | nextEventConsent | Yes | Yes | Yes |
 | groupSize | No | No | Yes |
-| disabledStudents | No | No | Yes |
-| senStudents | No | No | Yes |
+| impairedParticipants | No | No | Yes |
+| nonImpairedParticipants | No | No | Yes |
 
 Field visibility per role is driven by `lib/field-visibility-config.ts`.
 

@@ -66,7 +66,7 @@ The system is fully built and in active event-day use. All core phases (infrastr
   - Impairment (optional, dropdown select)
   - Registration role (3 radio button options: Participant, Volunteer, Group)
   - Photo consent, feedback consent, next event consent
-  - Group-role conditional fields: groupSize, disabledStudents, senStudents, groupLeaderParticipating
+  - Group-role conditional fields: groupSize, impairedParticipants, nonImpairedParticipants, groupLeaderParticipating
 
 - **Validation:**
   - Client-side validation with Zod schema

@@ -116,8 +116,8 @@ The following mappings apply when using the direct sync (`syncRegistrationsToAir
 | Role | Single Select | `role` | Participant / Volunteer / Group |
 | Event | Linked Record | `eventAirtableRecordId` | Links to Events table |
 | Group Size | Number | `groupSize` | Participants from org, excluding leader |
-| Disabled Students | Number | `disabledStudents` | |
-| SEN Students | Number | `senStudents` | |
+| Disabled Students | Number | `impairedParticipants` | Stored on registrations as `impaired_participants` |
+| SEN Students | Number | `nonImpairedParticipants` | Stored on registrations as `non_impaired_participants` |
 | Leader Participating | Checkbox | `groupLeaderParticipating` | |
 
 ## 6. Environment Variables
