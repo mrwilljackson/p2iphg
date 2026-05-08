@@ -63,11 +63,11 @@ export const volunteers = pgTable('volunteers', {
  */
 export const registrations = pgTable('registrations', {
   id: uuid('id').primaryKey().defaultRandom(),
-  eventId: uuid('event_id').notNull().references(() => events.id),
+  eventId: uuid('event_id').notNull().references(() => events.id, { onDelete: 'cascade' }),
   attendeeName: text('attendee_name').notNull(),
   attendeeSurname: text('attendee_surname').notNull(),
   email: text('email'),
-  organizationId: uuid('organization_id'), // References either organisations (UK) or organizations (US) table
+  organizationId: uuid('organization_id').references(() => organisations.id, { onDelete: 'restrict' }),
   impairment: text('impairment'),
   role: text('role').notNull(), // 'Participant' | 'Volunteer' | 'Group'
   photoConsent: boolean('photo_consent').notNull(),
@@ -86,8 +86,10 @@ export const registrations = pgTable('registrations', {
 
 /**
  * Organisations Table (UK spelling)
- * Stores organisation data imported from Airtable
- * Linked to events via airtable_event_id (text) matching events.airtable_record_id
+ * Stores organisation data imported from Airtable.
+ * Organisations are GLOBAL records reused across events. Per-event scoping
+ * (which org participates in which event, with what leader) lives on
+ * organisation_contacts.eventId — never on this table.
  */
 export const organisations = pgTable('organisations', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -95,20 +97,20 @@ export const organisations = pgTable('organisations', {
   groupType: text('group_type'),
   imageUrl: text('image_url'),
   airtableRecordId: text('airtable_record_id'),
-  airtableEventId: text('airtable_event_id'),
   createdAt: timestamp('created_at'),
   modifiedAt: timestamp('modified_at'),
 });
 
 /**
  * Organisation Contacts Table
- * Stores contact details for organisations
- * Linked to organisations via organisation_id (airtable record ID) matching organisations.airtable_record_id
+ * One row = one organisation's participation in one event. Holds the
+ * group leader's contact details, open/closed flag, expected group size,
+ * and consent preferences for that pairing.
  */
 export const organisationContacts = pgTable('organisation_contacts', {
   id: uuid('id').primaryKey().defaultRandom(),
-  organisationId: text('organisation_id'), // Airtable record ID of the organisation
-  airtableEventId: text('airtable_event_id'),
+  organisationId: uuid('organisation_id').notNull().references(() => organisations.id, { onDelete: 'restrict' }),
+  eventId: uuid('event_id').notNull().references(() => events.id, { onDelete: 'cascade' }),
   // open_group: whether this group is visible to individual Participants at this event.
   // Stored here (not on organisations) so the same org can be open at one event and closed at another.
   openGroup: boolean('open_group').notNull().default(true),

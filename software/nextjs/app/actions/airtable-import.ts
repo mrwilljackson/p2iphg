@@ -339,7 +339,6 @@ export async function importOrganizationToNeon(organizationData: ImportOrganizat
         .set({
           name: organizationData.name,
           groupType: normalizeGroupType(organizationData.groupType),
-          airtableEventId: organizationData.eventAirtableId,
           modifiedAt: new Date(),
         })
         .where(eq(organisations.airtableRecordId, organizationData.airtableRecordId))
@@ -358,7 +357,6 @@ export async function importOrganizationToNeon(organizationData: ImportOrganizat
           name: organizationData.name,
           groupType: normalizeGroupType(organizationData.groupType),
           airtableRecordId: organizationData.airtableRecordId,
-          airtableEventId: organizationData.eventAirtableId,
           createdAt: new Date(),
           modifiedAt: new Date(),
         })
@@ -430,7 +428,32 @@ export async function importOrganisationContactToNeon(contactData: ImportOrganis
   try {
     console.log('Importing organisation contact with data:', JSON.stringify(contactData, null, 2));
 
-    // Check if contact already exists by airtableRecordId
+    if (!contactData.organisationId) {
+      return { success: false, error: 'Missing organisation Airtable ID on contact' };
+    }
+    if (!contactData.airtableEventId) {
+      return { success: false, error: 'Missing event Airtable ID on contact' };
+    }
+
+    // Resolve Airtable record IDs to local UUIDs
+    const [org] = await db
+      .select({ id: organisations.id })
+      .from(organisations)
+      .where(eq(organisations.airtableRecordId, contactData.organisationId))
+      .limit(1);
+    if (!org) {
+      return { success: false, error: `Organisation not found for airtableRecordId=${contactData.organisationId}` };
+    }
+
+    const [event] = await db
+      .select({ id: events.id })
+      .from(events)
+      .where(eq(events.airtableRecordId, contactData.airtableEventId))
+      .limit(1);
+    if (!event) {
+      return { success: false, error: `Event not found for airtableRecordId=${contactData.airtableEventId}` };
+    }
+
     const existing = await db
       .select()
       .from(organisationContacts)
@@ -438,12 +461,11 @@ export async function importOrganisationContactToNeon(contactData: ImportOrganis
       .limit(1);
 
     if (existing.length > 0) {
-      // Contact already exists - update it
       const [updated] = await db
         .update(organisationContacts)
         .set({
-          organisationId: contactData.organisationId,
-          airtableEventId: contactData.airtableEventId,
+          organisationId: org.id,
+          eventId: event.id,
           contactFirstName: contactData.contactFirstName,
           contactLastName: contactData.contactLastName,
           contactEmail: contactData.contactEmail,
@@ -461,12 +483,11 @@ export async function importOrganisationContactToNeon(contactData: ImportOrganis
         contact: updated,
       };
     } else {
-      // Contact doesn't exist - create it
       const [created] = await db
         .insert(organisationContacts)
         .values({
-          organisationId: contactData.organisationId,
-          airtableEventId: contactData.airtableEventId,
+          organisationId: org.id,
+          eventId: event.id,
           contactFirstName: contactData.contactFirstName,
           contactLastName: contactData.contactLastName,
           contactEmail: contactData.contactEmail,

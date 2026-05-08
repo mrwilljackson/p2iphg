@@ -14,7 +14,7 @@ import { resolve } from 'path';
 config({ path: resolve(__dirname, '../.env.local') });
 
 import { db } from '../lib/db/client';
-import { registrations, organisations as organizations, events } from '../lib/db/schema';
+import { registrations, organisations as organizations, organisationContacts, events } from '../lib/db/schema';
 import { eq } from 'drizzle-orm';
 
 async function debugCambridgeBoatClub() {
@@ -35,14 +35,20 @@ async function debugCambridgeBoatClub() {
   console.log('📅 Current Event:', currentEvent[0].name, '(', currentEvent[0].date, ')');
   console.log('Event ID:', currentEvent[0].id);
 
-  // 2. Find Cambridge Uni Boat Club organization
-  // organisations table links via airtableEventId (text), not a UUID eventId
-  const cambridgeOrg = currentEvent[0].airtableRecordId
-    ? await db
-        .select()
-        .from(organizations)
-        .where(eq(organizations.airtableEventId, currentEvent[0].airtableRecordId))
-    : await db.select().from(organizations);
+  // 2. Find Cambridge Uni Boat Club organization (scoped to current event via contacts)
+  const cambridgeOrg = await db
+    .select({
+      id: organizations.id,
+      name: organizations.name,
+      groupType: organizations.groupType,
+      imageUrl: organizations.imageUrl,
+      airtableRecordId: organizations.airtableRecordId,
+      createdAt: organizations.createdAt,
+      modifiedAt: organizations.modifiedAt,
+    })
+    .from(organizations)
+    .innerJoin(organisationContacts, eq(organisationContacts.organisationId, organizations.id))
+    .where(eq(organisationContacts.eventId, currentEvent[0].id));
 
   const cambridge = cambridgeOrg.find(org => org.name?.toLowerCase().includes('cambridge'));
 

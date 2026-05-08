@@ -100,57 +100,38 @@ export class DatabaseService {
   }
 
   /**
-   * Get all organizations for a specific event
-   * Reads from the `organisations` (UK) table, joined with `organisation_contacts`
-   * Matches event via airtable_event_id ↔ events.airtable_record_id
+   * Get all organizations participating in a specific event.
+   * An org "participates" when an organisation_contacts row exists linking
+   * it to the event. The Individual system org is always included.
    */
   static async getOrganizations(eventId?: string): Promise<Organization[]> {
     try {
-      // Look up the event's airtable_record_id so we can match organisations
-      let eventAirtableId: string | null = null;
-      let eventUuid: string | undefined = eventId;
-      if (eventId) {
-        const evt = await db.select().from(events).where(eq(events.id, eventId)).limit(1);
-        eventAirtableId = evt[0]?.airtableRecordId ?? null;
-      }
+      type Row = { org: OrganisationRow; contact: OrganisationContactRow | null };
 
-      // Query organisations (UK table) with optional contact details
-      const result = await db
-        .select({
-          org: organisations,
-          contact: organisationContacts,
-        })
-        .from(organisations)
-        .leftJoin(
-          organisationContacts,
-          eq(organisations.airtableRecordId, organisationContacts.organisationId)
-        );
-
-      // Filter by event via the contact's airtableEventId (orgs don't have direct event links)
-      let filtered = result;
-      if (eventAirtableId) {
-        const byEvent = result.filter(r => r.contact?.airtableEventId === eventAirtableId);
-        if (byEvent.length > 0) {
-          filtered = byEvent;
-        }
-      }
+      const scoped: Row[] = eventId
+        ? await db
+            .select({ org: organisations, contact: organisationContacts })
+            .from(organisationContacts)
+            .innerJoin(organisations, eq(organisationContacts.organisationId, organisations.id))
+            .where(eq(organisationContacts.eventId, eventId))
+        : await db
+            .select({ org: organisations, contact: organisationContacts })
+            .from(organisations)
+            .leftJoin(organisationContacts, eq(organisationContacts.organisationId, organisations.id));
 
       // Always append system orgs (groupType = 'Individual') regardless of event
       const systemOrgs = await db
-        .select({ org: organisations, contact: organisationContacts })
+        .select({ org: organisations })
         .from(organisations)
-        .leftJoin(
-          organisationContacts,
-          eq(organisations.airtableRecordId, organisationContacts.organisationId)
-        )
         .where(eq(organisations.groupType, 'Individual'));
 
-      // Avoid duplicates if Individual org somehow appears in filtered already
-      const filteredIds = new Set(filtered.map(r => r.org.id));
-      const toAppend = systemOrgs.filter(r => !filteredIds.has(r.org.id));
+      const scopedIds = new Set(scoped.map(r => r.org.id));
+      const toAppend: Row[] = systemOrgs
+        .filter(s => !scopedIds.has(s.org.id))
+        .map(s => ({ org: s.org, contact: null }));
 
-      return [...filtered, ...toAppend].map(r =>
-        mapOrganisationToOrganization(r.org, r.contact, eventUuid)
+      return [...scoped, ...toAppend].map(r =>
+        mapOrganisationToOrganization(r.org, r.contact, eventId)
       );
     } catch (error) {
       console.error('Error fetching organizations:', error);
@@ -159,38 +140,28 @@ export class DatabaseService {
   }
 
   /**
-   * Get organization by ID
-   * Queries the UK organisations table with joined contact details.
-   * Pass eventId to scope the contact join to the correct event (recommended),
-   * otherwise an arbitrary contact row may be returned if the org spans multiple events.
+   * Get organization by ID with optional event-scoped contact details.
+   * Pass eventId to scope the contact join to the correct event — otherwise
+   * an arbitrary contact row may be returned for orgs that span multiple events.
    */
   static async getOrganizationById(id: string, eventId?: string): Promise<Organization | null> {
     try {
-      let eventAirtableId: string | null = null;
-      if (eventId) {
-        const [evt] = await db.select().from(events).where(eq(events.id, eventId)).limit(1);
-        eventAirtableId = evt?.airtableRecordId ?? null;
-      }
-
-      const contactJoinCondition = eventAirtableId
+      const contactJoinCondition = eventId
         ? and(
-            eq(organisations.airtableRecordId, organisationContacts.organisationId),
-            eq(organisationContacts.airtableEventId, eventAirtableId)
+            eq(organisationContacts.organisationId, organisations.id),
+            eq(organisationContacts.eventId, eventId),
           )
-        : eq(organisations.airtableRecordId, organisationContacts.organisationId);
+        : eq(organisationContacts.organisationId, organisations.id);
 
       const result = await db
-        .select({
-          org: organisations,
-          contact: organisationContacts,
-        })
+        .select({ org: organisations, contact: organisationContacts })
         .from(organisations)
         .leftJoin(organisationContacts, contactJoinCondition)
         .where(eq(organisations.id, id))
         .limit(1);
 
       if (result[0]) {
-        return mapOrganisationToOrganization(result[0].org, result[0].contact);
+        return mapOrganisationToOrganization(result[0].org, result[0].contact, eventId);
       }
 
       return null;
@@ -531,48 +502,36 @@ export class DatabaseService {
    */
   static async getFullyRegisteredOrgIds(eventId: string): Promise<string[]> {
     try {
-      // 1. Get the event's airtable record ID
-      const [evt] = await db.select({ airtableRecordId: events.airtableRecordId })
-        .from(events)
-        .where(eq(events.id, eventId))
-        .limit(1);
-      if (!evt?.airtableRecordId) return [];
 
-      // 2. Get all closed-group orgs for this event (scoped via contact's airtableEventId)
-      const closedOrgs = await db.select({
-        id: organisations.id,
-        airtableRecordId: organisations.airtableRecordId,
-      })
+      // 1. Get all closed-group orgs for this event
+      const closedOrgs = await db.select({ id: organisations.id })
         .from(organisations)
         .innerJoin(
           organisationContacts,
           and(
-            eq(organisationContacts.organisationId, organisations.airtableRecordId),
-            eq(organisationContacts.airtableEventId, evt.airtableRecordId),
+            eq(organisationContacts.organisationId, organisations.id),
+            eq(organisationContacts.eventId, eventId),
             eq(organisationContacts.openGroup, false),
           )
         );
 
       if (closedOrgs.length === 0) return [];
 
-      // 3. Deduplicate org IDs (multiple contacts per org produce multiple rows)
-      const uniqueOrgs = [...new Map(closedOrgs.map(o => [o.id, o.airtableRecordId])).entries()]
-        .map(([id, airtableRecordId]) => ({ id, airtableRecordId }));
+      // 2. Deduplicate org IDs (multiple contacts per org produce multiple rows)
+      const uniqueOrgs = [...new Set(closedOrgs.map(o => o.id))].map(id => ({ id }));
 
-      // 4. For each org, count total contacts and registered contacts
+      // 3. For each org, count total contacts and registered contacts
       const fullyRegisteredIds: string[] = [];
 
       for (const org of uniqueOrgs) {
-        if (!org.airtableRecordId) continue;
-
         // Count total contacts for this org + event
         const [{ count: totalContacts }] = await db
           .select({ count: sql<number>`count(*)` })
           .from(organisationContacts)
           .where(
             and(
-              eq(organisationContacts.organisationId, org.airtableRecordId),
-              eq(organisationContacts.airtableEventId, evt.airtableRecordId),
+              eq(organisationContacts.organisationId, org.id),
+              eq(organisationContacts.eventId, eventId),
             )
           );
 
@@ -582,8 +541,8 @@ export class DatabaseService {
           .from(organisationContacts)
           .where(
             and(
-              eq(organisationContacts.organisationId, org.airtableRecordId),
-              eq(organisationContacts.airtableEventId, evt.airtableRecordId),
+              eq(organisationContacts.organisationId, org.id),
+              eq(organisationContacts.eventId, eventId),
             )
           );
         const emails = contactEmails
@@ -631,32 +590,17 @@ export class DatabaseService {
     eventId: string,
     orgId: string,
   ): Promise<OrgContactOption[]> {
-    // 1. Get the event's airtable record ID
-    const [evt] = await db.select({ airtableRecordId: events.airtableRecordId })
-      .from(events)
-      .where(eq(events.id, eventId))
-      .limit(1);
-    if (!evt?.airtableRecordId) return [];
-
-    // 2. Get the org's airtable record ID
-    const [org] = await db.select({ airtableRecordId: organisations.airtableRecordId })
-      .from(organisations)
-      .where(eq(organisations.id, orgId))
-      .limit(1);
-    if (!org?.airtableRecordId) return [];
-
-    // 3. Fetch all contacts for this org + event
     const contacts = await db.select()
       .from(organisationContacts)
       .where(
         and(
-          eq(organisationContacts.organisationId, org.airtableRecordId),
-          eq(organisationContacts.airtableEventId, evt.airtableRecordId),
+          eq(organisationContacts.organisationId, orgId),
+          eq(organisationContacts.eventId, eventId),
         )
       );
     if (contacts.length === 0) return [];
 
-    // 4. Fetch emails of Group registrations already submitted for this event + org
+    // Fetch emails of Group registrations already submitted for this event + org
     const existingRegs = await db
       .select({ email: registrations.email })
       .from(registrations)
@@ -671,7 +615,6 @@ export class DatabaseService {
       existingRegs.map(r => r.email).filter((e): e is string => e != null)
     );
 
-    // 5. Map to OrgContactOption
     return contacts.map(c => ({
       contactId: c.id,
       firstName: c.contactFirstName ?? '',
@@ -732,42 +675,26 @@ export class DatabaseService {
       // for their org, store the registration as a Group leader instead
       let resolvedRole = data.role;
       if (data.role === 'Participant' && data.email && data.organizationId) {
-        // Look up the org's airtable record ID for matching against contacts
-        const [org] = await db.select({ airtableRecordId: organisations.airtableRecordId })
-          .from(organisations)
-          .where(eq(organisations.id, data.organizationId))
+        const [matchingContact] = await db.select({
+          id: organisationContacts.id,
+          expectedGroupSize: organisationContacts.expectedGroupSize,
+        })
+          .from(organisationContacts)
+          .where(
+            and(
+              eq(organisationContacts.organisationId, data.organizationId),
+              eq(organisationContacts.eventId, data.eventId),
+              sql`lower(${organisationContacts.contactEmail}) = lower(${data.email})`,
+            )
+          )
           .limit(1);
 
-        if (org?.airtableRecordId) {
-          // Look up the event's airtable record ID
-          const [evt] = await db.select({ airtableRecordId: events.airtableRecordId })
-            .from(events)
-            .where(eq(events.id, data.eventId))
-            .limit(1);
-
-          if (evt?.airtableRecordId) {
-            const [matchingContact] = await db.select({
-              id: organisationContacts.id,
-              expectedGroupSize: organisationContacts.expectedGroupSize,
-            })
-              .from(organisationContacts)
-              .where(
-                and(
-                  eq(organisationContacts.organisationId, org.airtableRecordId),
-                  eq(organisationContacts.airtableEventId, evt.airtableRecordId),
-                  sql`lower(${organisationContacts.contactEmail}) = lower(${data.email})`,
-                )
-              )
-              .limit(1);
-
-            if (matchingContact) {
-              resolvedRole = 'Group';
-              const groupSize = matchingContact.expectedGroupSize
-                ? parseInt(matchingContact.expectedGroupSize, 10)
-                : null;
-              data = { ...data, groupLeaderParticipating: true, groupSize: groupSize ?? data.groupSize };
-            }
-          }
+        if (matchingContact) {
+          resolvedRole = 'Group';
+          const groupSize = matchingContact.expectedGroupSize
+            ? parseInt(matchingContact.expectedGroupSize, 10)
+            : null;
+          data = { ...data, groupLeaderParticipating: true, groupSize: groupSize ?? data.groupSize };
         }
       }
 
@@ -799,32 +726,25 @@ export class DatabaseService {
   }
 
   /**
-   * Create a new organization (for admin use)
-   * Creates a record in the UK organisations table + organisation_contacts for contact details
+   * Create a new organization (for admin use).
+   * Creates a row in organisations + an organisation_contacts row scoped to the event.
    */
   static async createOrganization(data: Omit<Organization, 'id' | 'createdAt' | 'modifiedAt'>): Promise<Organization> {
     try {
-      // Look up event's airtable_record_id for linking
-      const evt = data.eventId
-        ? await db.select().from(events).where(eq(events.id, data.eventId)).limit(1)
-        : [];
-      const eventAirtableId = evt[0]?.airtableRecordId ?? null;
-
-      // Generate a local record ID for linking org ↔ contacts (no Airtable ID yet)
-      const localRecordId = data.airtableRecordId || `local-${randomUUID()}`;
+      if (!data.eventId) {
+        throw new Error('eventId is required to create an organisation contact');
+      }
 
       const [newOrg] = await db.insert(organisations).values({
         name: data.name,
         groupType: data.groupType || 'Other',
         imageUrl: data.imageUrl || null,
-        airtableRecordId: localRecordId,
-        airtableEventId: eventAirtableId,
+        airtableRecordId: data.airtableRecordId || `local-${randomUUID()}`,
       }).returning();
 
-      // Create contact record — openGroup lives here (per event), not on the org
       const [newContact] = await db.insert(organisationContacts).values({
-        organisationId: localRecordId,
-        airtableEventId: eventAirtableId,
+        organisationId: newOrg.id,
+        eventId: data.eventId,
         openGroup: data.openGroup ?? true,
         contactFirstName: data.contactFirstName || null,
         contactLastName: data.contactLastName || null,
@@ -861,52 +781,38 @@ export class DatabaseService {
     try {
       const familyGroupName = `${surname} Family Group`;
 
-      // Get event's airtable_record_id for linking to UK table's airtable_event_id
-      const evt = await db.select().from(events).where(eq(events.id, eventId)).limit(1);
-      const eventAirtableId = evt[0]?.airtableRecordId ?? null;
-
-      // Check if this family group already exists in the UK organisations table
+      // Check if this family group already exists for this event (matched by contact email)
       const existing = await db
         .select({ org: organisations, contact: organisationContacts })
-        .from(organisations)
-        .leftJoin(
-          organisationContacts,
-          eq(organisations.airtableRecordId, organisationContacts.organisationId)
-        )
+        .from(organisationContacts)
+        .innerJoin(organisations, eq(organisationContacts.organisationId, organisations.id))
         .where(
           and(
             eq(organisations.name, familyGroupName),
-            eventAirtableId ? eq(organisations.airtableEventId, eventAirtableId) : undefined,
+            eq(organisationContacts.eventId, eventId),
           )
         );
 
-      // Match by contact email to deduplicate
       const matchByEmail = existing.find(r => r.contact?.contactEmail === contactEmail);
       if (matchByEmail) {
         return mapOrganisationToOrganization(matchByEmail.org, matchByEmail.contact, eventId);
       }
 
-      // Create new family group in UK organisations table
-      // Use a local-{uuid} as airtable_record_id to link org ↔ contacts
-      const localRecordId = `local-${randomUUID()}`;
-
       const [newOrg] = await db.insert(organisations).values({
         name: familyGroupName,
         groupType: 'Family',
         imageUrl: null,
-        airtableRecordId: localRecordId,
-        airtableEventId: eventAirtableId,
+        airtableRecordId: `local-${randomUUID()}`,
       }).returning();
 
-      // Create contact record — openGroup lives here (per event), not on the org
       // Family groups are closed (not visible in participant dropdown)
       const [newContact] = await db.insert(organisationContacts).values({
-        organisationId: localRecordId,
-        airtableEventId: eventAirtableId,
+        organisationId: newOrg.id,
+        eventId,
         openGroup: false,
-        contactFirstName: contactFirstName,
-        contactLastName: contactLastName,
-        contactEmail: contactEmail,
+        contactFirstName,
+        contactLastName,
+        contactEmail,
         contactPhone: null,
         notes: 'Auto-created family group',
       }).returning();
@@ -942,30 +848,38 @@ export class DatabaseService {
 
       if (!current) throw new Error(`Organisation not found: ${id}`);
 
-      const oldAirtableRecordId = current.airtableRecordId;
-      const newAirtableRecordId = data.airtableRecordId ?? oldAirtableRecordId;
-
       const { contactFirstName, contactLastName, contactEmail, contactPhone, notes, airtableRecordId, openGroup, ...orgFields } = data;
       await db
         .update(organisations)
-        .set({ ...orgFields, airtableRecordId: newAirtableRecordId, modifiedAt: new Date() })
+        .set({
+          ...orgFields,
+          ...(airtableRecordId !== undefined ? { airtableRecordId } : {}),
+          modifiedAt: new Date(),
+        })
         .where(eq(organisations.id, id));
 
-      if (oldAirtableRecordId) {
+      // Propagate per-contact fields to all contact rows for this org (across events)
+      const hasContactUpdates =
+        openGroup !== undefined ||
+        contactFirstName !== undefined ||
+        contactLastName !== undefined ||
+        contactEmail !== undefined ||
+        contactPhone !== undefined ||
+        notes !== undefined;
+
+      if (hasContactUpdates) {
         await db
           .update(organisationContacts)
           .set({
-            organisationId: newAirtableRecordId,
-            // openGroup lives on the contact row (per event), not on the org
             ...(openGroup !== undefined ? { openGroup } : {}),
-            contactFirstName: contactFirstName ?? undefined,
-            contactLastName: contactLastName ?? undefined,
-            contactEmail: contactEmail ?? undefined,
-            contactPhone: contactPhone ?? undefined,
-            notes: notes ?? undefined,
+            ...(contactFirstName !== undefined ? { contactFirstName } : {}),
+            ...(contactLastName !== undefined ? { contactLastName } : {}),
+            ...(contactEmail !== undefined ? { contactEmail } : {}),
+            ...(contactPhone !== undefined ? { contactPhone } : {}),
+            ...(notes !== undefined ? { notes } : {}),
             modifiedAt: new Date(),
           })
-          .where(eq(organisationContacts.organisationId, oldAirtableRecordId));
+          .where(eq(organisationContacts.organisationId, id));
       }
 
       const updated = await this.getOrganizationById(id);
@@ -992,19 +906,9 @@ export class DatabaseService {
         throw new Error('Cannot delete an organisation that has registrations.');
       }
 
-      const [org] = await db
-        .select({ airtableRecordId: organisations.airtableRecordId })
-        .from(organisations)
-        .where(eq(organisations.id, id))
-        .limit(1);
-
-      if (!org) throw new Error(`Organisation not found: ${id}`);
-
-      if (org.airtableRecordId) {
-        await db
-          .delete(organisationContacts)
-          .where(eq(organisationContacts.organisationId, org.airtableRecordId));
-      }
+      await db
+        .delete(organisationContacts)
+        .where(eq(organisationContacts.organisationId, id));
 
       await db.delete(organisations).where(eq(organisations.id, id));
     } catch (error) {
@@ -1045,20 +949,11 @@ export class DatabaseService {
   }): Promise<OrgRecord> {
     const [current] = await db.select().from(organisations).where(eq(organisations.id, id)).limit(1);
     if (!current) throw new Error(`Organisation not found: ${id}`);
-    const oldAirtableRecordId = current.airtableRecordId;
-    const newAirtableRecordId = data.airtableRecordId ?? oldAirtableRecordId;
-    const { airtableRecordId, ...orgFields } = data;
     const [row] = await db
       .update(organisations)
-      .set({ ...orgFields, airtableRecordId: newAirtableRecordId, modifiedAt: new Date() })
+      .set({ ...data, modifiedAt: new Date() })
       .where(eq(organisations.id, id))
       .returning();
-    if (oldAirtableRecordId && newAirtableRecordId !== oldAirtableRecordId) {
-      await db
-        .update(organisationContacts)
-        .set({ organisationId: newAirtableRecordId })
-        .where(eq(organisationContacts.organisationId, oldAirtableRecordId));
-    }
     return mapOrgRecord(row);
   }
 
@@ -1070,20 +965,12 @@ export class DatabaseService {
     if ((regCount?.count ?? 0) > 0) {
       throw new Error('Cannot delete an organisation that has registrations.');
     }
-    const [org] = await db
-      .select({ airtableRecordId: organisations.airtableRecordId })
-      .from(organisations)
-      .where(eq(organisations.id, id))
-      .limit(1);
-    if (!org) throw new Error(`Organisation not found: ${id}`);
-    if (org.airtableRecordId) {
-      const [contactCount] = await db
-        .select({ count: sql<number>`count(*)::int` })
-        .from(organisationContacts)
-        .where(eq(organisationContacts.organisationId, org.airtableRecordId));
-      if ((contactCount?.count ?? 0) > 0) {
-        throw new Error('Cannot delete: this organisation has group leaders. Delete them first.');
-      }
+    const [contactCount] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(organisationContacts)
+      .where(eq(organisationContacts.organisationId, id));
+    if ((contactCount?.count ?? 0) > 0) {
+      throw new Error('Cannot delete: this organisation has group leaders. Delete them first.');
     }
     await db.delete(organisations).where(eq(organisations.id, id));
   }
@@ -1093,13 +980,11 @@ export class DatabaseService {
   // ---------------------------------------------------------------------------
 
   static async getGroupLeaders(eventId: string): Promise<GroupLeader[]> {
-    const [event] = await db.select().from(events).where(eq(events.id, eventId)).limit(1);
-    if (!event?.airtableRecordId) return [];
     const rows = await db
       .select({ org: organisations, contact: organisationContacts })
       .from(organisationContacts)
-      .innerJoin(organisations, eq(organisationContacts.organisationId, organisations.airtableRecordId))
-      .where(eq(organisationContacts.airtableEventId, event.airtableRecordId));
+      .innerJoin(organisations, eq(organisationContacts.organisationId, organisations.id))
+      .where(eq(organisationContacts.eventId, eventId));
     return rows
       .map(r => mapGroupLeader(r.org, r.contact))
       .sort((a, b) => a.orgName.localeCompare(b.orgName));
@@ -1120,13 +1005,11 @@ export class DatabaseService {
     nextEventConsent?: boolean;
     airtableRecordId?: string;
   }): Promise<GroupLeader> {
-    const [event] = await db.select().from(events).where(eq(events.id, data.eventId)).limit(1);
-    const eventAirtableId = event?.airtableRecordId ?? null;
     const [org] = await db.select().from(organisations).where(eq(organisations.id, data.orgId)).limit(1);
     if (!org) throw new Error(`Organisation not found: ${data.orgId}`);
     const [contact] = await db.insert(organisationContacts).values({
-      organisationId: org.airtableRecordId,
-      airtableEventId: eventAirtableId,
+      organisationId: org.id,
+      eventId: data.eventId,
       openGroup: data.openGroup,
       expectedGroupSize: data.expectedGroupSize != null ? String(data.expectedGroupSize) : null,
       contactFirstName: data.contactFirstName || null,
@@ -1157,16 +1040,14 @@ export class DatabaseService {
     airtableRecordId?: string;
   }): Promise<GroupLeader> {
     const { orgId, openGroup, expectedGroupSize, ...contactFields } = data;
-    let orgAirtableId: string | null | undefined;
     if (orgId) {
-      const [org] = await db.select().from(organisations).where(eq(organisations.id, orgId)).limit(1);
+      const [org] = await db.select({ id: organisations.id }).from(organisations).where(eq(organisations.id, orgId)).limit(1);
       if (!org) throw new Error(`Organisation not found: ${orgId}`);
-      orgAirtableId = org.airtableRecordId;
     }
     await db
       .update(organisationContacts)
       .set({
-        ...(orgAirtableId !== undefined ? { organisationId: orgAirtableId } : {}),
+        ...(orgId !== undefined ? { organisationId: orgId } : {}),
         ...(openGroup !== undefined ? { openGroup } : {}),
         ...(expectedGroupSize !== undefined ? { expectedGroupSize: expectedGroupSize != null ? String(expectedGroupSize) : null } : {}),
         ...contactFields,
@@ -1176,7 +1057,7 @@ export class DatabaseService {
     const [result] = await db
       .select({ org: organisations, contact: organisationContacts })
       .from(organisationContacts)
-      .innerJoin(organisations, eq(organisationContacts.organisationId, organisations.airtableRecordId))
+      .innerJoin(organisations, eq(organisationContacts.organisationId, organisations.id))
       .where(eq(organisationContacts.id, id));
     if (!result) throw new Error(`Group leader not found after update: ${id}`);
     return mapGroupLeader(result.org, result.contact);
@@ -1296,25 +1177,18 @@ export class DatabaseService {
         .leftJoin(organisations, eq(registrations.organizationId, organisations.id))
         .where(eq(registrations.eventId, eventId));
 
-      // Get pre-registered organisations via organisation_contacts (which has the event link)
-      // Organisations don't have a direct event link — the link is through contacts
-      const evt = await db.select().from(events).where(eq(events.id, eventId)).limit(1);
-      const eventAirtableId = evt[0]?.airtableRecordId ?? null;
-
-      // Query organisation_contacts for this event, joined to organisations for name/groupType
-      const contactsForEvent = eventAirtableId
-        ? await db
-            .select({
-              orgId: organisations.id,
-              orgName: organisations.name,
-              orgGroupType: organisations.groupType,
-              openGroup: organisationContacts.openGroup,
-              contactExpectedGroupSize: organisationContacts.expectedGroupSize,
-            })
-            .from(organisationContacts)
-            .innerJoin(organisations, eq(organisationContacts.organisationId, organisations.airtableRecordId))
-            .where(eq(organisationContacts.airtableEventId, eventAirtableId))
-        : [];
+      // Pre-registered organisations for this event (one row per contact)
+      const contactsForEvent = await db
+        .select({
+          orgId: organisations.id,
+          orgName: organisations.name,
+          orgGroupType: organisations.groupType,
+          openGroup: organisationContacts.openGroup,
+          contactExpectedGroupSize: organisationContacts.expectedGroupSize,
+        })
+        .from(organisationContacts)
+        .innerJoin(organisations, eq(organisationContacts.organisationId, organisations.id))
+        .where(eq(organisationContacts.eventId, eventId));
 
       // Aggregate expectedGroupSize per organisation (multiple contacts may exist per org)
       const orgMap = new Map<string, { id: string; name: string; groupType: string | null; openGroup: boolean | null; expectedGroupSize: number }>();
@@ -1399,15 +1273,15 @@ export class DatabaseService {
       groupRegs.map(r => r.organizationId).filter((id): id is string => id != null)
     )];
 
-    if (orgUuids.length > 0 && event.airtableRecordId) {
+    if (orgUuids.length > 0) {
       const orgRows = await db
         .select({ orgId: organisations.id, openGroup: organisationContacts.openGroup })
         .from(organisations)
         .leftJoin(
           organisationContacts,
           and(
-            eq(organisationContacts.organisationId, organisations.airtableRecordId),
-            eq(organisationContacts.airtableEventId, event.airtableRecordId),
+            eq(organisationContacts.organisationId, organisations.id),
+            eq(organisationContacts.eventId, eventId),
           ),
         )
         .where(inArray(organisations.id, orgUuids));
@@ -1667,7 +1541,6 @@ function mapOrgRecord(row: OrganisationRow): OrgRecord {
     name: row.name ?? '',
     groupType: row.groupType ?? 'Other',
     airtableRecordId: row.airtableRecordId ?? undefined,
-    airtableEventId: row.airtableEventId ?? undefined,
     createdAt: row.createdAt?.toISOString(),
     modifiedAt: row.modifiedAt?.toISOString(),
   };
@@ -1677,7 +1550,7 @@ function mapGroupLeader(org: OrganisationRow, contact: OrganisationContactRow): 
   return {
     id: contact.id,
     orgId: org.id,
-    organisationAirtableId: contact.organisationId ?? '',
+    eventId: contact.eventId,
     orgName: org.name ?? '',
     openGroup: contact.openGroup,
     groupType: org.groupType ?? 'Other',
@@ -1691,7 +1564,6 @@ function mapGroupLeader(org: OrganisationRow, contact: OrganisationContactRow): 
     feedbackConsent: contact.feedbackConsent,
     nextEventConsent: contact.nextEventConsent,
     airtableRecordId: contact.airtableRecordId ?? undefined,
-    airtableEventId: contact.airtableEventId ?? undefined,
   };
 }
 
