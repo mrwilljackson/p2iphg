@@ -47,8 +47,8 @@ Controlled by `lib/field-visibility-config.ts`:
 | `feedbackConsent` | ✅ | ✅ | ✅ |
 | `nextEventConsent` | ✅ | ✅ | ✅ |
 | `groupSize` | ❌ | ✅ | ❌ |
-| `disabledStudents` | ❌ | ✅ | ❌ |
-| `senStudents` | ❌ | ✅ | ❌ |
+| `impairedParticipants` | ❌ | ✅ | ❌ |
+| `nonImpairedParticipants` | ❌ | ✅ | ❌ |
 
 **Note:** `groupLeaderParticipating` is not in the visibility config — it is hard-coded to show only for the Group role on Step 2.
 
@@ -78,8 +78,8 @@ Controlled by `lib/field-visibility-config.ts`:
 | `feedbackConsent` | Boolean |
 | `nextEventConsent` | Boolean |
 | `groupSize` | Integer 1–999 |
-| `disabledStudents` | Integer 0–999 |
-| `senStudents` | Integer 0–999 |
+| `impairedParticipants` | Integer 0–999 |
+| `nonImpairedParticipants` | Integer 0–999 |
 | `groupLeaderParticipating` | Boolean |
 
 ### Step-Level Validation (validateCurrentStep)
@@ -90,7 +90,7 @@ Fields validated when pressing "Next":
 | Participant | 1 | `organizationId`, `attendeeName`, `attendeeSurname`, `email`, `impairment` |
 | Group | 1 | `organizationId`, `email`, `attendeeName`, `attendeeSurname` |
 | Group | 2 (additional leader) | `groupLeaderParticipating` |
-| Group | 2 (normal / additional participants) | `groupLeaderParticipating`, `groupSize`, `disabledStudents`, `senStudents` |
+| Group | 2 (normal / additional participants) | `groupLeaderParticipating`, `groupSize`, `impairedParticipants`, `nonImpairedParticipants` |
 
 ---
 
@@ -135,7 +135,7 @@ When the user switches role, the selected organisation is **cleared** automatica
 When a Group leader selects an organisation that already has a registered leader:
 - An info panel shows existing leader names, group sizes, and total participants.
 - Two radio options appear:
-  - **"Register as additional leader only"** → sets `groupSize`, `disabledStudents`, `senStudents` to 0; skips group-size fields on Step 2.
+  - **"Register as additional leader only"** → sets `groupSize`, `impairedParticipants`, `nonImpairedParticipants` to 0; skips group-size fields on Step 2.
   - **"Register additional participants"** → clears auto-set values; shows normal group-size fields.
 
 ### 5.7 Group — Disability/Family Conditional Fields
@@ -144,12 +144,12 @@ The variable `shouldShowImpairmentFields` is `true` when:
 - Selected org's `groupType` is `'Disability'` or `'Family'`
 
 When `shouldShowImpairmentFields` is `true` (and not additional-leader-only):
-- **Step 2** shows `groupSize`, `disabledStudents`, and `senStudents` with disability-specific labels.
+- **Step 2** shows `groupSize`, `impairedParticipants`, and `nonImpairedParticipants` with disability-specific labels.
 - A note appears for Disability groups: *"Please check your details are correct…"*
 
 When `shouldShowImpairmentFields` is `false` (other group types):
 - **Step 2** shows only `groupSize` with generic label: *"How many participants are in your group (not including yourself)?"*
-- `disabledStudents` and `senStudents` fields are hidden.
+- `impairedParticipants` and `nonImpairedParticipants` fields are hidden.
 
 ### 5.8 Photo Consent Wording
 | Role | Yes Text | No Text |
@@ -193,7 +193,7 @@ Volunteers who have already registered for the current event are hidden from the
 
 When the form fetches contacts for a closed-group organisation:
 
-- Queries are scoped by `organisationContacts.airtableEventId` matching the current event, so contacts from past events do not appear.
+- Queries are scoped by `organisationContacts.eventId` (UUID FK to `events.id`) matching the current event, so contacts from past events do not appear.
 - Already-registered contact matching uses **case-insensitive email comparison** to avoid missed matches caused by capitalisation differences between stored contact email and the email entered at registration.
 
 ---
@@ -367,8 +367,8 @@ Group-role Step 2 (below `GROUP_LEADER`). Fields shown depend on whether the sel
 | ID | UI Label | Control type | Condition |
 |---|---|---|---|
 | `group.size.closed` | "How many participants are you responsible for in your group" | Number input | Closed group selected + `additionalLeaderChoice` ≠ `leaderOnly` |
-| `group.disabledStudents` | "How many of your participants are disabled people, or have a long-term physical or mental health condition or impairment?" | Number input | Closed group selected + `additionalLeaderChoice` ≠ `leaderOnly` |
-| `group.senStudents` | "Do you have any special educational needs (SEN) or require additional learning support?" | Number input | Closed group selected + `additionalLeaderChoice` ≠ `leaderOnly` |
+| `group.impairedParticipants` | "How many of your participants are disabled people, or have a long-term physical or mental health condition or impairment?" | Number input | Closed group selected + `additionalLeaderChoice` ≠ `leaderOnly` |
+| `group.nonImpairedParticipants` | "Do you have any special educational needs (SEN) or require additional learning support?" | Number input | Closed group selected + `additionalLeaderChoice` ≠ `leaderOnly` |
 
 > `group.size.open` and `group.size.closed` both map to the `groupSize` database field — they have different labels but are the same underlying value.
 
@@ -449,8 +449,8 @@ These are not data entry elements but replace the form when triggered, blocking 
 | `group.additionalLeaderChoice` | – | conditional | – |
 | `group.size.open` | – | open group only | – |
 | `group.size.closed` | – | closed group only | – |
-| `group.disabledStudents` | – | closed group only | – |
-| `group.senStudents` | – | closed group only | – |
+| `group.impairedParticipants` | – | closed group only | – |
+| `group.nonImpairedParticipants` | – | closed group only | – |
 | `consent.photo` | ✓ | ✓ | ✓ |
 | `consent.feedback` | ✓ | ✓ | ✓ |
 | `consent.nextEvent` | ✓ | ✓ | ✓ |

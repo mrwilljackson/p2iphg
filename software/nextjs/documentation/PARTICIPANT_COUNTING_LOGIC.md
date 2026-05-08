@@ -96,8 +96,8 @@ Cambridge Uni Boat Club (Educational)
 
 **Registration Process:**
 - Individuals register as Participant role
-- **Organisation is required** — participants select from non-Disability/Family organisations (Corporate, Sporting, Community, Educational, Other) or the virtual "Family Group" placeholder
-- The dropdown excludes Disability and Family organisations (those are reserved for the Group role)
+- **Organisation is required** — participants select from open-group organisations (`openGroup !== false` on the contact row for the active event), or the virtual "Family Group" placeholder
+- The dropdown excludes closed-group organisations (those are reserved for the Group role, where the leader registers on behalf of all members)
 - No group leader involved
 
 **Counting:**

@@ -243,13 +243,13 @@ Once the event is active, the public registration form will:
 
 ### For Participants (Individual)
 - Show the active event name (read-only)
-- Organisation dropdown shows **non-Disability/Family** organisations only (Corporate, Sporting, Community, Educational, Other) plus the **"Family Group"** placeholder option
+- Organisation dropdown shows **open-group organisations only** (`openGroup !== false` on the contact row for the active event), plus the **"Family Group"** placeholder option
 - Organisation selection is **required** (validated by Zod `superRefine`)
 - Require: Name, Surname, Email, Organisation, Impairment details
 - Optional: Photo consent, Feedback consent, Next event consent
 
 ### For Groups
-- Organisation dropdown shows **only Disability and Family** organisations
+- Organisation dropdown shows **all** organisations participating in the event (open-group orgs first, closed-group orgs at the bottom). Closed-group orgs disappear from the list once their leader has registered.
 - Organisation selection is **required** (validated by Zod `superRefine`)
 - No "Family Group" placeholder in Group role
 - Require: Group leader details, Group size, Disabled students count, SEN students count

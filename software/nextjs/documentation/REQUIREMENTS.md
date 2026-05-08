@@ -65,7 +65,7 @@ The Power2Inspire Event CRM App is a **web-based application** designed to facil
 - **FR-025:** Group role is for group leaders registering on behalf of their organisation (IMPLEMENTED)
 - **FR-026:** Group leader selects their organisation from the closed-group organisations list (`openGroup === false` on organisationContacts) (IMPLEMENTED)
 - **FR-027:** Group leader enters groupSize: the number of participants in their group NOT including the leader themselves (IMPLEMENTED)
-- **FR-028:** Group leader enters disabledStudents and senStudents counts for their group (IMPLEMENTED)
+- **FR-028:** Group leader enters impairedParticipants and nonImpairedParticipants counts for their group (IMPLEMENTED)
 - **FR-029:** Group leader selects their contact record from a contact picker pre-populated from the organisationContacts table (IMPLEMENTED)
 - **FR-030:** Group leader indicates whether they are personally participating via groupLeaderParticipating boolean (IMPLEMENTED)
 - **FR-031:** Auto-detect group leader: when a Participant's email matches a group leader contact record, the system auto-sets groupLeaderParticipating=true and copies expectedGroupSize as the initial groupSize value (IMPLEMENTED)
@@ -96,7 +96,7 @@ The Power2Inspire Event CRM App is a **web-based application** designed to facil
   - Organization, Impairment, Role
   - Photo Consent, Feedback Consent, Next Event Consent
   - Check-in Time, Check-out Time, Attendance Duration
-  - groupSize, disabledStudents, senStudents, groupLeaderParticipating (for Group registrations)
+  - groupSize, impairedParticipants, nonImpairedParticipants, groupLeaderParticipating (for Group registrations)
 - **FR-061:** Export attendance statistics (IMPLEMENTED)
 - **FR-062:** Export volunteer participation data (IMPLEMENTED)
 - **FR-063:** Support date-range filtering for reports (IMPLEMENTED)
@@ -297,8 +297,8 @@ The Power2Inspire Event CRM App is a **web-based application** designed to facil
 - ✅ Event dropdown pre-selects current event
 - ✅ Organisation dropdown filters by role: Participants see open-group orgs; Group leaders see closed-group orgs
 - ✅ Volunteer email lookup auto-populates name and consent fields
-- ✅ Group registration captures groupSize, disabledStudents, senStudents, groupLeaderParticipating
-- ✅ Registrations save to Neon Postgres successfully; sync to Airtable post-event
+- ✅ Group registration captures groupSize, impairedParticipants, nonImpairedParticipants, groupLeaderParticipating
+- ✅ Registrations save to Neon Postgres successfully; CSV export to Airtable post-event (direct sync deprecated 2026-04-29)
 - ✅ Attendance tracking (check-in/out) updates Neon Postgres in real-time
 - ✅ CSV export generates correct fields (V2 specification, no phone number)
 - ✅ Search/filter works on attendance list
@@ -373,7 +373,7 @@ The Power2Inspire Event CRM App is a **web-based application** designed to facil
 - Resolved TBD: organisation field uses role-based `openGroup` filtering (not `groupType`)
 - Resolved TBD: volunteer form uses email lookup, auto-populates name, captures consent fields only
 - Resolved TBD: admin authentication uses client-side sessionStorage
-- Added Group role requirements (FR-025–FR-031) including groupSize, disabledStudents, senStudents, groupLeaderParticipating, contact picker, and auto-detect logic
+- Added Group role requirements (FR-025–FR-031) including groupSize, impairedParticipants, nonImpairedParticipants, groupLeaderParticipating, contact picker, and auto-detect logic
 - Renamed "Attendee" to "Participant" throughout
 - Marked all implemented requirements with (IMPLEMENTED) status
 - Corrected data integration: Neon Postgres is primary store; Airtable sync is post-event
