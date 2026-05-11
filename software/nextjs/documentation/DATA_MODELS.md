@@ -474,7 +474,7 @@ enum EventStatus {
   planned = "planned",      // Future event, not yet active
   active = "active",        // Currently ongoing or upcoming
   completed = "completed",  // Event has finished; registration data still present
-  archived = "archived",    // Event whose participant/organisation data has been cleared; eventSummary snapshot exists
+  archived = "archived",    // Event whose participant/organisation data has been permanently deleted; event_archive snapshot exists
 }
 ```
 
