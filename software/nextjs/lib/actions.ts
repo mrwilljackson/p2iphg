@@ -12,7 +12,7 @@ import { db } from './db/client';
 import { events, registrations, volunteers, organisationContacts } from './db/schema';
 import { eq, sql } from 'drizzle-orm';
 import { DatabaseService } from './db-service';
-import type { Event, Organization, OrgRecord, GroupLeader, Volunteer, Registration, OrgContactOption, EventSummaryPreview, EventSummary } from './types';
+import type { Event, Organization, OrgRecord, GroupLeader, Volunteer, Registration, OrgContactOption, EventArchivePreview, EventArchiveView } from './types';
 import type { ParticipantCounts } from './participant-counting';
 
 /**
@@ -193,8 +193,8 @@ export async function getFullyRegisteredOrgIds(eventId: string): Promise<string[
   return await DatabaseService.getFullyRegisteredOrgIds(eventId);
 }
 
-export async function getEventSummary(eventId: string) {
-  return await DatabaseService.getEventSummary(eventId);
+export async function getEventArchive(eventId: string): Promise<EventArchiveView | null> {
+  return await DatabaseService.getEventArchive(eventId);
 }
 
 /**
@@ -494,20 +494,26 @@ export async function deleteVolunteer(id: string): Promise<void> {
 }
 
 /**
- * Compute and return event summary counts without writing to DB.
- * Used by the Generate Summary modal to show a preview before the admin confirms.
+ * Compute and return event-archive counts without writing to DB.
+ * Used by the Archive Event modal to show a preview before the admin commits.
  */
-export async function previewEventSummary(eventId: string): Promise<EventSummaryPreview> {
-  return await DatabaseService.previewEventSummary(eventId);
+export async function previewEventArchive(eventId: string): Promise<EventArchivePreview> {
+  return await DatabaseService.previewEventArchive(eventId);
 }
 
 /**
- * Generate and persist an event summary, then archive the event.
+ * Archive a completed event. Atomically:
+ *  - Creates event_archive + event_archive_org_lines rows
+ *  - HARD-DELETES the event's rows from registrations,
+ *    organisation_contacts, and volunteers
+ *  - Sets events.status = 'archived'
+ *
+ * Returns the new archive row id. Throws if the event is not 'completed'
+ * or already archived.
  */
-export async function generateEventSummary(
+export async function archiveEvent(
   eventId: string,
   sequenceNumber: number,
-  notes: string | null,
-): Promise<EventSummary> {
-  return await DatabaseService.generateEventSummary(eventId, sequenceNumber, notes);
+): Promise<string> {
+  return await DatabaseService.archiveEvent(eventId, sequenceNumber);
 }
