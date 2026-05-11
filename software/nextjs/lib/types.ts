@@ -282,7 +282,7 @@ export interface EventArchiveOrgLine {
   actualHeadcount: number;
   impairedCount: number;
   nonImpairedCount: number;
-  createdAt: string | null;
+  createdAt: string;
 }
 
 /**
@@ -315,8 +315,12 @@ export interface EventArchivePreview {
 /**
  * A fully-saved event archive (header + lines) loaded from the DB.
  * Returned by getEventArchive() and rendered by the View Archive dialog.
+ *
+ * Inherits all count fields from EventArchivePreview so the two stay in
+ * lock-step automatically; adds the identity / metadata / archive-only
+ * fields and replaces orgLines with the full saved-row shape.
  */
-export interface EventArchiveView {
+export interface EventArchiveView extends Omit<EventArchivePreview, 'orgLines'> {
   id: string;
   eventId: string;
   eventName: string;
@@ -326,19 +330,8 @@ export interface EventArchiveView {
   eventAirtableRecordId: string | null;
   eventSequenceNumber: number;
 
-  participantCount: number;
-  volunteerCount: number;
-  groupCount: number;
-  totalHeadcount: number;
-  companiesCount: number;
-  impairedParticipantCount: number;
-  nonImpairedParticipantCount: number;
-  photoConsentCount: number;
-  feedbackConsentCount: number;
-  nextEventConsentCount: number;
-
   sourcePurgedAt: string;
-  createdAt: string | null;
+  createdAt: string;
 
   orgLines: EventArchiveOrgLine[];
 }
