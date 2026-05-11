@@ -644,7 +644,7 @@ export default function ManageEventsPage() {
                 />
               </div>
 
-              <p className="text-sm text-red-700 bg-red-50 border border-red-200 rounded p-3">
+              <p role="alert" className="text-sm text-red-700 bg-red-50 border border-red-200 rounded p-3">
                 <strong>This will permanently delete</strong> all attendee, organisation-contact and helper personal data for this event. The aggregate counts above will be preserved in the archive. <strong>This action cannot be undone.</strong>
               </p>
             </div>
@@ -655,9 +655,9 @@ export default function ManageEventsPage() {
               Cancel
             </Button>
             <Button
+              variant="destructive"
               onClick={handleArchiveEvent}
               disabled={!archivePreview || !archiveSequenceNumber.trim() || isNaN(parseInt(archiveSequenceNumber, 10)) || parseInt(archiveSequenceNumber, 10) <= 0 || isArchiving}
-              className="bg-red-600 hover:bg-red-700 text-white"
             >
               {isArchiving ? "Archiving..." : "Archive event"}
             </Button>
