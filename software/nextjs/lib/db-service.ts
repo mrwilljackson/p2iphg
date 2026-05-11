@@ -1315,25 +1315,13 @@ export class DatabaseService {
     const volunteerCount = volunteerRegs.length;
     const groupCount = groupRegs.length;
 
-    // 3. Participant headcount (rolls in closed-group members and participating leaders).
+    // 3. Participant headcount + impairment split, in lock-step.
+    //    Every person added to participantCount is also classified as either
+    //    impaired or non-impaired so the two stay reconciled.
     let participantCount = participantRegs.length;
-    for (const g of groupRegs) {
-      const isOpen = g.organizationId
-        ? (openGroupByOrgId.get(g.organizationId) ?? true)
-        : true;
-      if (!isOpen) {
-        participantCount += g.groupSize ?? 0;
-      }
-      if (g.groupLeaderParticipating === true) {
-        participantCount += 1;
-      }
-    }
-
-    const totalHeadcount = participantCount + volunteerCount;
-
-    // 4. Impairment split across the same population that participantCount covers.
     let impairedParticipantCount = 0;
     let nonImpairedParticipantCount = 0;
+
     for (const p of participantRegs) {
       if (p.impairment && p.impairment.trim() !== '') {
         impairedParticipantCount += 1;
@@ -1341,30 +1329,56 @@ export class DatabaseService {
         nonImpairedParticipantCount += 1;
       }
     }
+
     for (const g of groupRegs) {
+      // Falls back to open (true) if this org has no organisation_contacts row
+      // for the event. In practice this should never happen — the registration
+      // form only allows selecting orgs that appear in organisation_contacts —
+      // but if it does, the org's registrations will be counted in the
+      // top-level participantCount as open-group members and will NOT produce
+      // an org line in the archive (the per-org loop below skips them).
       const isOpen = g.organizationId
         ? (openGroupByOrgId.get(g.organizationId) ?? true)
         : true;
+
       if (!isOpen) {
+        participantCount += g.groupSize ?? 0;
         impairedParticipantCount += g.impairedParticipants ?? 0;
         nonImpairedParticipantCount += g.nonImpairedParticipants ?? 0;
       }
+
       // Participating leaders count as non-impaired by default (the leader's
       // own impairment isn't tracked on the Group registration row).
       if (g.groupLeaderParticipating === true) {
+        participantCount += 1;
         nonImpairedParticipantCount += 1;
       }
     }
 
-    // 5. Consent counts across ALL registrations for the event (any role).
+    const totalHeadcount = participantCount + volunteerCount;
+
+    // 4. Consent counts across ALL registrations for the event (any role).
     const photoConsentCount = regs.filter(r => r.photoConsent === true).length;
     const feedbackConsentCount = regs.filter(r => r.feedbackConsent === true).length;
     const nextEventConsentCount = regs.filter(r => r.nextEventConsent === true).length;
 
-    // 6. Companies count = distinct orgs that appear in contactRows for this event.
+    // Sanity check: impairment split must equal participantCount.
+    // A mismatch means a closed-group registration had groupSize ≠
+    // impaired + non-impaired. The registration form warns about this
+    // but does not block submission, so it can reach the archive.
+    // We log and proceed — the operator can investigate via logs.
+    if (impairedParticipantCount + nonImpairedParticipantCount !== participantCount) {
+      console.warn(
+        `[computeArchiveData] eventId=${eventId}: impairment split ` +
+        `(${impairedParticipantCount} + ${nonImpairedParticipantCount}) ` +
+        `does not equal participantCount (${participantCount}).`
+      );
+    }
+
+    // 5. Companies count = distinct orgs that appear in contactRows for this event.
     const companiesCount = new Set(contactRows.map(r => r.org.id)).size;
 
-    // 7. Per-org lines. One line per organisation_contact row (= one per org
+    // 6. Per-org lines. One line per organisation_contact row (= one per org
     //    in this event because each org has at most one contact per event,
     //    enforced indirectly by current import logic).
     //    For each org line compute: actual_headcount, impaired_count,
@@ -1471,6 +1485,12 @@ export class DatabaseService {
    * UPDATE. The worst-case partial-failure mode is a created archive with
    * source rows still present; an admin can manually retry by deleting the
    * orphan archive row and re-running.
+   *
+   * Race condition note: the "already archived" pre-check is not atomic
+   * with the transaction (neon-http batches don't support reads). If two
+   * archive requests race, the UNIQUE constraint on event_archive.event_id
+   * is the backstop; the losing request will receive a raw constraint
+   * error rather than the friendly "already archived" message.
    */
   static async archiveEvent(
     eventId: string,
