@@ -130,11 +130,20 @@ export const organisationContacts = pgTable('organisation_contacts', {
 });
 
 /**
- * Event Summaries Table
- * Point-in-time snapshot generated when a P2I admin archives a completed event.
- * Stores computed registration counts plus admin-entered sequence number and notes.
+ * Event Archive Table
+ *
+ * Canonical post-event record. Created when an admin archives a completed
+ * event — at which point the matching rows in registrations,
+ * organisation_contacts, and volunteers for that event are HARD-DELETED in
+ * the same operation. No personal identifying information is ever stored
+ * on this table; aggregate counts only.
+ *
+ * source_purged_at records the timestamp at which the source PII rows were
+ * deleted as part of the archive operation. For atomic-flow archives this
+ * equals created_at; preserved as a distinct column so a future migration
+ * could distinguish "summary made" from "source data deleted".
  */
-export const eventSummaries = pgTable('event_summaries', {
+export const eventArchive = pgTable('event_archive', {
   id: uuid('id').primaryKey().defaultRandom(),
   eventId: uuid('event_id').notNull().unique().references(() => events.id),
   eventName: text('event_name').notNull(),
@@ -142,21 +151,59 @@ export const eventSummaries = pgTable('event_summaries', {
   eventLocation: text('event_location'),
   eventDescription: text('event_description'),
   eventAirtableRecordId: text('event_airtable_record_id'),
+
   participantCount: integer('participant_count').notNull().default(0),
   volunteerCount: integer('volunteer_count').notNull().default(0),
   groupCount: integer('group_count').notNull().default(0),
   totalHeadcount: integer('total_headcount').notNull().default(0),
+  companiesCount: integer('companies_count').notNull().default(0),
+
+  impairedParticipantCount: integer('impaired_participant_count').notNull().default(0),
+  nonImpairedParticipantCount: integer('non_impaired_participant_count').notNull().default(0),
+
   photoConsentCount: integer('photo_consent_count').notNull().default(0),
   feedbackConsentCount: integer('feedback_consent_count').notNull().default(0),
   nextEventConsentCount: integer('next_event_consent_count').notNull().default(0),
-  orgBreakdown: text('org_breakdown').notNull().default('[]'),
+
   eventSequenceNumber: integer('event_sequence_number').notNull(),
-  adminNotes: text('admin_notes'),
+
+  sourcePurgedAt: timestamp('source_purged_at').notNull(),
   createdAt: timestamp('created_at').defaultNow(),
 });
 
-export type EventSummaryRow = typeof eventSummaries.$inferSelect;
-export type NewEventSummaryRow = typeof eventSummaries.$inferInsert;
+/**
+ * Event Archive Org Lines Table
+ *
+ * One row per (archive, organisation). Supports per-organisation history
+ * queries across multiple events. Organisation IDs survive the archive
+ * (organisations is a global, long-lived table); the Airtable IDs are
+ * snapshotted at archive time because the source contact row is deleted.
+ */
+export const eventArchiveOrgLines = pgTable('event_archive_org_lines', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  archiveId: uuid('archive_id')
+    .notNull()
+    .references(() => eventArchive.id, { onDelete: 'cascade' }),
+  organisationId: uuid('organisation_id')
+    .notNull()
+    .references(() => organisations.id, { onDelete: 'restrict' }),
+
+  orgNameSnapshot: text('org_name_snapshot').notNull(),
+  orgAirtableRecordId: text('org_airtable_record_id'),
+  contactAirtableRecordId: text('contact_airtable_record_id'),
+
+  actualHeadcount: integer('actual_headcount').notNull().default(0),
+  impairedCount: integer('impaired_count').notNull().default(0),
+  nonImpairedCount: integer('non_impaired_count').notNull().default(0),
+
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+export type EventArchiveRow = typeof eventArchive.$inferSelect;
+export type NewEventArchiveRow = typeof eventArchive.$inferInsert;
+
+export type EventArchiveOrgLineRow = typeof eventArchiveOrgLines.$inferSelect;
+export type NewEventArchiveOrgLineRow = typeof eventArchiveOrgLines.$inferInsert;
 
 // Export types for TypeScript
 export type Event = typeof events.$inferSelect;
