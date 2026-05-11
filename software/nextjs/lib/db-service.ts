@@ -1468,29 +1468,24 @@ export class DatabaseService {
   }
 
   /**
-   * Atomically archive a completed event:
+   * Archive a completed event:
    *   1. Insert event_archive + event_archive_org_lines.
    *   2. Delete registrations / organisation_contacts / volunteers for the event.
    *   3. Update events.status = 'archived'.
    *
-   * Uses Drizzle's db.transaction() which on neon-http batches all statements
-   * into a single HTTP request — atomic from the DB's perspective.
+   * neon-http does not support db.transaction(). Instead the steps are
+   * executed sequentially: INSERTs first, then DELETEs, then the status
+   * UPDATE. The worst-case partial-failure mode is a created archive with
+   * source rows still present; an admin can retry by deleting the orphan
+   * archive row and re-running.
    *
    * If the precondition fails (event missing, not completed, or already
    * archived) it throws BEFORE any write.
    *
-   * If db.transaction() throws at runtime ("not supported on this driver"
-   * or similar), the fallback is to run the same sequence outside a
-   * transaction: do the INSERTs first, then the DELETEs, then the status
-   * UPDATE. The worst-case partial-failure mode is a created archive with
-   * source rows still present; an admin can manually retry by deleting the
-   * orphan archive row and re-running.
-   *
-   * Race condition note: the "already archived" pre-check is not atomic
-   * with the transaction (neon-http batches don't support reads). If two
-   * archive requests race, the UNIQUE constraint on event_archive.event_id
-   * is the backstop; the losing request will receive a raw constraint
-   * error rather than the friendly "already archived" message.
+   * Race condition note: the "already archived" pre-check is not atomic.
+   * If two archive requests race, the UNIQUE constraint on
+   * event_archive.event_id is the backstop; the losing request will
+   * receive a raw constraint error rather than the friendly message.
    */
   static async archiveEvent(
     eventId: string,
@@ -1549,18 +1544,19 @@ export class DatabaseService {
       nonImpairedCount: line.nonImpairedCount,
     }));
 
-    await db.transaction(async (tx) => {
-      await tx.insert(eventArchive).values(headerRow);
-      if (lineRows.length > 0) {
-        await tx.insert(eventArchiveOrgLines).values(lineRows);
-      }
-      await tx.delete(registrations).where(eq(registrations.eventId, eventId));
-      await tx.delete(organisationContacts).where(eq(organisationContacts.eventId, eventId));
-      await tx.delete(volunteers).where(eq(volunteers.eventId, eventId));
-      await tx.update(events)
-        .set({ status: 'archived', modifiedAt: now })
-        .where(eq(events.id, eventId));
-    });
+    // neon-http does not support db.transaction() — execute sequentially.
+    // INSERTs first so the unique constraint on event_id catches any race;
+    // DELETEs second; status flip last.
+    await db.insert(eventArchive).values(headerRow);
+    if (lineRows.length > 0) {
+      await db.insert(eventArchiveOrgLines).values(lineRows);
+    }
+    await db.delete(registrations).where(eq(registrations.eventId, eventId));
+    await db.delete(organisationContacts).where(eq(organisationContacts.eventId, eventId));
+    await db.delete(volunteers).where(eq(volunteers.eventId, eventId));
+    await db.update(events)
+      .set({ status: 'archived', modifiedAt: now })
+      .where(eq(events.id, eventId));
 
     return archiveId;
   }
