@@ -7,10 +7,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { getCurrentEvent, getEventById, getRegistrationCountsByRole, getAllRegistrations, getOrganizations, getAllVolunteers, createEvent, markEventCompleted, getEventDataCounts, clearEventData, previewEventSummary, generateEventSummary } from "@/lib/actions";
+import { getCurrentEvent, getEventById, getRegistrationCountsByRole, getAllRegistrations, getOrganizations, getAllVolunteers, createEvent, markEventCompleted, getEventDataCounts, clearEventData, previewEventArchive, archiveEvent } from "@/lib/actions";
 import { syncRegistrationsToAirtable } from "@/app/actions/airtable-sync";
-import type { Event, Registration, Organization, Volunteer, EventSummaryPreview } from "@/lib/types";
+import type { Event, Registration, Organization, Volunteer, EventArchivePreview } from "@/lib/types";
 import type { ParticipantCounts } from "@/lib/participant-counting";
 import { P2iAdminNav } from "@/components/p2i-admin-nav";
 
@@ -75,12 +74,11 @@ export default function P2IAdminDashboard() {
   const [isClearEventLoading, setIsClearEventLoading] = useState(false);
   const [forceClearUnsynced, setForceClearUnsynced] = useState(false);
 
-  // Generate Summary Dialog State
-  const [isGenerateSummaryOpen, setIsGenerateSummaryOpen] = useState(false);
-  const [summaryPreview, setSummaryPreview] = useState<EventSummaryPreview | null>(null);
-  const [isSummaryPreviewLoading, setIsSummaryPreviewLoading] = useState(false);
-  const [summarySequenceNumber, setSummarySequenceNumber] = useState("");
-  const [summaryNotes, setSummaryNotes] = useState("");
+  // Archive Event Dialog State
+  const [isArchiveEventOpen, setIsArchiveEventOpen] = useState(false);
+  const [archivePreview, setArchivePreview] = useState<EventArchivePreview | null>(null);
+  const [isArchivePreviewLoading, setIsArchivePreviewLoading] = useState(false);
+  const [archiveSequenceNumber, setArchiveSequenceNumber] = useState("");
   const [isArchiving, setIsArchiving] = useState(false);
 
   const [counts, setCounts] = useState<ParticipantCounts>({
@@ -516,38 +514,36 @@ export default function P2IAdminDashboard() {
     }
   };
 
-  const handleGenerateSummaryOpen = async (open: boolean) => {
-    setIsGenerateSummaryOpen(open);
+  const handleArchiveEventOpen = async (open: boolean) => {
+    setIsArchiveEventOpen(open);
     if (!open) {
-      setSummaryPreview(null);
-      setSummarySequenceNumber("");
-      setSummaryNotes("");
+      setArchivePreview(null);
+      setArchiveSequenceNumber("");
       return;
     }
     if (currentEvent) {
-      setIsSummaryPreviewLoading(true);
+      setIsArchivePreviewLoading(true);
       try {
-        const preview = await previewEventSummary(currentEvent.id);
-        setSummaryPreview(preview);
+        const preview = await previewEventArchive(currentEvent.id);
+        setArchivePreview(preview);
       } catch (error) {
-        console.error("Failed to load summary preview:", error);
-        alert("Failed to load event summary. " + (error instanceof Error ? error.message : ""));
-        setIsGenerateSummaryOpen(false);
+        console.error("Failed to load archive preview:", error);
+        alert("Failed to load event preview. " + (error instanceof Error ? error.message : ""));
+        setIsArchiveEventOpen(false);
       } finally {
-        setIsSummaryPreviewLoading(false);
+        setIsArchivePreviewLoading(false);
       }
     }
   };
 
-  const handleArchiveEvent = async () => {
+  const handleArchiveEventCommit = async () => {
     if (!currentEvent) return;
-    const seqNum = parseInt(summarySequenceNumber, 10);
-    if (isNaN(seqNum)) return;
+    const seqNum = parseInt(archiveSequenceNumber, 10);
+    if (isNaN(seqNum) || seqNum <= 0) return;
     try {
       setIsArchiving(true);
-      await generateEventSummary(currentEvent.id, seqNum, summaryNotes.trim() || null);
-      setIsGenerateSummaryOpen(false);
-      // Reload the page to reflect the new archived status
+      await archiveEvent(currentEvent.id, seqNum);
+      setIsArchiveEventOpen(false);
       window.location.reload();
     } catch (error) {
       console.error("Failed to archive event:", error);
@@ -665,7 +661,7 @@ export default function P2IAdminDashboard() {
           </div>
         )}
 
-        {/* Generate Summary Banner — shown for completed events */}
+        {/* Archive Event Banner — shown for completed events */}
         {currentEvent && currentEvent.status === 'completed' && (
           <div className="bg-blue-50 border border-blue-300 rounded-lg p-4 mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div className="flex items-start gap-3">
@@ -673,21 +669,21 @@ export default function P2IAdminDashboard() {
               <div>
                 <p className="font-semibold text-blue-800">This event is completed</p>
                 <p className="text-sm text-blue-700">
-                  Generate a summary snapshot to archive this event. Registration data will not be deleted.
+                  Archive this event to preserve aggregate counts and permanently delete attendee personal data.
                 </p>
               </div>
             </div>
-            <Dialog open={isGenerateSummaryOpen} onOpenChange={handleGenerateSummaryOpen}>
+            <Dialog open={isArchiveEventOpen} onOpenChange={handleArchiveEventOpen}>
               <DialogTrigger asChild>
                 <Button className="bg-blue-600 hover:bg-blue-700 text-white shrink-0">
-                  📋 Generate Summary
+                  📋 Archive event
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[540px] max-h-[90vh] overflow-y-auto">
+              <DialogContent className="sm:max-w-[560px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>Generate Event Summary</DialogTitle>
+                  <DialogTitle>Archive event</DialogTitle>
                   <DialogDescription>
-                    Review the computed counts below, then enter a sequence number and optional notes before archiving.
+                    Review the figures below. Pressing &quot;Archive event&quot; will permanently delete all attendee, organisation-contact and helper personal data for this event.
                   </DialogDescription>
                 </DialogHeader>
 
@@ -701,100 +697,75 @@ export default function P2IAdminDashboard() {
                   </div>
                 )}
 
-                {isSummaryPreviewLoading ? (
-                  <div className="py-8 text-center text-gray-500">Loading summary data...</div>
-                ) : summaryPreview ? (
+                {isArchivePreviewLoading ? (
+                  <div className="py-8 text-center text-gray-500">Loading preview...</div>
+                ) : archivePreview ? (
                   <div className="space-y-4 py-2">
-                    {/* Registration counts */}
                     <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 space-y-2 text-sm">
-                      <h4 className="font-semibold text-gray-900 mb-2">Registration Counts</h4>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Total Participants</span>
-                        <span className="font-medium">{summaryPreview.participantCount}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Total Helpers</span>
-                        <span className="font-medium">{summaryPreview.volunteerCount}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Total Group Leaders</span>
-                        <span className="font-medium">{summaryPreview.groupCount} <span className="text-gray-400 font-normal">({summaryPreview.participatingLeaderCount} participating)</span></span>
-                      </div>
+                      <h4 className="font-semibold text-gray-900 mb-2">Headline counts</h4>
+                      <div className="flex justify-between"><span className="text-gray-600">Companies / organisations</span><span className="font-medium">{archivePreview.companiesCount}</span></div>
+                      <div className="flex justify-between"><span className="text-gray-600">Total headcount</span><span className="font-medium">{archivePreview.totalHeadcount}</span></div>
+                      <div className="pl-3 flex justify-between text-gray-500"><span>– Participants</span><span>{archivePreview.participantCount}</span></div>
+                      <div className="pl-3 flex justify-between text-gray-500"><span>– Helpers</span><span>{archivePreview.volunteerCount}</span></div>
                     </div>
 
-                    {/* Org breakdown */}
-                    {summaryPreview.orgBreakdown.length > 0 && (
+                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 space-y-2 text-sm">
+                      <h4 className="font-semibold text-gray-900 mb-2">Participant impairment split</h4>
+                      <div className="flex justify-between"><span className="text-gray-600">Impaired</span><span className="font-medium">{archivePreview.impairedParticipantCount}</span></div>
+                      <div className="flex justify-between"><span className="text-gray-600">Non-impaired</span><span className="font-medium">{archivePreview.nonImpairedParticipantCount}</span></div>
+                    </div>
+
+                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 space-y-2 text-sm">
+                      <h4 className="font-semibold text-gray-900 mb-2">Consent</h4>
+                      <div className="flex justify-between"><span className="text-gray-600">Photo</span><span className="font-medium">{archivePreview.photoConsentCount}</span></div>
+                      <div className="flex justify-between"><span className="text-gray-600">Feedback</span><span className="font-medium">{archivePreview.feedbackConsentCount}</span></div>
+                      <div className="flex justify-between"><span className="text-gray-600">Next event</span><span className="font-medium">{archivePreview.nextEventConsentCount}</span></div>
+                    </div>
+
+                    {archivePreview.orgLines.length > 0 && (
                       <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 text-sm">
-                        <h4 className="font-semibold text-gray-900 mb-2">Organisation Breakdown</h4>
-                        <div className="space-y-1">
-                          {summaryPreview.orgBreakdown.map(({ orgName, headcount }) => (
-                            <div key={orgName} className="flex justify-between">
-                              <span className="text-gray-600 truncate mr-4">{orgName}</span>
-                              <span className="font-medium shrink-0">{headcount}</span>
+                        <h4 className="font-semibold text-gray-900 mb-2">Per-organisation breakdown</h4>
+                        <div className="space-y-2">
+                          {archivePreview.orgLines.map((line) => (
+                            <div key={line.organisationId} className="border-b last:border-b-0 border-gray-200 pb-2 last:pb-0">
+                              <p className="font-medium text-gray-900">{line.orgNameSnapshot}</p>
+                              <p className="text-gray-500 text-xs">
+                                {line.actualHeadcount} attended &middot; {line.impairedCount} impaired, {line.nonImpairedCount} not
+                              </p>
                             </div>
                           ))}
                         </div>
                       </div>
                     )}
 
-                    {/* Admin input */}
-                    <div className="space-y-3">
-                      <div className="grid gap-1.5">
-                        <Label htmlFor="seq-number">Event sequence number *</Label>
-                        <Input
-                          id="seq-number"
-                          type="number"
-                          min="1"
-                          value={summarySequenceNumber}
-                          onChange={(e) => setSummarySequenceNumber(e.target.value)}
-                          placeholder="e.g. 42"
-                        />
-                      </div>
-                      <div className="grid gap-1.5">
-                        <Label htmlFor="admin-notes">Notes <span className="text-gray-400 font-normal">(optional)</span></Label>
-                        <Textarea
-                          id="admin-notes"
-                          rows={3}
-                          value={summaryNotes}
-                          onChange={(e) => setSummaryNotes(e.target.value)}
-                          placeholder="Any notes about this event..."
-                        />
-                      </div>
+                    <div className="grid gap-1.5">
+                      <Label htmlFor="dashboard-seq-number">Event sequence number *</Label>
+                      <Input
+                        id="dashboard-seq-number"
+                        type="number"
+                        min="1"
+                        value={archiveSequenceNumber}
+                        onChange={(e) => setArchiveSequenceNumber(e.target.value)}
+                        placeholder="e.g. 43"
+                      />
                     </div>
 
-                    {/* Consent counts */}
-                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 space-y-2 text-sm">
-                      <h4 className="font-semibold text-gray-900 mb-2">Consent</h4>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Photo consent</span>
-                        <span className="font-medium">{summaryPreview.photoConsentCount}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Feedback consent</span>
-                        <span className="font-medium">{summaryPreview.feedbackConsentCount}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Next event consent</span>
-                        <span className="font-medium">{summaryPreview.nextEventConsentCount}</span>
-                      </div>
-                    </div>
-
-                    <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">
-                      This will mark the event as archived. Registration data will not be deleted.
+                    <p role="alert" className="text-sm text-red-700 bg-red-50 border border-red-200 rounded p-3">
+                      <strong>This will permanently delete</strong> all attendee, organisation-contact and helper personal data for this event. The aggregate counts above will be preserved in the archive. <strong>This action cannot be undone.</strong>
                     </p>
                   </div>
                 ) : null}
 
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsGenerateSummaryOpen(false)}>
+                  <Button variant="outline" onClick={() => setIsArchiveEventOpen(false)}>
                     Cancel
                   </Button>
                   <Button
-                    onClick={handleArchiveEvent}
-                    disabled={!summaryPreview || !summarySequenceNumber.trim() || isNaN(parseInt(summarySequenceNumber, 10)) || isArchiving}
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                    variant="destructive"
+                    onClick={handleArchiveEventCommit}
+                    disabled={!archivePreview || !archiveSequenceNumber.trim() || isNaN(parseInt(archiveSequenceNumber, 10)) || parseInt(archiveSequenceNumber, 10) <= 0 || isArchiving}
                   >
-                    {isArchiving ? "Archiving..." : "Archive this event"}
+                    {isArchiving ? "Archiving..." : "Archive event"}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -808,7 +779,7 @@ export default function P2IAdminDashboard() {
             <span className="text-2xl">🗂️</span>
             <div>
               <p className="font-semibold text-gray-700">This event is archived</p>
-              <p className="text-sm text-gray-500">A summary has been saved. No further actions are available.</p>
+              <p className="text-sm text-gray-500">Aggregate counts have been preserved; attendee personal data was permanently deleted. View the archive from Manage Events.</p>
             </div>
           </div>
         )}

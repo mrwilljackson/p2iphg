@@ -265,28 +265,62 @@ export interface ApiErrorResponse {
 export type ApiResponse<T = unknown> = ApiSuccessResponse<T> | ApiErrorResponse;
 
 // ============================================================================
-// Event Summary Types
+// Event Archive Types
 // ============================================================================
 
 /**
- * Read-only preview of computed event counts (returned before saving).
+ * One organisation's contribution to an archived event.
+ * Matches the event_archive_org_lines table shape with timestamps as ISO strings.
  */
-export interface EventSummaryPreview {
-  participantCount: number;
-  volunteerCount: number;
-  groupCount: number;
-  participatingLeaderCount: number;
-  totalHeadcount: number;
-  photoConsentCount: number;
-  feedbackConsentCount: number;
-  nextEventConsentCount: number;
-  orgBreakdown: { orgName: string; headcount: number }[];
+export interface EventArchiveOrgLine {
+  id: string;
+  archiveId: string;
+  organisationId: string;
+  orgNameSnapshot: string;
+  orgAirtableRecordId: string | null;
+  contactAirtableRecordId: string | null;
+  actualHeadcount: number;
+  impairedCount: number;
+  nonImpairedCount: number;
+  createdAt: string;
 }
 
 /**
- * Saved event summary — persisted snapshot plus admin-entered fields.
+ * Read-only preview of computed event-archive counts (returned before saving).
+ * Shown in the Archive Event dialog so the admin can sanity-check counts
+ * before pressing the irreversible "Archive event" button.
+ *
+ * Counting semantics — locked in by this design (see spec §6):
+ * - participantCount = (Participant-role registrations)
+ *     + (closed-group members via groupSize on Group-role registrations)
+ *     + (participating group leaders, i.e. groupLeaderParticipating=true)
+ *   i.e. every actual person attending in a participant capacity.
+ * - totalHeadcount = participantCount + volunteerCount.
+ * - companiesCount = distinct organisations that participated.
  */
-export interface EventSummary extends EventSummaryPreview {
+export interface EventArchivePreview {
+  participantCount: number;
+  volunteerCount: number;
+  groupCount: number;
+  totalHeadcount: number;
+  companiesCount: number;
+  impairedParticipantCount: number;
+  nonImpairedParticipantCount: number;
+  photoConsentCount: number;
+  feedbackConsentCount: number;
+  nextEventConsentCount: number;
+  orgLines: Omit<EventArchiveOrgLine, 'id' | 'archiveId' | 'createdAt'>[];
+}
+
+/**
+ * A fully-saved event archive (header + lines) loaded from the DB.
+ * Returned by getEventArchive() and rendered by the View Archive dialog.
+ *
+ * Inherits all count fields from EventArchivePreview so the two stay in
+ * lock-step automatically; adds the identity / metadata / archive-only
+ * fields and replaces orgLines with the full saved-row shape.
+ */
+export interface EventArchiveView extends Omit<EventArchivePreview, 'orgLines'> {
   id: string;
   eventId: string;
   eventName: string;
@@ -295,7 +329,10 @@ export interface EventSummary extends EventSummaryPreview {
   eventDescription: string | null;
   eventAirtableRecordId: string | null;
   eventSequenceNumber: number;
-  adminNotes: string | null;
+
+  sourcePurgedAt: string;
   createdAt: string;
+
+  orgLines: EventArchiveOrgLine[];
 }
 

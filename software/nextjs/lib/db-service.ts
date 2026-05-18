@@ -15,10 +15,10 @@
  */
 
 import { db } from './db/client';
-import { events, organisations, organisationContacts, volunteers, registrations, eventSummaries } from './db/schema';
+import { events, organisations, organisationContacts, volunteers, registrations, eventArchive, eventArchiveOrgLines } from './db/schema';
 import { eq, ne, and, ilike, sql, inArray } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
-import type { Event, Organization, OrgRecord, GroupLeader, Volunteer, Registration, OrgContactOption, EventSummaryPreview, EventSummary } from './types';
+import type { Event, Organization, OrgRecord, GroupLeader, Volunteer, Registration, OrgContactOption, EventArchivePreview, EventArchiveView, EventArchiveOrgLine } from './types';
 import type { OrganisationRow, OrganisationContactRow } from './db/schema';
 import { calculateParticipantCounts, type RegistrationForCounting, type ParticipantCounts } from './participant-counting';
 
@@ -1250,282 +1250,371 @@ export class DatabaseService {
   }
 
   /**
-   * Compute summary counts for an event without writing to the DB.
-   * Uses open/closed group logic: closed groups count groupSize + leader;
-   * open groups count leader only if participating.
+   * Compute the data that will end up in event_archive + event_archive_org_lines
+   * for the given event, without writing anything to the DB.
+   *
+   * Throws if the event is not found or not status='completed'.
+   *
+   * Counting semantics (see spec §6 and EVENT_ARCHIVE_SAMPLE.md):
+   * - participantCount  = Participant registrations
+   *                       + closed-group members via groupSize
+   *                       + leaders with groupLeaderParticipating=true
+   * - totalHeadcount    = participantCount + volunteerCount
+   * - companiesCount    = distinct orgs participating (via organisation_contacts)
+   * - Org-line headcount per org applies the same rule:
+   *     open-group  -> count Participant registrations for that org
+   *                    + 1 if any leader participated
+   *     closed-group -> sum of groupSize across the org's Group registrations
+   *                     + count of those with groupLeaderParticipating=true
    */
-  private static async computeSummaryData(
-    eventId: string,
-    event: { id: string; airtableRecordId?: string },
-  ): Promise<EventSummaryPreview> {
-    // Fetch all registrations for this event
+  private static async computeArchiveData(eventId: string): Promise<{
+    event: {
+      id: string;
+      name: string;
+      date: string;
+      location: string | null;
+      description: string | null;
+      airtableRecordId: string | null;
+    };
+    preview: EventArchivePreview;
+  }> {
+    const eventRows = await db.select().from(events).where(eq(events.id, eventId)).limit(1);
+    const event = eventRows[0];
+    if (!event) throw new Error(`Event not found: ${eventId}`);
+    if (event.status !== 'completed') {
+      throw new Error(`Event is not completed (status: ${event.status}). Only completed events can be archived.`);
+    }
+
+    // 1. All registrations for this event.
     const regs = await db
       .select()
       .from(registrations)
       .where(eq(registrations.eventId, eventId));
 
-    const groupRegs = regs.filter(r => r.role === 'Group');
-    const participantRegs = regs.filter(r => r.role === 'Participant');
+    // 2. All organisation_contacts rows for this event, joined to the org row.
+    //    Contains the per-event open/closed flag and the contact's airtable ID.
+    const contactRows = await db
+      .select({
+        contact: organisationContacts,
+        org: organisations,
+      })
+      .from(organisationContacts)
+      .innerJoin(organisations, eq(organisationContacts.organisationId, organisations.id))
+      .where(eq(organisationContacts.eventId, eventId));
 
-    // Build openGroup lookup: organisations.id (UUID) → isOpen (boolean)
-    const openGroupMap = new Map<string, boolean>();
-    const orgUuids = [...new Set(
-      groupRegs.map(r => r.organizationId).filter((id): id is string => id != null)
-    )];
-
-    if (orgUuids.length > 0) {
-      const orgRows = await db
-        .select({ orgId: organisations.id, openGroup: organisationContacts.openGroup })
-        .from(organisations)
-        .leftJoin(
-          organisationContacts,
-          and(
-            eq(organisationContacts.organisationId, organisations.id),
-            eq(organisationContacts.eventId, eventId),
-          ),
-        )
-        .where(inArray(organisations.id, orgUuids));
-
-      for (const row of orgRows) {
-        openGroupMap.set(row.orgId, row.openGroup !== false);
-      }
+    // Build a lookup orgId -> openGroup. Falls back to true (open) if no contact.
+    const openGroupByOrgId = new Map<string, boolean>();
+    for (const row of contactRows) {
+      openGroupByOrgId.set(row.org.id, row.contact.openGroup);
     }
 
-    // Role counts
-    const volunteerCount = regs.filter(r => r.role === 'Volunteer').length;
+    const participantRegs = regs.filter(r => r.role === 'Participant');
+    const groupRegs = regs.filter(r => r.role === 'Group');
+    const volunteerRegs = regs.filter(r => r.role === 'Volunteer');
+
+    const volunteerCount = volunteerRegs.length;
     const groupCount = groupRegs.length;
 
-    // Participant count: individual registrations + closed group members (groupSize)
+    // 3. Participant headcount + impairment split, in lock-step.
+    //    Every person added to participantCount is also classified as either
+    //    impaired or non-impaired so the two stay reconciled.
     let participantCount = participantRegs.length;
-    for (const reg of groupRegs) {
-      const isOpen = reg.organizationId
-        ? (openGroupMap.get(reg.organizationId) ?? true)
-        : true;
-      if (!isOpen) {
-        participantCount += reg.groupSize ?? 0;
+    let impairedParticipantCount = 0;
+    let nonImpairedParticipantCount = 0;
+
+    for (const p of participantRegs) {
+      if (p.impairment && p.impairment.trim() !== '') {
+        impairedParticipantCount += 1;
+      } else {
+        nonImpairedParticipantCount += 1;
       }
     }
 
-    // Headcount: participants + group leaders who are participating
-    const participatingLeaderCount = groupRegs.filter(r => r.groupLeaderParticipating === true).length;
-    const totalHeadcount = participantCount + participatingLeaderCount;
+    for (const g of groupRegs) {
+      // Falls back to open (true) if this org has no organisation_contacts row
+      // for the event. In practice this should never happen — the registration
+      // form only allows selecting orgs that appear in organisation_contacts —
+      // but if it does, the org's registrations will be counted in the
+      // top-level participantCount as open-group members and will NOT produce
+      // an org line in the archive (the per-org loop below skips them).
+      const isOpen = g.organizationId
+        ? (openGroupByOrgId.get(g.organizationId) ?? true)
+        : true;
 
-    // Consent counts (across all roles)
+      if (!isOpen) {
+        participantCount += g.groupSize ?? 0;
+        impairedParticipantCount += g.impairedParticipants ?? 0;
+        nonImpairedParticipantCount += g.nonImpairedParticipants ?? 0;
+      }
+
+      // Participating leaders count as non-impaired by default (the leader's
+      // own impairment isn't tracked on the Group registration row).
+      if (g.groupLeaderParticipating === true) {
+        participantCount += 1;
+        nonImpairedParticipantCount += 1;
+      }
+    }
+
+    const totalHeadcount = participantCount + volunteerCount;
+
+    // 4. Consent counts across ALL registrations for the event (any role).
     const photoConsentCount = regs.filter(r => r.photoConsent === true).length;
     const feedbackConsentCount = regs.filter(r => r.feedbackConsent === true).length;
     const nextEventConsentCount = regs.filter(r => r.nextEventConsent === true).length;
 
-    // Build org name lookup from organizationId → org name via the organisations table
-    const allOrgUuids = [...new Set(
-      regs.map(r => r.organizationId).filter((id): id is string => id != null)
-    )];
-    const orgNameMap = new Map<string, string>();
-    if (allOrgUuids.length > 0) {
-      const orgNameRows = await db
-        .select({ id: organisations.id, name: organisations.name })
-        .from(organisations)
-        .where(inArray(organisations.id, allOrgUuids));
-      for (const row of orgNameRows) {
-        const name = row.name?.toLowerCase() === 'individual' ? 'Individual Participants' : (row.name ?? 'Unknown organisation');
-        orgNameMap.set(row.id, name);
-      }
+    // Sanity check: impairment split must equal participantCount.
+    // A mismatch means a closed-group registration had groupSize ≠
+    // impaired + non-impaired. The registration form warns about this
+    // but does not block submission, so it can reach the archive.
+    // We log and proceed — the operator can investigate via logs.
+    if (impairedParticipantCount + nonImpairedParticipantCount !== participantCount) {
+      console.warn(
+        `[computeArchiveData] eventId=${eventId}: impairment split ` +
+        `(${impairedParticipantCount} + ${nonImpairedParticipantCount}) ` +
+        `does not equal participantCount (${participantCount}).`
+      );
     }
 
-    // Org breakdown using joined org names, with open/closed headcount rules
-    const orgHeadcountMap = new Map<string, number>();
+    // 5. Companies count = distinct orgs that appear in contactRows for this event.
+    const companiesCount = new Set(contactRows.map(r => r.org.id)).size;
 
-    for (const reg of participantRegs) {
-      const orgName = (reg.organizationId ? orgNameMap.get(reg.organizationId) : null)
-        ?? reg.organisationName ?? 'No organisation';
-      orgHeadcountMap.set(orgName, (orgHeadcountMap.get(orgName) ?? 0) + 1);
-    }
+    // 6. Per-org lines. One line per organisation_contact row (= one per org
+    //    in this event because each org has at most one contact per event,
+    //    enforced indirectly by current import logic).
+    //    For each org line compute: actual_headcount, impaired_count,
+    //    non_impaired_count.
+    const orgLines: EventArchivePreview['orgLines'] = [];
 
-    for (const reg of groupRegs) {
-      const orgName = (reg.organizationId ? orgNameMap.get(reg.organizationId) : null)
-        ?? reg.organisationName ?? 'No organisation';
-      const isOpen = reg.organizationId
-        ? (openGroupMap.get(reg.organizationId) ?? true)
-        : true;
-      let contribution = 0;
-      if (!isOpen) {
-        contribution += reg.groupSize ?? 0;
-        if (reg.groupLeaderParticipating === true) contribution += 1;
+    for (const row of contactRows) {
+      const orgId = row.org.id;
+      const isOpen = row.contact.openGroup !== false;
+
+      // Find the Group registration(s) for this org (usually one).
+      const orgGroupRegs = groupRegs.filter(g => g.organizationId === orgId);
+      // Find the Participant registrations for this org.
+      const orgParticipantRegs = participantRegs.filter(p => p.organizationId === orgId);
+
+      let actual = 0;
+      let impaired = 0;
+      let nonImpaired = 0;
+
+      if (isOpen) {
+        actual = orgParticipantRegs.length;
+        for (const p of orgParticipantRegs) {
+          if (p.impairment && p.impairment.trim() !== '') impaired += 1;
+          else nonImpaired += 1;
+        }
+        for (const g of orgGroupRegs) {
+          if (g.groupLeaderParticipating === true) {
+            actual += 1;
+            nonImpaired += 1;
+          }
+        }
       } else {
-        if (reg.groupLeaderParticipating === true) contribution += 1;
+        for (const g of orgGroupRegs) {
+          actual += g.groupSize ?? 0;
+          impaired += g.impairedParticipants ?? 0;
+          nonImpaired += g.nonImpairedParticipants ?? 0;
+          if (g.groupLeaderParticipating === true) {
+            actual += 1;
+            nonImpaired += 1;
+          }
+        }
       }
-      if (contribution > 0) {
-        orgHeadcountMap.set(orgName, (orgHeadcountMap.get(orgName) ?? 0) + contribution);
-      }
-    }
 
-    const orgBreakdown = [...orgHeadcountMap.entries()]
-      .map(([orgName, headcount]) => ({ orgName, headcount }))
-      .sort((a, b) => b.headcount - a.headcount);
+      orgLines.push({
+        organisationId: orgId,
+        orgNameSnapshot: row.org.name ?? 'Unknown organisation',
+        orgAirtableRecordId: row.org.airtableRecordId ?? null,
+        contactAirtableRecordId: row.contact.airtableRecordId ?? null,
+        actualHeadcount: actual,
+        impairedCount: impaired,
+        nonImpairedCount: nonImpaired,
+      });
+    }
 
     return {
-      participantCount,
-      volunteerCount,
-      groupCount,
-      participatingLeaderCount,
-      totalHeadcount,
-      photoConsentCount,
-      feedbackConsentCount,
-      nextEventConsentCount,
-      orgBreakdown,
+      event: {
+        id: event.id,
+        name: event.name,
+        date: event.date,
+        location: event.location ?? null,
+        description: event.description ?? null,
+        airtableRecordId: event.airtableRecordId ?? null,
+      },
+      preview: {
+        participantCount,
+        volunteerCount,
+        groupCount,
+        totalHeadcount,
+        companiesCount,
+        impairedParticipantCount,
+        nonImpairedParticipantCount,
+        photoConsentCount,
+        feedbackConsentCount,
+        nextEventConsentCount,
+        orgLines,
+      },
     };
   }
 
   /**
-   * Compute and return event summary counts without writing anything to the DB.
-   * Used by the modal to show a preview before the admin confirms.
-   * Throws if the event is not found or not status='completed'.
+   * Compute archive counts without writing anything. Used by the Archive
+   * Event dialog to render the preview before the admin commits.
    */
-  static async previewEventSummary(eventId: string): Promise<EventSummaryPreview> {
-    const eventRows = await db.select().from(events).where(eq(events.id, eventId)).limit(1);
-    const event = eventRows[0];
-    if (!event) throw new Error(`Event not found: ${eventId}`);
-    if (event.status !== 'completed') {
-      throw new Error(`Event is not completed (status: ${event.status})`);
-    }
-    return DatabaseService.computeSummaryData(eventId, {
-      id: event.id,
-      airtableRecordId: event.airtableRecordId ?? undefined,
-    });
+  static async previewEventArchive(eventId: string): Promise<EventArchivePreview> {
+    const { preview } = await DatabaseService.computeArchiveData(eventId);
+    return preview;
   }
 
   /**
-   * Generate and persist an event summary, then set the event status to 'archived'.
+   * Archive a completed event:
+   *   1. Insert event_archive + event_archive_org_lines.
+   *   2. Delete registrations / organisation_contacts / volunteers for the event.
+   *   3. Update events.status = 'archived'.
    *
-   * Atomicity note: Neon HTTP client has no transaction support. Steps run sequentially:
-   * 1. Insert summary row
-   * 2. Update event status to 'archived'
-   * If step 2 fails, the summary row exists but the event remains 'completed'.
-   * This is the preferred failure mode — it is recoverable by retrying.
+   * neon-http does not support db.transaction(). Instead the steps are
+   * executed sequentially: INSERTs first, then DELETEs, then the status
+   * UPDATE. The worst-case partial-failure mode is a created archive with
+   * source rows still present; an admin can retry by deleting the orphan
+   * archive row and re-running.
    *
-   * Throws if the event is not found or not status='completed'.
+   * If the precondition fails (event missing, not completed, or already
+   * archived) it throws BEFORE any write.
+   *
+   * Race condition note: the "already archived" pre-check is not atomic.
+   * If two archive requests race, the UNIQUE constraint on
+   * event_archive.event_id is the backstop; the losing request will
+   * receive a raw constraint error rather than the friendly message.
    */
-  static async generateEventSummary(
+  static async archiveEvent(
     eventId: string,
     eventSequenceNumber: number,
-    adminNotes: string | null,
-  ): Promise<EventSummary> {
-    const eventRows = await db.select().from(events).where(eq(events.id, eventId)).limit(1);
-    const event = eventRows[0];
-    if (!event) throw new Error(`Event not found: ${eventId}`);
-    if (event.status !== 'completed') {
-      throw new Error(`Event is not completed (status: ${event.status})`);
+  ): Promise<string> {
+    if (!Number.isInteger(eventSequenceNumber) || eventSequenceNumber <= 0) {
+      throw new Error(`eventSequenceNumber must be a positive integer, got: ${eventSequenceNumber}`);
     }
 
-    const preview = await DatabaseService.computeSummaryData(eventId, {
-      id: event.id,
-      airtableRecordId: event.airtableRecordId ?? undefined,
-    });
+    // Precondition: refuse if an archive already exists for this event.
+    const [existing] = await db
+      .select({ id: eventArchive.id })
+      .from(eventArchive)
+      .where(eq(eventArchive.eventId, eventId))
+      .limit(1);
+    if (existing) {
+      throw new Error(`Event is already archived (event_archive.id = ${existing.id}).`);
+    }
 
-    // Step 1: Insert summary row
-    const inserted = await db
-      .insert(eventSummaries)
-      .values({
-        eventId,
-        eventName: event.name,
-        eventDate: event.date,
-        eventLocation: event.location ?? null,
-        eventDescription: event.description ?? null,
-        eventAirtableRecordId: event.airtableRecordId ?? null,
-        participantCount: preview.participantCount,
-        volunteerCount: preview.volunteerCount,
-        groupCount: preview.groupCount,
-        totalHeadcount: preview.totalHeadcount,
-        photoConsentCount: preview.photoConsentCount,
-        feedbackConsentCount: preview.feedbackConsentCount,
-        nextEventConsentCount: preview.nextEventConsentCount,
-        orgBreakdown: JSON.stringify(preview.orgBreakdown),
-        eventSequenceNumber,
-        adminNotes: adminNotes ?? null,
-      })
-      .onConflictDoUpdate({
-        target: eventSummaries.eventId,
-        set: {
-          eventName: event.name,
-          eventDate: event.date,
-          eventLocation: event.location ?? null,
-          eventDescription: event.description ?? null,
-          eventAirtableRecordId: event.airtableRecordId ?? null,
-          participantCount: preview.participantCount,
-          volunteerCount: preview.volunteerCount,
-          groupCount: preview.groupCount,
-          totalHeadcount: preview.totalHeadcount,
-          photoConsentCount: preview.photoConsentCount,
-          feedbackConsentCount: preview.feedbackConsentCount,
-          nextEventConsentCount: preview.nextEventConsentCount,
-          orgBreakdown: JSON.stringify(preview.orgBreakdown),
-          eventSequenceNumber,
-          adminNotes: adminNotes ?? null,
-          createdAt: new Date(),
-        },
-      })
-      .returning();
+    // Compute everything we need to write. Throws if event isn't 'completed'.
+    const { event, preview } = await DatabaseService.computeArchiveData(eventId);
 
-    const row = inserted[0];
-    if (!row) throw new Error('Failed to save event summary');
+    const archiveId = randomUUID();
+    const now = new Date();
 
-    // Step 2: Archive the event
-    await db
-      .update(events)
-      .set({ status: 'archived' })
+    const headerRow: typeof eventArchive.$inferInsert = {
+      id: archiveId,
+      eventId: event.id,
+      eventName: event.name,
+      eventDate: event.date,
+      eventLocation: event.location,
+      eventDescription: event.description,
+      eventAirtableRecordId: event.airtableRecordId,
+      eventSequenceNumber,
+      participantCount: preview.participantCount,
+      volunteerCount: preview.volunteerCount,
+      groupCount: preview.groupCount,
+      totalHeadcount: preview.totalHeadcount,
+      companiesCount: preview.companiesCount,
+      impairedParticipantCount: preview.impairedParticipantCount,
+      nonImpairedParticipantCount: preview.nonImpairedParticipantCount,
+      photoConsentCount: preview.photoConsentCount,
+      feedbackConsentCount: preview.feedbackConsentCount,
+      nextEventConsentCount: preview.nextEventConsentCount,
+      sourcePurgedAt: now,
+    };
+
+    const lineRows: (typeof eventArchiveOrgLines.$inferInsert)[] = preview.orgLines.map(line => ({
+      archiveId,
+      organisationId: line.organisationId,
+      orgNameSnapshot: line.orgNameSnapshot,
+      orgAirtableRecordId: line.orgAirtableRecordId,
+      contactAirtableRecordId: line.contactAirtableRecordId,
+      actualHeadcount: line.actualHeadcount,
+      impairedCount: line.impairedCount,
+      nonImpairedCount: line.nonImpairedCount,
+    }));
+
+    // neon-http does not support db.transaction() — execute sequentially.
+    // INSERTs first so the unique constraint on event_id catches any race;
+    // DELETEs second; status flip last.
+    await db.insert(eventArchive).values(headerRow);
+    if (lineRows.length > 0) {
+      await db.insert(eventArchiveOrgLines).values(lineRows);
+    }
+    await db.delete(registrations).where(eq(registrations.eventId, eventId));
+    await db.delete(organisationContacts).where(eq(organisationContacts.eventId, eventId));
+    await db.delete(volunteers).where(eq(volunteers.eventId, eventId));
+    await db.update(events)
+      .set({ status: 'archived', modifiedAt: now })
       .where(eq(events.id, eventId));
 
-    return {
-      id: row.id,
-      eventId: row.eventId,
-      eventName: row.eventName,
-      eventDate: row.eventDate,
-      eventLocation: row.eventLocation,
-      eventDescription: row.eventDescription,
-      eventAirtableRecordId: row.eventAirtableRecordId,
-      participantCount: row.participantCount,
-      volunteerCount: row.volunteerCount,
-      groupCount: row.groupCount,
-      participatingLeaderCount: preview.participatingLeaderCount,
-      totalHeadcount: row.totalHeadcount,
-      photoConsentCount: row.photoConsentCount,
-      feedbackConsentCount: row.feedbackConsentCount,
-      nextEventConsentCount: row.nextEventConsentCount,
-      orgBreakdown: JSON.parse(row.orgBreakdown) as { orgName: string; headcount: number }[],
-      eventSequenceNumber: row.eventSequenceNumber,
-      adminNotes: row.adminNotes,
-      createdAt: row.createdAt?.toISOString() ?? new Date().toISOString(),
-    };
+    return archiveId;
   }
+
   /**
-   * Get the stored event summary for an archived event.
+   * Load a saved archive (header + lines) for an archived event.
+   * Returns null if no archive exists.
    */
-  static async getEventSummary(eventId: string) {
-    const [row] = await db
+  static async getEventArchive(eventId: string): Promise<EventArchiveView | null> {
+    const [header] = await db
       .select()
-      .from(eventSummaries)
-      .where(eq(eventSummaries.eventId, eventId))
+      .from(eventArchive)
+      .where(eq(eventArchive.eventId, eventId))
       .limit(1);
 
-    if (!row) return null;
+    if (!header) return null;
+
+    const lines = await db
+      .select()
+      .from(eventArchiveOrgLines)
+      .where(eq(eventArchiveOrgLines.archiveId, header.id))
+      .orderBy(eventArchiveOrgLines.orgNameSnapshot);
+
+    const orgLines: EventArchiveOrgLine[] = lines.map(l => ({
+      id: l.id,
+      archiveId: l.archiveId,
+      organisationId: l.organisationId,
+      orgNameSnapshot: l.orgNameSnapshot,
+      orgAirtableRecordId: l.orgAirtableRecordId,
+      contactAirtableRecordId: l.contactAirtableRecordId,
+      actualHeadcount: l.actualHeadcount,
+      impairedCount: l.impairedCount,
+      nonImpairedCount: l.nonImpairedCount,
+      createdAt: l.createdAt!.toISOString(),
+    }));
 
     return {
-      id: row.id,
-      eventId: row.eventId,
-      eventName: row.eventName,
-      eventDate: row.eventDate,
-      eventLocation: row.eventLocation,
-      eventDescription: row.eventDescription,
-      participantCount: row.participantCount,
-      volunteerCount: row.volunteerCount,
-      groupCount: row.groupCount,
-      totalHeadcount: row.totalHeadcount,
-      photoConsentCount: row.photoConsentCount,
-      feedbackConsentCount: row.feedbackConsentCount,
-      nextEventConsentCount: row.nextEventConsentCount,
-      orgBreakdown: JSON.parse(row.orgBreakdown) as { orgName: string; headcount: number }[],
-      eventSequenceNumber: row.eventSequenceNumber,
-      adminNotes: row.adminNotes,
-      createdAt: row.createdAt?.toISOString() ?? null,
+      id: header.id,
+      eventId: header.eventId,
+      eventName: header.eventName,
+      eventDate: header.eventDate,
+      eventLocation: header.eventLocation,
+      eventDescription: header.eventDescription,
+      eventAirtableRecordId: header.eventAirtableRecordId,
+      eventSequenceNumber: header.eventSequenceNumber,
+      participantCount: header.participantCount,
+      volunteerCount: header.volunteerCount,
+      groupCount: header.groupCount,
+      totalHeadcount: header.totalHeadcount,
+      companiesCount: header.companiesCount,
+      impairedParticipantCount: header.impairedParticipantCount,
+      nonImpairedParticipantCount: header.nonImpairedParticipantCount,
+      photoConsentCount: header.photoConsentCount,
+      feedbackConsentCount: header.feedbackConsentCount,
+      nextEventConsentCount: header.nextEventConsentCount,
+      sourcePurgedAt: header.sourcePurgedAt.toISOString(),
+      createdAt: header.createdAt!.toISOString(),
+      orgLines,
     };
   }
 }

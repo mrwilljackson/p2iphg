@@ -1,7 +1,7 @@
 # Power2Inspire Event CRM App - Data Models
 
-**Document Version:** 2.2
-**Date:** 2026-04-16
+**Document Version:** 2.3
+**Date:** 2026-05-11
 **Status:** Current Implementation (NextJS Web App)
 
 > ⚠️ **Note (2026-04-29):** The `syncStatus` and `airtableRecordId` fields documented below remain in the schema, but the **Neon → Airtable direct sync flow is deprecated**. CSV export is the supported post-event workflow. These fields are retained for historical records but are no longer actively populated by a live sync. See `AIRTABLE_INTEGRATION.md` for the canonical deprecation note.
@@ -327,64 +327,111 @@ Represents a pre-registered volunteer for an event. Volunteers are event-specifi
 
 ---
 
-### 1.5 EventSummary Entity
+### 1.5 Event Archive Table
 
-Represents a point-in-time snapshot generated when a P2I admin archives a completed event. The summary persists after the event's participant and organisation data has been cleared from the database.
+Represents a point-in-time snapshot created when a P2I admin archives a completed event. The archive captures summary counts and organisation-level data, while participant and organisation records are simultaneously hard-deleted from their source tables. The archive persists as the permanent record of the event's outcomes.
 
 **Properties:**
 - `id` (UUID, PK): Unique identifier
-- `eventId` (UUID, required, unique FK → events): The archived event this summary belongs to
+- `eventId` (UUID, required, unique FK → events): The archived event this archive belongs to
 - `eventName` (String, required): Event name captured at archive time
 - `eventDate` (String, required): Event date (ISO 8601) captured at archive time
 - `eventLocation` (String, optional): Event venue captured at archive time
 - `eventDescription` (String, optional): Event description captured at archive time
 - `eventAirtableRecordId` (String, optional): Airtable record ID of the event
-- `participantCount` (Integer, required, default: 0): Number of Participant registrations
+- `participantCount` (Integer, required, default: 0): Number of Participant registrations, plus any group leaders who participated
 - `volunteerCount` (Integer, required, default: 0): Number of Volunteer registrations
 - `groupCount` (Integer, required, default: 0): Number of Group registrations
-- `totalHeadcount` (Integer, required, default: 0): Total computed headcount (accounts for closed-group sizes)
+- `totalHeadcount` (Integer, required, default: 0): Total computed headcount = `participantCount` + `volunteerCount` (accounts for closed-group sizes via participantCount)
+- `companies_count` (Integer, required, default: 0): Distinct number of organisations represented
+- `impaired_participant_count` (Integer, required, default: 0): Total number of impaired participants across all registrations
+- `non_impaired_participant_count` (Integer, required, default: 0): Total number of non-impaired participants across all registrations
 - `photoConsentCount` (Integer, required, default: 0): Number of attendees who gave photo consent
 - `feedbackConsentCount` (Integer, required, default: 0): Number of attendees who gave feedback consent
 - `nextEventConsentCount` (Integer, required, default: 0): Number of attendees who gave next-event consent
-- `orgBreakdown` (String, required, default: '[]'): JSON array of `{ orgName: string, headcount: number }` objects
 - `eventSequenceNumber` (Integer, required): Human-readable sequence number assigned by P2I admin at archive time
-- `adminNotes` (String, optional): Free-text notes entered by P2I admin at archive time
-- `createdAt` (DateTime, optional): Timestamp when the summary was generated
+- `source_purged_at` (DateTime, required): Timestamp when source participant/organisation data was hard-deleted (equals `createdAt` for atomic-flow archives)
+- `createdAt` (DateTime, required): Timestamp when the archive was generated
 
 **Business Rules:**
-- One summary per event (`eventId` is unique)
-- Summary is created when the event is archived; event data is cleared immediately after
-- All event metadata fields are copied from the event record at archive time to survive the data clear
-- `orgBreakdown` is stored as serialised JSON text
+- One archive per event (`eventId` is unique)
+- Archive is created atomically: snapshot is taken, source rows are hard-deleted, and event status is set to "archived" in a single transaction
+- All event metadata fields are copied from the event record at archive time to survive the deletion
+- Personal data (registration details, contact information) is permanently deleted; the archive contains only aggregated counts and organisation summaries
+- Organisation-level breakdowns are stored in the child table `event_archive_org_lines` (one row per distinct organisation)
 - `eventSequenceNumber` is required and assigned manually by the P2I admin (not auto-incremented)
 
 **Example:**
 ```typescript
 {
-  id: 'uuid-summary-001',
+  id: 'uuid-archive-001',
   eventId: 'uuid-evt-001',
   eventName: 'Community Wellness Day 2026',
   eventDate: '2026-03-15',
   eventLocation: 'Community Center, Main Street',
   eventDescription: 'Annual wellness event with health screenings',
   eventAirtableRecordId: 'recEVENTXXXXXXXXXX',
-  participantCount: 142,
+  participantCount: 160,  // Includes 18 group leaders who participated
   volunteerCount: 18,
   groupCount: 12,
-  totalHeadcount: 310,
-  photoConsentCount: 295,
-  feedbackConsentCount: 210,
-  nextEventConsentCount: 185,
-  orgBreakdown: '[{"orgName":"Next PLC","headcount":45},{"orgName":"Glenfield SEN School","headcount":26}]',
+  totalHeadcount: 178,    // 160 + 18 (volunteers)
+  companies_count: 24,
+  impaired_participant_count: 87,
+  non_impaired_participant_count: 73,
+  photoConsentCount: 155,
+  feedbackConsentCount: 142,
+  nextEventConsentCount: 128,
   eventSequenceNumber: 7,
-  adminNotes: 'Excellent turnout. Venue was slightly too small.',
+  source_purged_at: '2026-03-20T14:30:00Z',
+  createdAt: '2026-03-20T14:30:00Z',
+}
+```
+
+**Note:** Organisation-level details (breakdown by org name, headcount per org, etc.) are stored in the `event_archive_org_lines` child table. See section 1.6.
+
+---
+
+### 1.6 Event Archive Organisation Lines Table
+
+One-to-many child table of `event_archive`. Each row captures the aggregated data for one organisation within an archived event, preserving the organisation name and contact reference as they were at archive time.
+
+**Properties:**
+- `id` (UUID, PK): Unique identifier
+- `archive_id` (UUID, required, FK → event_archive.id): The archive this line belongs to
+- `organisation_id` (UUID, required, FK → organisations.id): Reference to the organisation master record
+- `org_name_snapshot` (String, required): Organisation name as it was at archive time
+- `org_airtable_record_id` (String, optional): Airtable record ID of the organisation
+- `contact_airtable_record_id` (String, optional): Airtable record ID of the organisation contact (from `organisation_contacts`)
+- `actual_headcount` (Integer, required): Total individuals from this organisation (accounting for closed-group sizes)
+- `impaired_count` (Integer, required): Number of impaired participants from this organisation
+- `non_impaired_count` (Integer, required): Number of non-impaired participants from this organisation
+- `createdAt` (DateTime, required): Timestamp when the archive was generated
+
+**Business Rules:**
+- One row per distinct organisation in the archived event
+- All identifying fields (`org_name_snapshot`, Airtable IDs) are snapshots taken at archive time to preserve historical accuracy
+- Counts are pre-computed at archive time and immutable thereafter
+- Rows exist only within the context of their parent archive (cascade delete if archive is removed)
+
+**Example:**
+```typescript
+{
+  id: 'uuid-line-001',
+  archive_id: 'uuid-archive-001',
+  organisation_id: 'org-uuid-next-plc',
+  org_name_snapshot: 'Next PLC',
+  org_airtable_record_id: 'recNEXTPLCXXXXXXXX',
+  contact_airtable_record_id: 'recCONTACT001XXXXX',
+  actual_headcount: 45,
+  impaired_count: 12,
+  non_impaired_count: 33,
   createdAt: '2026-03-20T14:30:00Z',
 }
 ```
 
 ---
 
-### 1.6 SyncLog Entity
+### 1.7 SyncLog Entity
 
 Tracks synchronization attempts to external systems.
 
@@ -427,7 +474,7 @@ enum EventStatus {
   planned = "planned",      // Future event, not yet active
   active = "active",        // Currently ongoing or upcoming
   completed = "completed",  // Event has finished; registration data still present
-  archived = "archived",    // Event whose participant/organisation data has been cleared; eventSummary snapshot exists
+  archived = "archived",    // Event whose participant/organisation data has been permanently deleted; event_archive snapshot exists
 }
 ```
 
@@ -629,7 +676,11 @@ Event (1) ──────< (Many) Registration
   │
   ├──────< (Many) Organization
   │
-  └──────< (Many) Volunteer
+  ├──────< (Many) Volunteer
+  │
+  └──── (1) Event Archive
+           │
+           └──────< (Many) Event Archive Organisation Lines
 
 Organization (1) ──────< (Many) Registration
 ```
@@ -672,10 +723,13 @@ Organization (1) ──────< (Many) Registration
 4. **Check-in/Check-out**: Attendance tracked with timestamps
 
 ### Post-Event Phase
-1. **Data Sync**: All registrations synced back to Airtable
-2. **CSV Export**: Event data exported for analysis
-3. **Database Wipe**: Neon PostgreSQL database cleared for next event
-4. **Airtable Archive**: All data preserved in Airtable as source of truth
+1. **Event Archival**: P2I Admin triggers the archive operation on a completed event
+2. **Snapshot Creation**: An `event_archive` record is created with aggregated counts
+3. **Organisation Breakdown**: `event_archive_org_lines` records are created (one per organisation) with snapshot counts
+4. **Source Data Deletion**: All registrations, organisation contacts, and event-specific data are atomically hard-deleted
+5. **Status Update**: Event status is set to "archived"
+6. **CSV Export**: Before archival, Event Admin can export registrations as CSV for manual import into Airtable
+7. **Airtable Archive**: All data is preserved in Airtable as the source of truth; local database retains only the archive summary
 
 ---
 
@@ -713,6 +767,22 @@ See also: `lib/helpers.ts` → `organizationsToOptions()` and `groupOrgsToSectio
 ---
 
 ## 8. Version History
+
+### V2.3 Changes (2026-05-11)
+
+1. **Event Archive Rename**: Renamed "Event Summary" concept to "Event Archive" to reflect the expanded semantics
+2. **Event Archive Schema**:
+   - Removed `orgBreakdown` (JSON) — replaced by `event_archive_org_lines` child table
+   - Removed `adminNotes` — no longer captured at archive time
+   - Added `companies_count` (distinct organisations)
+   - Added `impaired_participant_count`, `non_impaired_participant_count` (impairment split)
+   - Added `source_purged_at` (timestamp of hard delete; equals `createdAt` for atomic archives)
+3. **New Event Archive Organisation Lines Table (section 1.6)**: Child table with one row per organisation per archive, capturing organisation name snapshot and aggregated headcount + impairment split
+4. **Counting Semantics Update**:
+   - `participantCount` now includes participating group leaders (formerly tracked separately)
+   - `totalHeadcount = participantCount + volunteerCount` (no longer has separate `participatingLeaderCount`)
+5. **Post-Event Flow Reframed**: Changed from "Generate Summary (no data deleted)" to "Archive Event (creates archive + hard-deletes source PII)" — emphasises the atomic operation and data deletion aspect
+6. **ERD Update**: Added Event Archive and Event Archive Organisation Lines entities to the conceptual diagram
 
 ### V2.2 Changes (2026-04-16)
 
